@@ -4,6 +4,20 @@ import (
 	"math/rand"
 )
 
+// Online clustering algorithm interface.
+type OnlineClust interface {
+	// Return the cluster information with the index idx.
+	get(idx int) (node, []node)
+	// Add an element to clustering data set.
+	push(node node)
+	// Make a prediction on node and return the cluster index.
+	predict(node node) int
+	// Run clustering algorithm.
+	run()
+	// Close algorithm clustering process.
+	close()
+}
+
 // Randomly picks initial K centroid nodes.
 func randomInit(nClusters int, nodes []node) []node {
 	centroids := make([]node, nClusters)

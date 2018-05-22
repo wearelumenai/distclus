@@ -45,11 +45,11 @@ func randomInit(nClusters int, elemts []Elemt) []Elemt {
 	return centroids
 }
 
-// Returns the index of the closest element to centroid from a list of nodes.
-func assign(centroid Elemt, elemts []Elemt, space space) int {
+// Returns the index of the closest element to elemt in elemts.
+func assign(elemt Elemt, elemts []Elemt, space space) int {
 	distances := make([]float64, len(elemts))
 	for i, node := range elemts {
-		distances[i] = space.dist(centroid, node)
+		distances[i] = space.dist(elemt, node)
 	}
 	current := distances[0]
 	var index int

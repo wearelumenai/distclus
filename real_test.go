@@ -150,42 +150,54 @@ func TestRealCombine2_1x0And4_2x0(t *testing.T) {
 	val = space.combine(e1, 0, e2, 0)
 }
 
-func TestRadomInitKMeans(t *testing.T) {
-	var nodes = make([]Elemt, 8)
-	nodes[0] = []float64{7.2, 6, 8, 11, 10}
-	nodes[1] = []float64{9, 8, 7, 7.5, 10}
-	nodes[2] = []float64{7.2, 6, 8, 11, 10}
-	nodes[3] = []float64{-9, -10, -8, -8, -7.5}
-	nodes[4] = []float64{-8, -10.5, -7, -8.5, -9}
-	nodes[5] = []float64{42, 41.2, 42, 40.2, 45}
-	nodes[6] = []float64{42, 41.2, 42.2, 40.2, 45}
-	nodes[7] = []float64{50, 51.2, 49, 40, 45.2}
-	space := realSpace{}
-	clusters := kMeans(nodes, space, 3, 10, randomInit)
+func TestRandomInitKMeans(t *testing.T) {
+	var data = make([]Elemt, 8)
+	data[0] = []float64{7.2, 6, 8, 11, 10}
+	data[1] = []float64{9, 8, 7, 7.5, 10}
+	data[2] = []float64{7.2, 6, 8, 11, 10}
+	data[3] = []float64{-9, -10, -8, -8, -7.5}
+	data[4] = []float64{-8, -10.5, -7, -8.5, -9}
+	data[5] = []float64{42, 41.2, 42, 40.2, 45}
+	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
+	data[7] = []float64{50, 51.2, 49, 40, 45.2}
+	var space = realSpace{}
+	var km = NewKMeans(3, 10, data, space, randomInit)
+	km.run()
+	km.close()
+	var clusters = km.clustering.clusters
 	if len(clusters) != 3 {
 		t.Errorf("Expected 3, got %v", 3)
 	}
 }
 
 func TestDeterminedInitKMeans(t *testing.T) {
-	var nodes = make([]Elemt, 8)
-	nodes[0] = []float64{7.2, 6, 8, 11, 10}
-	nodes[1] = []float64{9, 8, 7, 7.5, 10}
-	nodes[2] = []float64{7.2, 6, 8, 11, 10}
-	nodes[3] = []float64{-9, -10, -8, -8, -7.5}
-	nodes[4] = []float64{-8, -10.5, -7, -8.5, -9}
-	nodes[5] = []float64{42, 41.2, 42, 40.2, 45}
-	nodes[6] = []float64{42, 41.2, 42.2, 40.2, 45}
-	nodes[7] = []float64{50, 51.2, 49, 40, 45.2}
-	space := realSpace{}
-	init := func(n int, nodes []Elemt) []Elemt {
-		var c = make([]Elemt, 3)
-		c[0] = []float64{7.2, 6, 8, 11, 10}
-		c[1] = []float64{-9, -10, -8, -8, -7.5}
-		c[2] = []float64{42, 41.2, 42.2, 40.2, 45}
+	var data = make([]Elemt, 8)
+	data[0] = []float64{7.2, 6, 8, 11, 10}
+	data[1] = []float64{9, 8, 7, 7.5, 10}
+	data[2] = []float64{7.2, 6, 8, 11, 10}
+	data[3] = []float64{-9, -10, -8, -8, -7.5}
+	data[4] = []float64{-8, -10.5, -7, -8.5, -9}
+	data[5] = []float64{42, 41.2, 42, 40.2, 45}
+	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
+	data[7] = []float64{50, 51.2, 49, 40, 45.2}
+	var localSpace = realSpace{}
+	var init = func(k int, elemts []Elemt, space space) Clustering {
+		var centroids = make([]Elemt, 3)
+		var clusters = make([][]Elemt, 3)
+		centroids[0] = []float64{7.2, 6, 8, 11, 10}
+		centroids[1] = []float64{-9, -10, -8, -8, -7.5}
+		centroids[2] = []float64{42, 41.2, 42.2, 40.2, 45}
+		for _, elemt := range elemts {
+			var idx = assign(elemt, centroids, space)
+			clusters[idx] = append(clusters[idx], elemt)
+		}
+		var c, _ = NewClustering(centroids, clusters)
 		return c
 	}
-	clusters := kMeans(nodes, space, 3, 10, init)
+	var km = NewKMeans(3, 10, data, localSpace, init)
+	km.run()
+	km.close()
+	var clusters = km.clustering.clusters
 	if len(clusters[0]) != 3 {
 		t.Errorf("Expected 3, got %v", len(clusters[0]))
 	}
@@ -195,27 +207,4 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	if len(clusters[2]) != 3 {
 		t.Errorf("Expected 3, got %v", len(clusters[2]))
 	}
-}
-
-func TestBadInitKMeans(t *testing.T) {
-	var nodes = make([]Elemt, 8)
-	nodes[0] = []float64{7.2, 6, 8, 11, 10}
-	nodes[1] = []float64{9, 8, 7, 7.5, 10}
-	nodes[2] = []float64{7.2, 6, 8, 11, 10}
-	nodes[3] = []float64{-9, -10, -8, -8, -7.5}
-	nodes[4] = []float64{-8, -10.5, -7, -8.5, -9}
-	nodes[5] = []float64{42, 41.2, 42, 40.2, 45}
-	nodes[6] = []float64{42, 41.2, 42.2, 40.2, 45}
-	nodes[7] = []float64{50, 51.2, 49, 40, 45.2}
-	space := realSpace{}
-	init := func(n int, nodes []Elemt) []Elemt {
-		return make([]Elemt, 0)
-	}
-	var clusters map[int][]Elemt
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", clusters)
-		}
-	}()
-	clusters = kMeans(nodes, space, 3, 10, init)
 }

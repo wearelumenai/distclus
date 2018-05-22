@@ -7,7 +7,7 @@ import (
 // Online clustering algorithm interface.
 type OnlineClust interface {
 	// Return the cluster information with the index idx.
-	get(idx int) (node, []node)
+	get(idx int) Cluster
 	// Add an element to clustering data set.
 	push(node node)
 	// Make a prediction on node and return the cluster index.
@@ -16,6 +16,11 @@ type OnlineClust interface {
 	run()
 	// Close algorithm clustering process.
 	close()
+}
+
+type Cluster struct {
+	center node
+	elemts []node
 }
 
 // Randomly picks initial K centroid nodes.

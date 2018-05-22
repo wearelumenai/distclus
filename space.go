@@ -1,10 +1,10 @@
 package clustering_go
 
 // Node interface representing a clusterisable entity.
-type node interface{}
+type Elemt interface{}
 
 // Space in which are defined nodes.
 type space interface {
-	dist(node1, node2 node) float64
-	combine(node1 node, weight1 int, node2 node, weight2 int) node
+	dist(elemt1, elemt2 Elemt) float64
+	combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) Elemt
 }

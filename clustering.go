@@ -2,12 +2,22 @@ package clustering_go
 
 import (
 	"math/rand"
+	"fmt"
+)
+
+type ClustStatus int
+
+const (
+	Created     ClustStatus = iota
+	Initialized
+	Running
+	Closed
 )
 
 // Online clustering algorithm interface.
 type OnlineClust interface {
-	// Return the cluster information with the index idx.
-	get(idx int) Cluster
+	// Return clustering configuration
+	configuration() (Clustering, error)
 	// Add an element to clustering data set.
 	push(elemt Elemt)
 	// Make a prediction on a element and return the cluster index.
@@ -19,14 +29,48 @@ type OnlineClust interface {
 }
 
 type Cluster struct {
-	center Elemt
-	elemts []Elemt
+	centroid Elemt
+	elemts   []Elemt
 }
 
-// Randomly picks initial K centroid nodes.
-func randomInit(nClusters int, elemts []Elemt) []Elemt {
-	centroids := make([]Elemt, nClusters)
-	choices := make([]int, 0)
+type Clustering struct {
+	centroids []Elemt
+	clusters  [][]Elemt
+}
+
+func (c *Clustering) getCluster(idx int) Cluster {
+	return Cluster{
+		centroid: c.centroids[idx],
+		elemts:   c.clusters[idx],
+	}
+}
+
+func (c *Clustering) getCentroids() *[]Elemt {
+	return &c.centroids
+}
+
+func NewClustering(centroids []Elemt, clusters [][]Elemt) (Clustering, error) {
+	var c Clustering
+	var clustlen = len(clusters)
+	var centrolen = len(centroids)
+	if clustlen < 1 {
+		return c, fmt.Errorf("centroids collection is empty")
+	}
+	if centrolen < 1 {
+		return c, fmt.Errorf("clustering collection is empty")
+	}
+	if clustlen != centrolen {
+		return c, fmt.Errorf("clustering and centroids don't have the same dimension, %v != %v", clustlen, centrolen)
+	}
+	c = Clustering{centroids: centroids, clusters: clusters}
+	return c, nil
+}
+
+// Random initializer for clustering model.
+func randomInit(nClusters int, elemts []Elemt, space space) Clustering {
+	var centroids = make([]Elemt, nClusters)
+	var clusters = make([][]Elemt, nClusters)
+	var choices = make([]int, 0)
 	var i int
 	for i < nClusters {
 		choice := rand.Intn(len(elemts))
@@ -42,11 +86,19 @@ func randomInit(nClusters int, elemts []Elemt) []Elemt {
 			i++
 		}
 	}
-	return centroids
+	for _, elemt := range elemts {
+		var idx = assign(elemt, centroids, space)
+		clusters[idx] = append(clusters[idx], elemt)
+	}
+	var c, _ = NewClustering(centroids, clusters)
+	return c
 }
 
 // Returns the index of the closest element to elemt in elemts.
 func assign(elemt Elemt, elemts []Elemt, space space) int {
+	if len(elemts) < 1 {
+		panic("elemts collection is empty")
+	}
 	distances := make([]float64, len(elemts))
 	for i, node := range elemts {
 		distances[i] = space.dist(elemt, node)
@@ -76,26 +128,4 @@ func mean(elemts []Elemt, space space) Elemt {
 		weight += 1
 	}
 	return mean
-}
-
-// Compute a kmeans on nodes contained in space with nCluster centroids.
-// Centroids are initialized through initializer method that return centroids(panic if collection is empty).
-func kMeans(elemts []Elemt, space space, nClusters int, maxIter int,
-	initializer func(k int, nodes []Elemt) []Elemt) map[int][]Elemt {
-	centroids := initializer(nClusters, elemts)
-	if len(centroids) == 0 {
-		panic("no centroids return by initializer")
-	}
-	clusters := make(map[int][]Elemt)
-	for iter := 0; iter < maxIter; iter++ {
-		clusters = make(map[int][]Elemt)
-		for _, node := range elemts {
-			idxCluster := assign(node, centroids, space)
-			clusters[idxCluster] = append(clusters[idxCluster], node)
-		}
-		for k, cluster := range clusters {
-			centroids[k] = mean(cluster, space)
-		}
-	}
-	return clusters
 }

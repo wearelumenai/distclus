@@ -161,9 +161,12 @@ func TestRandomInitKMeans(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = realSpace{}
-	var km = NewKMeans(3, 10, data, space, randomInit)
-	km.run()
-	km.close()
+	var km = NewKMeans(3, 10, space, randomInit)
+	for _, elt:= range data{
+		km.Push(elt)
+	}
+	km.Run()
+	km.Close()
 	var clusters = km.clustering.clusters
 	if len(clusters) != 3 {
 		t.Errorf("Expected 3, got %v", 3)
@@ -181,7 +184,7 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var localSpace = realSpace{}
-	var init = func(k int, elemts []Elemt, space space) Clustering {
+	var init = func(k int, elemts []Elemt, space space) clustering {
 		var centroids = make([]Elemt, 3)
 		var clusters = make([][]Elemt, 3)
 		centroids[0] = []float64{7.2, 6, 8, 11, 10}
@@ -191,12 +194,15 @@ func TestDeterminedInitKMeans(t *testing.T) {
 			var idx = assign(elemt, centroids, space)
 			clusters[idx] = append(clusters[idx], elemt)
 		}
-		var c, _ = NewClustering(centroids, clusters)
+		var c, _ = newClustering(centroids, clusters)
 		return c
 	}
-	var km = NewKMeans(3, 10, data, localSpace, init)
-	km.run()
-	km.close()
+	var km = NewKMeans(3, 10, localSpace, init)
+	for _, elt:= range data{
+		km.Push(elt)
+	}
+	km.Run()
+	km.Close()
 	var clusters = km.clustering.clusters
 	if len(clusters[0]) != 3 {
 		t.Errorf("Expected 3, got %v", len(clusters[0]))

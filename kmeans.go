@@ -11,11 +11,11 @@ type KMeans struct {
 	data        []Elemt
 	space       space
 	status      ClustStatus
-	initializer func(k int, nodes []Elemt) Clustering
-	clustering  Clustering
+	initializer func(k int, nodes []Elemt) clustering
+	clustering  clustering
 }
 
-func NewKMeans(k int, iter int, data []Elemt, space space, initializer func(k int, elemts []Elemt, space space) Clustering) KMeans {
+func NewKMeans(k int, iter int, space space, initializer func(k int, elemts []Elemt, space space) clustering) KMeans {
 	var km KMeans
 	if k < 1 {
 		panic(fmt.Sprintf("Illegal value for k: %v", k))
@@ -25,11 +25,10 @@ func NewKMeans(k int, iter int, data []Elemt, space space, initializer func(k in
 	}
 	km.iter = iter
 	km.k = k
-	km.initializer = func(k int, elemts []Elemt) Clustering {
+	km.initializer = func(k int, elemts []Elemt) clustering {
 		return initializer(k, elemts, km.space)
 	}
 	km.space = space
-	km.data = data
 	km.status = Created
 	return km
 }
@@ -43,26 +42,36 @@ func (km *KMeans) initialize() (error) {
 	return nil
 }
 
-func (km *KMeans) configuration() (Clustering, error) {
-	var c Clustering
-	if km.status == Created {
-		return c, fmt.Errorf("no clustering available")
+func (km *KMeans) Centroids() (*[]Elemt, error) {
+	var c *[]Elemt
+	var err error
+	switch km.status {
+	case Created:
+		err = fmt.Errorf("no clustering available")
+	default:
+		c = km.clustering.getCentroids()
 	}
-	c = km.clustering
-	return c, nil
+	return c, err
 }
 
-func (km *KMeans) push(elemt Elemt) {
+func (km *KMeans) Push(elemt Elemt) {
 	km.data = append(km.data, elemt)
 }
 
-func (km *KMeans) close() {
+func (km *KMeans) Close() {
 	km.status = Closed
 }
 
-func (km *KMeans) predict(elemt Elemt) Cluster {
-	var idx = assign(elemt, *km.clustering.getCentroids(), km.space)
-	return km.clustering.getCluster(idx)
+func (km *KMeans) Predict(elemt Elemt) (Cluster, error) {
+	var c Cluster
+	switch km.status {
+	case Created:
+		return c, fmt.Errorf("no clustering available")
+	default:
+		var idx = assign(elemt, *km.clustering.getCentroids(), km.space)
+		c = km.clustering.getCluster(idx)
+		return c, nil
+	}
 }
 
 func (km *KMeans) iteration() {
@@ -75,14 +84,14 @@ func (km *KMeans) iteration() {
 	for k, cluster := range clusters {
 		centroids[k] = mean(cluster, km.space)
 	}
-	var clustering, err = NewClustering(centroids, clusters)
+	var clustering, err = newClustering(centroids, clusters)
 	if err != nil {
 		panic(err)
 	}
 	km.clustering = clustering
 }
 
-func (km *KMeans) run() {
+func (km *KMeans) Run() {
 	km.status = Running
 	km.initialize()
 	for iter := 0; iter < km.iter; iter++ {

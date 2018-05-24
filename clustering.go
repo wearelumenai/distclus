@@ -3,6 +3,7 @@ package clustering_go
 import (
 	"math/rand"
 	"fmt"
+	"errors"
 )
 
 type ClustStatus int
@@ -48,8 +49,11 @@ func (c *clustering) getAllClust() []*Cluster {
 }
 
 // Return the cluster pointer at index idx
-func (c *clustering) getClust(idx int) *Cluster {
-	return c.clust[idx]
+func (c *clustering) getClust(idx int) (*Cluster, error) {
+	if idx < 0 || idx > len(c.clust) {
+		return nil, errors.New("cluster index out of bounds")
+	}
+	return c.clust[idx], nil
 }
 
 // Return clustering result centers collection

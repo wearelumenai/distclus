@@ -28,25 +28,37 @@ type OnlineClust interface {
 	Close()
 }
 
+// Cluster representation
 type Cluster struct {
-	centroid Elemt
-	elemts   []Elemt
+	// Cluster center
+	center Elemt
+	// Cluster elements
+	elemts []Elemt
 }
 
+// Indexed clustering result
 type clustering struct {
-	centroids []Elemt
-	clusters  [][]Elemt
+	// Clusters contained in clustering result
+	clust []*Cluster
 }
 
-func (c *clustering) getCluster(idx int) Cluster {
-	return Cluster{
-		centroid: c.centroids[idx],
-		elemts:   c.clusters[idx],
+// Return clusters pointers collection of a clustering result
+func (c *clustering) getAllClust() []*Cluster {
+	return c.clust
+}
+
+// Return the cluster pointer at index idx
+func (c *clustering) getClust(idx int) *Cluster {
+	return c.clust[idx]
+}
+
+// Return clustering result centers collection
+func (c *clustering) getAllCenter() []Elemt {
+	var centroids = make([]Elemt, len(c.clust))
+	for i, clust := range c.clust {
+		centroids[i] = clust.center
 	}
-}
-
-func (c *clustering) getCentroids() *[]Elemt {
-	return &c.centroids
+	return centroids
 }
 
 func newClustering(centroids []Elemt, clusters [][]Elemt) (clustering, error) {
@@ -62,7 +74,11 @@ func newClustering(centroids []Elemt, clusters [][]Elemt) (clustering, error) {
 	if clustlen != centrolen {
 		return c, fmt.Errorf("clustering and centroids don't have the same dimension, %v != %v", clustlen, centrolen)
 	}
-	c = clustering{centroids: centroids, clusters: clusters}
+	var clusts = make([]*Cluster, len(centroids))
+	for i, center := range centroids {
+		clusts[i] = &Cluster{center, clusters[i]}
+	}
+	c = clustering{clust: clusts}
 	return c, nil
 }
 

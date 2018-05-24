@@ -22,7 +22,7 @@ type OnlineClust interface {
 	// Return model current centroids configuration
 	Centroids() (*[]Elemt, error)
 	// Make a prediction on a element and return the cluster index.
-	Predict(elemt Elemt) (Cluster, error)
+	Predict(elemt Elemt) (*Cluster, error)
 	// Run clustering algorithm.
 	Run()
 	// Close algorithm clustering process.

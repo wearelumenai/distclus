@@ -1,8 +1,8 @@
 package clustering_go
 
 import (
-	"testing"
 	"math"
+	"testing"
 )
 
 func TestRealDist2And4(t *testing.T) {
@@ -162,12 +162,12 @@ func TestRandomInitKMeans(t *testing.T) {
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = realSpace{}
 	var km = NewKMeans(3, 10, space, randomInit)
-	for _, elt:= range data{
+	for _, elt := range data {
 		km.Push(elt)
 	}
 	km.Run()
 	km.Close()
-	var clusters = km.clustering.clusters
+	var clusters = km.clustering.clust
 	if len(clusters) != 3 {
 		t.Errorf("Expected 3, got %v", 3)
 	}
@@ -198,19 +198,57 @@ func TestDeterminedInitKMeans(t *testing.T) {
 		return c
 	}
 	var km = NewKMeans(3, 10, localSpace, init)
-	for _, elt:= range data{
+	for _, elt := range data {
 		km.Push(elt)
 	}
 	km.Run()
 	km.Close()
-	var clusters = km.clustering.clusters
-	if len(clusters[0]) != 3 {
-		t.Errorf("Expected 3, got %v", len(clusters[0]))
+	var clusters = km.clustering.clust
+	var c1 = len(clusters[0].elemts)
+	if c1 != 3 {
+		t.Errorf("Expected 3, got %v", c1)
 	}
-	if len(clusters[1]) != 2 {
-		t.Errorf("Expected 2, got %v", len(clusters[1]))
+	var c2 = len(clusters[1].elemts)
+	if c2 != 2 {
+		t.Errorf("Expected 2, got %v", c2)
 	}
-	if len(clusters[2]) != 3 {
-		t.Errorf("Expected 3, got %v", len(clusters[2]))
+	var c3 = len(clusters[2].elemts)
+	if c3 != 3 {
+		t.Errorf("Expected 3, got %v", c3)
+	}
+}
+
+func TestProposalLossNorm2(t *testing.T) {
+	var localSpace = realSpace{}
+	var centroids = make([]Elemt, 2)
+	centroids[0] = []float64{1}
+	centroids[1] = []float64{42}
+	var clusters = make([][]Elemt, 2)
+	clusters[0] = make([]Elemt, 6)
+	clusters[1] = make([]Elemt, 4)
+	clusters[0][0] = []float64{2}
+	clusters[0][1] = []float64{1}
+	clusters[0][2] = []float64{3.1}
+	clusters[0][3] = []float64{-1}
+	clusters[0][4] = []float64{2.4}
+	clusters[0][5] = []float64{1.4}
+	clusters[1][0] = []float64{41}
+	clusters[1][1] = []float64{42.3}
+	clusters[1][2] = []float64{43}
+	clusters[1][3] = []float64{42.9}
+	var clustering, _ = newClustering(centroids, clusters)
+	var proposal = proposal{k: 2, clustering: clustering}
+	var loss = proposal.loss(1, localSpace)
+	var res float64
+	for i := range clusters {
+		for _, value := range clusters[i] {
+			var x = value.([]float64)[0]
+			var y = centroids[i].([]float64)[0]
+			res += math.Sqrt(math.Pow(x-y, 2))
+		}
+	}
+	res /= 10
+	if loss != res {
+		t.Errorf("Expected %v, got %v", res, loss)
 	}
 }

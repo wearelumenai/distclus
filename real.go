@@ -9,7 +9,7 @@ type realSpace struct{}
 
 // Check if a Elemt is contained in realSpace
 func (space realSpace) check(elemt Elemt) []float64 {
-	n := elemt.([]float64)
+	var n = elemt.([]float64)
 	if len(n) == 0 {
 		panic("Elemt is empty")
 	}

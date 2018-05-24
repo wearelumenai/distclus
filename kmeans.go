@@ -43,15 +43,15 @@ func (km *KMeans) initialize() (error) {
 }
 
 func (km *KMeans) Centroids() (*[]Elemt, error) {
-	var c *[]Elemt
+	var c []Elemt
 	var err error
 	switch km.status {
 	case Created:
 		err = fmt.Errorf("no clustering available")
 	default:
-		c = km.clustering.getCentroids()
+		c = km.clustering.getAllCenter()
 	}
-	return c, err
+	return &c, err
 }
 
 func (km *KMeans) Push(elemt Elemt) {
@@ -62,21 +62,24 @@ func (km *KMeans) Close() {
 	km.status = Closed
 }
 
-func (km *KMeans) Predict(elemt Elemt) (Cluster, error) {
-	var c Cluster
+func (km *KMeans) Predict(elemt Elemt) (*Cluster, error) {
+	var c *Cluster
 	switch km.status {
 	case Created:
 		return c, fmt.Errorf("no clustering available")
 	default:
-		var idx = assign(elemt, *km.clustering.getCentroids(), km.space)
-		c = km.clustering.getCluster(idx)
+		var idx = assign(elemt, km.clustering.getAllCenter(), km.space)
+		c, err := km.clustering.getClust(idx)
+		if err != nil {
+			panic(err)
+		}
 		return c, nil
 	}
 }
 
 func (km *KMeans) iteration() {
 	var clusters = make([][]Elemt, km.k)
-	var centroids = *km.clustering.getCentroids()
+	var centroids = km.clustering.getAllCenter()
 	for _, node := range km.data {
 		var idxCluster = assign(node, centroids, km.space)
 		clusters[idxCluster] = append(clusters[idxCluster], node)

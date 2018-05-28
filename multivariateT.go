@@ -13,8 +13,11 @@ type MultivariateT struct {
 	tau, nu float64
 }
 
-func NewMultivariateT(dim int, tau, nu float64, src rand.Source) (MultivariateT, bool) {
-	var m MultivariateT
+func NewMultivariateT() MultivariateT {
+	return MultivariateT{}
+}
+
+func (m* MultivariateT) Init(dim int, tau, nu float64, src rand.Source) bool {
 	var sigma = make([]float64, dim*dim)
 	var nextX int
 	var nextY int
@@ -33,23 +36,26 @@ func NewMultivariateT(dim int, tau, nu float64, src rand.Source) (MultivariateT,
 	m.nu = nu
 	var d, ok = distmv.NewStudentsT(make([]float64, dim), m.sigma, nu, src)
 	m.d = d
-	return m, ok
+	return ok
 }
 
-func (m* MultivariateT) Sample(mu []float64) []float64 {
-	var dim = len(mu)
+func (m* MultivariateT) Sample(mu Elemt) Elemt {
+	var mu_ = mu.([]float64)
+	var dim = len(mu_)
 	var res = make([]float64, dim)
 	var s = m.d.Rand(make([]float64, dim))
 	for i := range s {
-		res[i] = mu[i] + s[i]
+		res[i] = mu_[i] + s[i]
 	}
 	return res
 }
 
-func (m* MultivariateT) Pdf(mu, x []float64) float64 {
-	var dif = make([]float64, len(mu))
-	for i := range mu {
-		dif[i] = mu[i] - x[i]
+func (m* MultivariateT) Pdf(mu, x Elemt) float64 {
+	var mu_ = mu.([]float64)
+	var x_ = x.([]float64)
+	var dif = make([]float64, len(mu_))
+	for i := range mu_ {
+		dif[i] = mu_[i] - x_[i]
 	}
 	return m.d.Prob(dif)
 }

@@ -11,11 +11,11 @@ type KMeans struct {
 	data        []Elemt
 	space       space
 	status      ClustStatus
-	initializer func(k int, nodes []Elemt) clustering
-	clustering  clustering
+	initializer Initializer
+	clust       Clust
 }
 
-func NewKMeans(k int, iter int, space space, initializer func(k int, elemts []Elemt, space space) clustering) KMeans {
+func NewKMeans(k int, iter int, space space, initializer Initializer) KMeans {
 	var km KMeans
 	if k < 1 {
 		panic(fmt.Sprintf("Illegal value for k: %v", k))
@@ -25,9 +25,7 @@ func NewKMeans(k int, iter int, space space, initializer func(k int, elemts []El
 	}
 	km.iter = iter
 	km.k = k
-	km.initializer = func(k int, elemts []Elemt) clustering {
-		return initializer(k, elemts, km.space)
-	}
+	km.initializer = initializer
 	km.space = space
 	km.status = Created
 	return km
@@ -37,21 +35,23 @@ func (km *KMeans) initialize() (error) {
 	if len(km.data) < km.k {
 		return errors.New("can't initialize kmeans model centroids, not enough data")
 	}
-	km.clustering = km.initializer(km.k, km.data)
+	var clust, err = km.initializer(km.k, km.data, km.space)
+	if err != nil {
+		panic(err)
+	}
+	km.clust = clust
 	km.status = Initialized
 	return nil
 }
 
-func (km *KMeans) Centroids() (*[]Elemt, error) {
-	var c []Elemt
-	var err error
+func (km *KMeans) Centroids() (c Clust, err error) {
 	switch km.status {
 	case Created:
-		err = fmt.Errorf("no clustering available")
+		err = fmt.Errorf("no Clust available")
 	default:
-		c = km.clustering.getAllCenter()
+		c = km.clust
 	}
-	return &c, err
+	return c, err
 }
 
 func (km *KMeans) Push(elemt Elemt) {
@@ -62,24 +62,19 @@ func (km *KMeans) Close() {
 	km.status = Closed
 }
 
-func (km *KMeans) Predict(elemt Elemt) (*Cluster, error) {
-	var c *Cluster
+func (km *KMeans) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 	switch km.status {
 	case Created:
-		return c, fmt.Errorf("no clustering available")
+		return c, idx, fmt.Errorf("no Clust available")
 	default:
-		var idx = assign(elemt, km.clustering.getAllCenter(), km.space)
-		c, err := km.clustering.getClust(idx)
-		if err != nil {
-			panic(err)
-		}
-		return c, nil
+		var idx = assign(elemt, km.clust.centers, km.space)
+		return km.clust.centers[idx], idx, nil
 	}
 }
 
 func (km *KMeans) iteration() {
 	var clusters = make([][]Elemt, km.k)
-	var centroids = km.clustering.getAllCenter()
+	var centroids = km.clust.centers
 	for _, node := range km.data {
 		var idxCluster = assign(node, centroids, km.space)
 		clusters[idxCluster] = append(clusters[idxCluster], node)
@@ -87,11 +82,11 @@ func (km *KMeans) iteration() {
 	for k, cluster := range clusters {
 		centroids[k] = mean(cluster, km.space)
 	}
-	var clustering, err = newClustering(centroids, clusters)
+	var clustering, err = NewClustering(centroids)
 	if err != nil {
 		panic(err)
 	}
-	km.clustering = clustering
+	km.clust = clustering
 }
 
 func (km *KMeans) Run() {

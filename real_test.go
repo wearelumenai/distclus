@@ -161,14 +161,14 @@ func TestRandomInitKMeans(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = realSpace{}
-	var km = NewKMeans(3, 10, space, randomInit)
+	var km = NewKMeans(3, 10, space, RandInitializer)
 	for _, elt := range data {
 		km.Push(elt)
 	}
 	km.Run()
 	km.Close()
-	var clusters = km.clustering.clust
-	if len(clusters) != 3 {
+	var clust = km.clust
+	if len(clust.centers) != 3 {
 		t.Errorf("Expected 3, got %v", 3)
 	}
 }
@@ -184,18 +184,13 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var localSpace = realSpace{}
-	var init = func(k int, elemts []Elemt, space space) clustering {
+	var init = func(k int, elemts []Elemt, space space) (Clust, error) {
 		var centroids = make([]Elemt, 3)
-		var clusters = make([][]Elemt, 3)
 		centroids[0] = []float64{7.2, 6, 8, 11, 10}
 		centroids[1] = []float64{-9, -10, -8, -8, -7.5}
 		centroids[2] = []float64{42, 41.2, 42.2, 40.2, 45}
-		for _, elemt := range elemts {
-			var idx = assign(elemt, centroids, space)
-			clusters[idx] = append(clusters[idx], elemt)
-		}
-		var c, _ = newClustering(centroids, clusters)
-		return c
+		var c, _ = NewClustering(centroids)
+		return c, nil
 	}
 	var km = NewKMeans(3, 10, localSpace, init)
 	for _, elt := range data {
@@ -203,52 +198,17 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	}
 	km.Run()
 	km.Close()
-	var clusters = km.clustering.clust
-	var c1 = len(clusters[0].elemts)
+	var clusters = km.clust.Assign(data, localSpace)
+	var c1 = len(clusters[0])
 	if c1 != 3 {
 		t.Errorf("Expected 3, got %v", c1)
 	}
-	var c2 = len(clusters[1].elemts)
+	var c2 = len(clusters[1])
 	if c2 != 2 {
 		t.Errorf("Expected 2, got %v", c2)
 	}
-	var c3 = len(clusters[2].elemts)
+	var c3 = len(clusters[2])
 	if c3 != 3 {
 		t.Errorf("Expected 3, got %v", c3)
-	}
-}
-
-func TestProposalLossNorm2(t *testing.T) {
-	var localSpace = realSpace{}
-	var centroids = make([]Elemt, 2)
-	centroids[0] = []float64{1}
-	centroids[1] = []float64{42}
-	var clusters = make([][]Elemt, 2)
-	clusters[0] = make([]Elemt, 6)
-	clusters[1] = make([]Elemt, 4)
-	clusters[0][0] = []float64{2}
-	clusters[0][1] = []float64{1}
-	clusters[0][2] = []float64{3.1}
-	clusters[0][3] = []float64{-1}
-	clusters[0][4] = []float64{2.4}
-	clusters[0][5] = []float64{1.4}
-	clusters[1][0] = []float64{41}
-	clusters[1][1] = []float64{42.3}
-	clusters[1][2] = []float64{43}
-	clusters[1][3] = []float64{42.9}
-	var clustering, _ = newClustering(centroids, clusters)
-	var proposal = proposal{k: 2, clustering: clustering}
-	var loss = proposal.loss(1, localSpace)
-	var res float64
-	for i := range clusters {
-		for _, value := range clusters[i] {
-			var x = value.([]float64)[0]
-			var y = centroids[i].([]float64)[0]
-			res += math.Sqrt(math.Pow(x-y, 2))
-		}
-	}
-	res /= 10
-	if loss != res {
-		t.Errorf("Expected %v, got %v", res, loss)
 	}
 }

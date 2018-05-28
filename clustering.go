@@ -138,6 +138,9 @@ func mean(elemts []Elemt, space space) Elemt {
 	return mean
 }
 
-func RandInitializer(k int, elemts []Elemt, _ space) (Clust, error) {
-	return NewRandClustering(k, elemts), fmt.Errorf("%v", recover())
+func RandInitializer(k int, elemts []Elemt, _ space) (c Clust, err error) {
+	if p := recover(); p != nil {
+		return c, fmt.Errorf("%v", p)
+	}
+	return NewRandClustering(k, elemts), err
 }

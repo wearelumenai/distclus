@@ -3,8 +3,8 @@ package clustering_go
 import (
 	"errors"
 	"fmt"
-	"math/rand"
 	"time"
+	"golang.org/x/exp/rand"
 )
 
 type KMeans struct {
@@ -123,6 +123,6 @@ func KmeansPPIterr(clust Clust, batch *[]Elemt, space space, src *rand.Rand) (Cl
 
 // Kmeans++ clustering initializer
 func KmeansPPInitializer(k int, elemts []Elemt, space space) (c Clust, err error) {
-	var src = rand.New(rand.NewSource(time.Now().UTC().Unix()))
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 	return KmeansPP(k, &elemts, space, src)
 }

@@ -1,7 +1,7 @@
 package clustering_go
 
 import (
-	"math/rand"
+	"golang.org/x/exp/rand"
 )
 
 // Return index of random weighted choice

@@ -140,9 +140,13 @@ func (m *MCMC) alter(proposal Clust) Clust {
 
 // Compute probability between two proposals using MCMC distribution
 func (m *MCMC) proba(proposal1, proposal2 Clust) (p float64) {
-	for i, c1 := range proposal1.centers {
-		var c2 = proposal2.centers[i]
-		p *= m.distrib.Pdf(c1, c2)
+	var c1 = *proposal1.Centers()
+	var c2 = *proposal2.Centers()
+	p = m.distrib.Pdf(c1[0], c2[0])
+	for i, e1 := range c1[1:] {
+		var e2 = c2[i]
+		pdf := m.distrib.Pdf(e1, e2)
+		p *= pdf
 	}
 	return p
 }

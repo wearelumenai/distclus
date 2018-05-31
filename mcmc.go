@@ -53,7 +53,7 @@ type MCMC struct {
 	uniform distuv.Uniform
 	store   map[int]Clust
 	data    []Elemt
-	curr    Clust
+	cur     Clust
 	status  ClustStatus
 	src     *rand.Rand
 }
@@ -86,7 +86,7 @@ func (m *MCMC) Centroids() (c Clust, err error) {
 	case Created:
 		err = fmt.Errorf("no Clust available")
 	default:
-		c = m.curr
+		c = m.cur
 	}
 	return c, err
 }
@@ -96,8 +96,8 @@ func (m *MCMC) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 	case Created:
 		return c, idx, fmt.Errorf("no Clust available")
 	default:
-		var idx = assign(elemt, *m.curr.Centers(), m.config.space)
-		return m.curr.Center(idx), idx, nil
+		var idx = assign(elemt, *m.cur.Centers(), m.config.space)
+		return m.cur.Center(idx), idx, nil
 	}
 }
 
@@ -148,9 +148,9 @@ func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool
 
 func (m *MCMC) Run() {
 	var curK = m.config.initK
-	var cur = m.initialize(curK)
-	var curLoss = m.loss(m.curr)
-	var curPdf = m.distrib.Pdf(cur, cur)
+	m.cur = m.initialize(curK)
+	var curLoss = m.loss(m.cur)
+	var curPdf = m.proba(m.cur, m.cur)
 	for i := 0; i < m.config.mcmcIter; i++ {
 		var propK = m.nextK(curK)
 		var propCenters = m.getCenters(propK, curK)
@@ -160,10 +160,10 @@ func (m *MCMC) Run() {
 		var propPdf = m.proba(prop, propCenters)
 		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK){
 			curK = propK
-			cur = prop
+			m.cur = prop
 			curLoss = propLoss
 			curPdf = propPdf
-			m.setCenters(cur)
+			m.setCenters(m.cur)
 		}
 	}
 }

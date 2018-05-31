@@ -36,18 +36,22 @@ type Clust struct {
 	centers []Elemt
 }
 
+// Return centers array pointer
 func (c *Clust) Centers() *[]Elemt {
 	return &c.centers
 }
 
+// Return center at the idx index
 func (c *Clust) Center(idx int) Elemt {
 	return c.centers[idx]
 }
 
+// Set centers
 func (c *Clust) SetCenters(centers []Elemt) {
 	c.centers = centers
 }
 
+// Assign elements on elemts at each centers
 func (c* Clust) Assign(elemts []Elemt, space space) [][]Elemt {
 	var clusters = make([][]Elemt, len(c.centers))
 	for _, elemt := range elemts {
@@ -57,6 +61,7 @@ func (c* Clust) Assign(elemts []Elemt, space space) [][]Elemt {
 	return clusters
 }
 
+// Compute loss of centers configuration with given data
 func (c *Clust) Loss(data *[]Elemt, space space, norm float64) float64 {
 	var sum float64
 	for _, elemt := range *data {
@@ -69,6 +74,7 @@ func (c *Clust) Loss(data *[]Elemt, space space, norm float64) float64 {
 	return sum / float64(len(*data))
 }
 
+// Clustering constructor
 func NewClustering(centroids []Elemt) (Clust, error) {
 	var c Clust
 	if len(centroids) < 1 {
@@ -138,6 +144,7 @@ func mean(elemts []Elemt, space space) Elemt {
 	return mean
 }
 
+// Random clustering initializer
 func RandInitializer(k int, elemts []Elemt, _ space) (c Clust, err error) {
 	if p := recover(); p != nil {
 		return c, fmt.Errorf("%v", p)

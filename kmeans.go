@@ -2,6 +2,9 @@ package clustering_go
 
 import (
 	"errors"
+	"fmt"
+	"math/rand"
+	"time"
 )
 
 type KMeans struct {
@@ -90,4 +93,36 @@ func (km *KMeans) Run() {
 	for iter := 0; iter < km.iter; iter++ {
 		km.iteration()
 	}
+}
+
+func KmeansPP(k int, batch *[]Elemt, space space, src *rand.Rand) (c Clust, err error) {
+	if k < 1 {
+		panic("k is lower than 1")
+	}
+	var init = make([]Elemt, 1)
+	init[0] = (*batch)[src.Intn(len(*batch))]
+	c = Clust{init}
+	for i:=1; i < k; i++{
+		c, err = KmeansPPIterr(c, batch, space, src)
+		if err!= nil {
+			return c, err
+		}
+	}
+	return c, nil
+}
+
+func KmeansPPIterr(clust Clust, batch *[]Elemt, space space, src *rand.Rand) (Clust, error) {
+	l := len(*batch)
+	var dists = make([]float64, l)
+	for i, elt := range *batch {
+		var center, _= clust.UAssign(elt, space)
+		dists[i] = space.dist(elt, center)
+	}
+	return NewClustering(append(*clust.Centers(), (*batch)[WeightedChoice(dists, src)]))
+}
+
+// Kmeans++ clustering initializer
+func KmeansPPInitializer(k int, elemts []Elemt, space space) (c Clust, err error) {
+	var src = rand.New(rand.NewSource(time.Now().UTC().Unix()))
+	return KmeansPP(k, &elemts, space, src)
 }

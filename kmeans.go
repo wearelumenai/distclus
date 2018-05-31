@@ -78,7 +78,9 @@ func (km *KMeans) iteration() {
 	var clusters = km.clust.Assign(&km.data, km.space)
 	var centroids = km.clust.centers
 	for k, cluster := range clusters {
-		centroids[k] = mean(cluster, km.space)
+		if len(cluster) != 0{
+			centroids[k] = mean(cluster, km.space)
+		}
 	}
 	var clustering, err = NewClustering(centroids)
 	if err != nil {

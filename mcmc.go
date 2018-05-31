@@ -209,7 +209,7 @@ func (m *MCMC) genCenters(k int, prev Clust) (c Clust) {
 	var err error
 	var prevK = len(prev.centers)
 	if prevK < k {
-		 c, err = KmeansPPIterr(prev, &m.data, m.config.Space, m.src)
+		c, err = KmeansPPIterr(prev, &m.data, m.config.Space, m.src)
 	}
 	if prevK > k {
 		var del = m.src.Intn(prevK)

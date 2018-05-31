@@ -61,6 +61,12 @@ func (c* Clust) Assign(elemts *[]Elemt, space space) [][]Elemt {
 	return clusters
 }
 
+// Assign a element to a center and return the center and its index
+func (c* Clust) UAssign(elemt Elemt, space space) (center Elemt, idx int) {
+	idx = assign(&elemt, c.centers, space)
+	return c.Center(idx), idx
+}
+
 // Compute loss of centers configuration with given data
 func (c *Clust) Loss(data *[]Elemt, space space, norm float64) float64 {
 	var sum float64

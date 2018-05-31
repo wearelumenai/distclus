@@ -1,7 +1,6 @@
 package clustering_go
 
 import (
-	"fmt"
 	"errors"
 )
 
@@ -67,8 +66,8 @@ func (km *KMeans) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 	case Created:
 		return c, idx, fmt.Errorf("no Clust available")
 	default:
-		var idx = assign(elemt, km.clust.centers, km.space)
-		return km.clust.centers[idx], idx, nil
+		c, idx = km.clust.UAssign(elemt, km.space)
+		return c, idx, nil
 	}
 }
 

@@ -108,8 +108,8 @@ func (m *MCMC) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 	case Created:
 		return c, idx, fmt.Errorf("no Clust available")
 	default:
-		var idx = assign(elemt, *m.cur.Centers(), m.config.Space)
-		return m.cur.Center(idx), idx, nil
+		c, idx = m.cur.UAssign(elemt, m.config.Space)
+		return c, idx, nil
 	}
 }
 

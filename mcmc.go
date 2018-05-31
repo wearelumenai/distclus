@@ -170,7 +170,7 @@ func (m *MCMC) Run() {
 	var curPdf = m.proba(m.cur, m.cur)
 	for i := 0; i < m.config.McmcIter; i++ {
 		var propK = m.nextK(curK)
-		var propCenters = m.getCenters(propK, curK)
+		var propCenters = m.getCenters(propK, m.cur)
 		propCenters = m.iterate(propK, propCenters)
 		var prop = m.alter(propCenters)
 		var propLoss = m.loss(prop)

@@ -25,18 +25,18 @@ type MCMCConf struct {
 	// Loss normalisation coefficient
 	Norm float64
 	// Degrees of freedom
-	Nu                 float64
+	Nu float64
 	// Initial number of centers
-	InitK              int
+	InitK int
 	// Iteration numbers for mcmc and centers initialisation
 	McmcIter, InitIter int
 	probaK             []float64
 	// Space where data are include
-	Space              space
+	Space space
 	// Centers initializer
-	Initializer        Initializer
+	Initializer Initializer
 	// Random source seed
-	Seed               uint64
+	Seed uint64
 }
 
 // Probability for next k (-1, 0, +1)
@@ -214,7 +214,7 @@ func (m *MCMC) genCenters(k int, prev Clust) (c Clust) {
 	if prevK > k {
 		var del = m.src.Intn(prevK)
 		var centers = *prev.Centers()
-		c, err = NewClustering(append(centers[:del], centers[del+1:]))
+		c, err = NewClustering(append(centers[:del], centers[del+1:]...))
 	}
 	if prevK == k {
 		c = prev
@@ -247,8 +247,5 @@ func (m *MCMC) nextK(k int) int {
 	if proba > less+same {
 		res = 1
 	}
-	if proba < less {
-		res = -1
-	}
-	return k + res
+	return newK
 }

@@ -6,10 +6,12 @@ import (
 	"gonum.org/v1/gonum/stat/distmv"
 )
 
+// Configuration for multivariateT distribution
 type MultivTConf struct {
 	MCMCConf
 }
 
+// Real(float64[]) distribution wrapping StudentsT of Gonum
 type MultivT struct {
 	c MultivTConf
 	sigma   mat.Symmetric
@@ -17,6 +19,7 @@ type MultivT struct {
 	src     *rand.Rand
 }
 
+// Constructor for multivT distribution
 func NewMultivT(c MultivTConf) (m MultivT, ok bool) {
 	var sigma = make([]float64, c.Dim*c.Dim)
 	var nextX int
@@ -38,6 +41,7 @@ func NewMultivT(c MultivTConf) (m MultivT, ok bool) {
 	return m, ok
 }
 
+// Sample from a (uncorrelated) multivariate t distribution
 func (m*MultivT) Sample(mu Elemt) Elemt {
 	var mu_ = mu.([]float64)
 	var dim = len(mu_)
@@ -49,6 +53,7 @@ func (m*MultivT) Sample(mu Elemt) Elemt {
 	return res
 }
 
+// Density of a (uncorrelated) multivariate t distribution
 func (m*MultivT) Pdf(mu, x Elemt) float64 {
 	var mu_ = mu.([]float64)
 	var x_ = x.([]float64)

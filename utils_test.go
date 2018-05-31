@@ -1,16 +1,16 @@
 package clustering_go
 
 import (
-	"math/rand"
 	"testing"
 	"time"
+	"golang.org/x/exp/rand"
 )
 
 func TestWeightedChoice(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
-	var src = rand.New(rand.NewSource(time.Now().UTC().Unix()))
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 	var w = []float64{10, 10, 80}
 	var sum = make([]int, 3)
 	var n = 100000

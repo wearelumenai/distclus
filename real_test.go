@@ -3,8 +3,8 @@ package clustering_go
 import (
 	"math"
 	"testing"
-	"math/rand"
 	"time"
+	"golang.org/x/exp/rand"
 )
 
 func TestRealDist2And4(t *testing.T) {
@@ -259,7 +259,7 @@ func TestKmeansPP(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = realSpace{}
-	var src = rand.New(rand.NewSource(time.Now().UTC().Unix()))
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 	var clust, _ = KmeansPP(3, &data, space, src)
 	res := len(clust.centers)
 	if res != 3 {

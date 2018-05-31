@@ -52,9 +52,9 @@ func (c *Clust) SetCenters(centers []Elemt) {
 }
 
 // Assign elements on elemts at each centers
-func (c* Clust) Assign(elemts []Elemt, space space) [][]Elemt {
+func (c* Clust) Assign(elemts *[]Elemt, space space) [][]Elemt {
 	var clusters = make([][]Elemt, len(c.centers))
-	for _, elemt := range elemts {
+	for _, elemt := range *elemts {
 		var idx = assign(elemt, c.centers, space)
 		clusters[idx] = append(clusters[idx], elemt)
 	}

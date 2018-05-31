@@ -198,7 +198,7 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	}
 	km.Run()
 	km.Close()
-	var clusters = km.clust.Assign(data, localSpace)
+	var clusters = km.clust.Assign(&data, localSpace)
 	var c1 = len(clusters[0])
 	if c1 != 3 {
 		t.Errorf("Expected 3, got %v", c1)

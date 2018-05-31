@@ -73,12 +73,8 @@ func (km *KMeans) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 }
 
 func (km *KMeans) iteration() {
-	var clusters = make([][]Elemt, km.k)
+	var clusters = km.clust.Assign(&km.data, km.space)
 	var centroids = km.clust.centers
-	for _, node := range km.data {
-		var idxCluster = assign(node, centroids, km.space)
-		clusters[idxCluster] = append(clusters[idxCluster], node)
-	}
 	for k, cluster := range clusters {
 		centroids[k] = mean(cluster, km.space)
 	}

@@ -129,7 +129,7 @@ func mean(elemts []Elemt, space space) Elemt {
 	if l < 1 {
 		panic("elemts are empty")
 	}
-	mean := elemts[1]
+	mean := elemts[0]
 	weight := 1
 	for _, node := range elemts {
 		mean = space.combine(node, 1, mean, weight)

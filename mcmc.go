@@ -7,24 +7,39 @@ import (
 	"math"
 )
 
+// MCMC distribution interface
 type MCMCDistrib interface {
+	// Sample from a distribution with mu expectancy
 	Sample(mu Elemt) Elemt
+	// Density from a distribution with mu expectancy and x point
 	Pdf(x, mu Elemt) float64
 }
 
 type MCMCConf struct {
-	Dim                int
-	FrameSize          int
-	B, Amp, lamb, tau  float64
-	Norm, Nu           float64
+	// Data dimension
+	Dim int
+	// Number of element to retain in the partition
+	FrameSize int
+	// Mcmc parameters
+	B, Amp, lamb, tau float64
+	// Loss normalisation coefficient
+	Norm float64
+	// Degrees of freedom
+	Nu                 float64
+	// Initial number of centers
 	InitK              int
+	// Iteration numbers for mcmc and centers initialisation
 	McmcIter, InitIter int
 	probaK             []float64
+	// Space where data are include
 	Space              space
+	// Centers initializer
 	Initializer        Initializer
+	// Random source seed
 	Seed               uint64
 }
 
+// Probability for next k (-1, 0, +1)
 func (c *MCMCConf) ProbaK() []float64 {
 	if len(c.probaK) == 0 {
 		c.probaK = []float64{1, 8, 1}
@@ -57,6 +72,7 @@ type MCMC struct {
 	src     *rand.Rand
 }
 
+// Constructor for MCMC
 func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 	var m MCMC
 	m.config = conf
@@ -68,6 +84,7 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 	return m
 }
 
+// Compute loss proposal based on Clust.Loss
 func (m *MCMC) loss(proposal Clust) float64 {
 	return proposal.Loss(&m.data, m.config.Space, m.config.Norm)
 }
@@ -96,6 +113,7 @@ func (m *MCMC) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 	}
 }
 
+// Make an iteration for a proposal running with kmeans
 func (m *MCMC) iterate(k int, proposal Clust) Clust {
 	var initializer = func(k2 int, elemts []Elemt, space space) (Clust, error) {
 		return proposal, nil
@@ -110,6 +128,7 @@ func (m *MCMC) iterate(k int, proposal Clust) Clust {
 	return clust
 }
 
+// Alter a proposal using MCMC distribution
 func (m *MCMC) alter(proposal Clust) Clust {
 	var res = make([]Elemt, len(proposal.centers))
 	for i, p := range proposal.centers {
@@ -119,6 +138,7 @@ func (m *MCMC) alter(proposal Clust) Clust {
 	return c
 }
 
+// Compute probability between two proposals using MCMC distribution
 func (m *MCMC) proba(proposal1, proposal2 Clust) (p float64) {
 	for i, c1 := range proposal1.centers {
 		var c2 = proposal2.centers[i]
@@ -127,6 +147,7 @@ func (m *MCMC) proba(proposal1, proposal2 Clust) (p float64) {
 	return p
 }
 
+// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and k
 func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
 	// adjust lambda to avoid very large gibbs measure
 	var lamb = m.config.Lamb()
@@ -154,7 +175,7 @@ func (m *MCMC) Run() {
 		var prop = m.alter(propCenters)
 		var propLoss = m.loss(prop)
 		var propPdf = m.proba(prop, propCenters)
-		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK){
+		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
 			curK = propK
 			m.cur = prop
 			curLoss = propLoss
@@ -168,6 +189,7 @@ func (m *MCMC) Close() {
 	m.status = Closed
 }
 
+// Get a configuration center(retrieve from store if k is exist else create with genCenters
 func (m *MCMC) getCenters(k, prevK int) Clust {
 	var centers, ok = m.store[k]
 	if !ok {
@@ -177,14 +199,17 @@ func (m *MCMC) getCenters(k, prevK int) Clust {
 	return centers
 }
 
+// Set a configuration in store
 func (m *MCMC) setCenters(clust Clust) {
 	m.store[len(clust.centers)] = clust
 }
 
+// Generate a configuration of k centers based on previous configuration
 func (m *MCMC) genCenters(k, prevK int) Clust {
 	return m.initialize(k)
 }
 
+// initialise a configuration of k centers
 func (m *MCMC) initialize(k int) Clust {
 	var km = NewKMeans(k, m.config.InitIter, m.config.Space, m.config.Initializer)
 	for _, elemt := range m.data {
@@ -196,6 +221,7 @@ func (m *MCMC) initialize(k int) Clust {
 	return clust
 }
 
+// Compute next centers number based on ProbaK
 func (m *MCMC) nextK(k int) int {
 	var prob = m.config.ProbaK()
 	var less, same, more = prob[0], prob[1], prob[2]

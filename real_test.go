@@ -224,13 +224,16 @@ func TestMCMC(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = realSpace{}
-	var conf =  MCMCConf{
+	var mcmcConf =  MCMCConf{
 		Dim: 5, FrameSize: 8, B: 100, Amp: 1,
 		Norm: 3, Nu: 10, InitK: 3, McmcIter: 3,
 		InitIter: 1, Initializer:RandInitializer, Space: space,
 	}
-	var distrib = NewMultivariateT()
-	var mcmc = NewMCMC(conf, &distrib)
+	var distrib, ok = NewMultivT(MultivTConf{mcmcConf})
+	if !ok {
+		t.Errorf("Expected true, got false")
+	}
+	var mcmc = NewMCMC(mcmcConf, &distrib)
 	for _, elt := range data {
 		mcmc.Push(elt)
 	}

@@ -6,40 +6,39 @@ import (
 	"gonum.org/v1/gonum/stat/distmv"
 )
 
-type MultivariateT struct {
-	d       *distmv.StudentsT
+type MultivTConf struct {
+	MCMCConf
+}
+
+type MultivT struct {
+	c MultivTConf
 	sigma   mat.Symmetric
-	dim     int
-	tau, nu float64
+	d       *distmv.StudentsT
+	src     *rand.Rand
 }
 
-func NewMultivariateT() MultivariateT {
-	return MultivariateT{}
-}
-
-func (m* MultivariateT) Init(dim int, tau, nu float64, src rand.Source) bool {
-	var sigma = make([]float64, dim*dim)
+func NewMultivT(c MultivTConf) (m MultivT, ok bool) {
+	var sigma = make([]float64, c.Dim*c.Dim)
 	var nextX int
 	var nextY int
+	var tau = c.Tau()
 	for i := range sigma {
-		var x = i/dim
-		var y = i%dim
+		var x = i/c.Dim
+		var y = i%c.Dim
 		if x == nextX && y == nextY{
 			sigma[i] = tau
 			nextX += 1
 			nextY += 1
 		}
 	}
-	m.sigma = mat.NewSymDense(dim, sigma)
-	m.dim = dim
-	m.tau = tau
-	m.nu = nu
-	var d, ok = distmv.NewStudentsT(make([]float64, dim), m.sigma, nu, src)
+	m.sigma = mat.NewSymDense(c.Dim, sigma)
+	m.src = rand.New(rand.NewSource(c.Seed))
+	d, ok := distmv.NewStudentsT(make([]float64, c.Dim), m.sigma, c.Nu, m.src)
 	m.d = d
-	return ok
+	return m, ok
 }
 
-func (m* MultivariateT) Sample(mu Elemt) Elemt {
+func (m*MultivT) Sample(mu Elemt) Elemt {
 	var mu_ = mu.([]float64)
 	var dim = len(mu_)
 	var res = make([]float64, dim)
@@ -50,7 +49,7 @@ func (m* MultivariateT) Sample(mu Elemt) Elemt {
 	return res
 }
 
-func (m* MultivariateT) Pdf(mu, x Elemt) float64 {
+func (m*MultivT) Pdf(mu, x Elemt) float64 {
 	var mu_ = mu.([]float64)
 	var x_ = x.([]float64)
 	var dif = make([]float64, len(mu_))

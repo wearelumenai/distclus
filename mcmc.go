@@ -10,7 +10,6 @@ import (
 type MCMCDistrib interface {
 	Sample(mu Elemt) Elemt
 	Pdf(x, mu Elemt) float64
-	Init(dim int, tau, nu float64, src rand.Source) bool
 }
 
 type MCMCConf struct {
@@ -65,10 +64,6 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 	m.status = Created
 	m.distrib = distrib
 	m.src = rand.New(rand.NewSource(conf.Seed))
-	ok := distrib.Init(conf.Dim, conf.Tau(), conf.Nu, m.src)
-	if !ok {
-		panic("can't initialize MCMCDistrib")
-	}
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.src}
 	return m
 }

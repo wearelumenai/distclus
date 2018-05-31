@@ -14,37 +14,37 @@ type MCMCDistrib interface {
 }
 
 type MCMCConf struct {
-	dim                int
-	frameSize          int
-	b, amp, lamb, tau  float64
-	norm, nu           float64
-	initK              int
-	mcmcIter, initIter int
+	Dim                int
+	FrameSize          int
+	B, Amp, lamb, tau  float64
+	Norm, Nu           float64
+	InitK              int
+	McmcIter, InitIter int
 	probaK             []float64
-	space              space
-	initializer        Initializer
-	seed               uint64
+	Space              space
+	Initializer        Initializer
+	Seed               uint64
 }
 
-func NewMCMCConf(dim, frameSize int, b, amp, norm, nu float64, initK, mcmcIter, initIter int,
-	space space, initializer Initializer, seed uint64) MCMCConf {
-	var c MCMCConf
-	c.dim = dim
-	c.frameSize = frameSize
-	c.b = b
-	c.amp = amp
-	c.lamb = c.amp * math.Sqrt(float64(dim+3)/float64(frameSize))
-	c.tau = 1 / math.Sqrt(float64(frameSize*20))
-	c.norm = norm
-	c.nu = nu
-	c.initIter = initIter
-	c.initK = initK
-	c.mcmcIter = mcmcIter
-	c.probaK = []float64{1, 8, 1}
-	c.space = space
-	c.initializer = initializer
-	c.seed = seed
-	return c
+func (c *MCMCConf) ProbaK() []float64 {
+	if len(c.probaK) == 0 {
+		c.probaK = []float64{1, 8, 1}
+	}
+	return c.probaK
+}
+
+func (c *MCMCConf) Tau() float64 {
+	if c.tau == 0 {
+		c.tau = 1 / math.Sqrt(float64(c.FrameSize*20))
+	}
+	return c.tau
+}
+
+func (c *MCMCConf) Lamb() float64 {
+	if c.lamb == 0 {
+		c.lamb = c.Amp * math.Sqrt(float64(c.Dim+3)/float64(c.FrameSize))
+	}
+	return c.lamb
 }
 
 type MCMC struct {
@@ -64,8 +64,8 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 	m.store = make(map[int]Clust)
 	m.status = Created
 	m.distrib = distrib
-	m.src = rand.New(rand.NewSource(conf.seed))
-	ok := distrib.Init(conf.dim, conf.tau, conf.nu, m.src)
+	m.src = rand.New(rand.NewSource(conf.Seed))
+	ok := distrib.Init(conf.Dim, conf.Tau(), conf.Nu, m.src)
 	if !ok {
 		panic("can't initialize MCMCDistrib")
 	}
@@ -74,7 +74,7 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 }
 
 func (m *MCMC) loss(proposal Clust) float64 {
-	return proposal.Loss(&m.data, m.config.space, m.config.norm)
+	return proposal.Loss(&m.data, m.config.Space, m.config.Norm)
 }
 
 func (m *MCMC) Push(elemt Elemt) {
@@ -96,7 +96,7 @@ func (m *MCMC) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 	case Created:
 		return c, idx, fmt.Errorf("no Clust available")
 	default:
-		var idx = assign(elemt, *m.cur.Centers(), m.config.space)
+		var idx = assign(elemt, *m.cur.Centers(), m.config.Space)
 		return m.cur.Center(idx), idx, nil
 	}
 }
@@ -105,7 +105,7 @@ func (m *MCMC) iterate(k int, proposal Clust) Clust {
 	var initializer = func(k2 int, elemts []Elemt, space space) (Clust, error) {
 		return proposal, nil
 	}
-	var km = NewKMeans(k, 1, m.config.space, initializer)
+	var km = NewKMeans(k, 1, m.config.Space, initializer)
 	for i := range m.data {
 		km.Push(m.data[i])
 	}
@@ -134,24 +134,25 @@ func (m *MCMC) proba(proposal1, proposal2 Clust) (p float64) {
 
 func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
 	// adjust lambda to avoid very large gibbs measure
-	if m.config.lamb*pLoss > 50 {
-		m.config.lamb = 50 / pLoss
+	var lamb = m.config.Lamb()
+	if lamb*pLoss > 50 {
+		lamb = 50 / pLoss
 	}
 
 	var rProp = cPdf / pPdf
-	var rInit = math.Pow(2*m.config.b, float64(m.config.dim*(cK-pK)))
-	var rGibbs = math.Exp(-m.config.lamb * (pLoss - cLoss))
+	var rInit = math.Pow(2*m.config.B, float64(m.config.Dim*(cK-pK)))
+	var rGibbs = math.Exp(-lamb * (pLoss - cLoss))
 
 	var rho = rGibbs * rInit * rProp
 	return m.uniform.Rand() < rho
 }
 
 func (m *MCMC) Run() {
-	var curK = m.config.initK
+	var curK = m.config.InitK
 	m.cur = m.initialize(curK)
 	var curLoss = m.loss(m.cur)
 	var curPdf = m.proba(m.cur, m.cur)
-	for i := 0; i < m.config.mcmcIter; i++ {
+	for i := 0; i < m.config.McmcIter; i++ {
 		var propK = m.nextK(curK)
 		var propCenters = m.getCenters(propK, curK)
 		propCenters = m.iterate(propK, propCenters)
@@ -190,7 +191,7 @@ func (m *MCMC) genCenters(k, prevK int) Clust {
 }
 
 func (m *MCMC) initialize(k int) Clust {
-	var km = NewKMeans(k, m.config.initIter, m.config.space, m.config.initializer)
+	var km = NewKMeans(k, m.config.InitIter, m.config.Space, m.config.Initializer)
 	for _, elemt := range m.data {
 		km.Push(elemt)
 	}
@@ -201,7 +202,7 @@ func (m *MCMC) initialize(k int) Clust {
 }
 
 func (m *MCMC) nextK(k int) int {
-	var prob = m.config.probaK
+	var prob = m.config.ProbaK()
 	var less, same, more = prob[0], prob[1], prob[2]
 	var sum = less + same + more
 	var proba = m.src.Float64() * sum

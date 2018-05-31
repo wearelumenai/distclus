@@ -63,7 +63,7 @@ func (c* Clust) Assign(elemts *[]Elemt, space space) [][]Elemt {
 
 // Assign a element to a center and return the center and its index
 func (c* Clust) UAssign(elemt Elemt, space space) (center Elemt, idx int) {
-	idx = assign(&elemt, c.centers, space)
+	idx = assign(elemt, c.centers, space)
 	return c.Center(idx), idx
 }
 

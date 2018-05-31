@@ -190,10 +190,10 @@ func (m *MCMC) Close() {
 }
 
 // Get a configuration center(retrieve from store if k is exist else create with genCenters
-func (m *MCMC) getCenters(k, prevK int) Clust {
+func (m *MCMC) getCenters(k int, prev Clust) Clust {
 	var centers, ok = m.store[k]
 	if !ok {
-		m.store[k] = m.genCenters(k, prevK)
+		m.store[k] = m.genCenters(k, prev)
 		centers, _ = m.store[k]
 	}
 	return centers
@@ -205,8 +205,24 @@ func (m *MCMC) setCenters(clust Clust) {
 }
 
 // Generate a configuration of k centers based on previous configuration
-func (m *MCMC) genCenters(k, prevK int) Clust {
-	return m.initialize(k)
+func (m *MCMC) genCenters(k int, prev Clust) (c Clust) {
+	var err error
+	var prevK = len(prev.centers)
+	if prevK < k {
+		 c, err = KmeansPPIterr(prev, &m.data, m.config.Space, m.src)
+	}
+	if prevK > k {
+		var del = m.src.Intn(prevK)
+		var centers = *prev.Centers()
+		c, err = NewClustering(append(centers[:del], centers[del+1:]))
+	}
+	if prevK == k {
+		c = prev
+	}
+	if err != nil {
+		panic(err)
+	}
+	return c
 }
 
 // initialise a configuration of k centers

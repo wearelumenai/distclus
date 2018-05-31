@@ -95,6 +95,7 @@ func (km *KMeans) Run() {
 	}
 }
 
+// Run au kmeans++ on a batch to return a k centers configuration
 func KmeansPP(k int, batch *[]Elemt, space space, src *rand.Rand) (c Clust, err error) {
 	if k < 1 {
 		panic("k is lower than 1")
@@ -103,7 +104,7 @@ func KmeansPP(k int, batch *[]Elemt, space space, src *rand.Rand) (c Clust, err 
 	init[0] = (*batch)[src.Intn(len(*batch))]
 	c = Clust{init}
 	for i:=1; i < k; i++{
-		c, err = KmeansPPIterr(c, batch, space, src)
+		c, err = KmeansPPIter(c, batch, space, src)
 		if err!= nil {
 			return c, err
 		}
@@ -111,7 +112,8 @@ func KmeansPP(k int, batch *[]Elemt, space space, src *rand.Rand) (c Clust, err 
 	return c, nil
 }
 
-func KmeansPPIterr(clust Clust, batch *[]Elemt, space space, src *rand.Rand) (Clust, error) {
+// Run au kmeans++ iteration on a batch to return a k+1 centers configuration
+func KmeansPPIter(clust Clust, batch *[]Elemt, space space, src *rand.Rand) (Clust, error) {
 	l := len(*batch)
 	var dists = make([]float64, l)
 	for i, elt := range *batch {

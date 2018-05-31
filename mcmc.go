@@ -239,13 +239,9 @@ func (m *MCMC) initialize(k int) Clust {
 
 // Compute next centers number based on ProbaK
 func (m *MCMC) nextK(k int) int {
-	var prob = m.config.ProbaK()
-	var less, same, more = prob[0], prob[1], prob[2]
-	var sum = less + same + more
-	var proba = m.src.Float64() * sum
-	var res = 0
-	if proba > less+same {
-		res = 1
+	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.config.ProbaK(), m.src)]
+	if newK < 1 {
+		return 1
 	}
 	return newK
 }

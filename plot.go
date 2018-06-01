@@ -1,4 +1,4 @@
-package clustering_go
+package distclus
 
 import (
 	"gonum.org/v1/plot"

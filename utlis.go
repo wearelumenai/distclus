@@ -1,4 +1,4 @@
-package clustering_go
+package distclus
 
 import (
 	"golang.org/x/exp/rand"

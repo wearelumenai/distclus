@@ -1,4 +1,4 @@
-package clustering_go
+package distclus
 
 // Node interface representing a clusterisable entity.
 type Elemt interface{}

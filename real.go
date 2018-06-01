@@ -5,10 +5,10 @@ import (
 )
 
 // Space for reals ([]float64)
-type realSpace struct{}
+type RealSpace struct{}
 
 // Check if a Elemt is contained in realSpace
-func (space realSpace) check(elemt Elemt) []float64 {
+func (space RealSpace) check(elemt Elemt) []float64 {
 	var n = elemt.([]float64)
 	if len(n) == 0 {
 		panic("Elemt is empty")
@@ -17,7 +17,7 @@ func (space realSpace) check(elemt Elemt) []float64 {
 }
 
 // Check if two nodes are contained in the same realSpace(i.e. same dimension)
-func (space realSpace) checkCombine(elemt1, elemt2 Elemt) ([]float64, []float64) {
+func (space RealSpace) checkCombine(elemt1, elemt2 Elemt) ([]float64, []float64) {
 	n1 := space.check(elemt1)
 	n2 := space.check(elemt2)
 	if len(n1) != len(n2) {
@@ -27,7 +27,7 @@ func (space realSpace) checkCombine(elemt1, elemt2 Elemt) ([]float64, []float64)
 }
 
 // Compute euclidean distance between two nodes
-func (space realSpace) dist(elemt1, elemt2 Elemt) float64 {
+func (space RealSpace) dist(elemt1, elemt2 Elemt) float64 {
 	e1, e2 := space.checkCombine(elemt1, elemt2)
 	diff := make([]float64, len(e1))
 	for i := 0; i < len(e1); i++ {
@@ -41,7 +41,7 @@ func (space realSpace) dist(elemt1, elemt2 Elemt) float64 {
 }
 
 // Compute combination between two nodes
-func (space realSpace) combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) Elemt {
+func (space RealSpace) combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) Elemt {
 	e1, e2 := space.checkCombine(elemt1, elemt2)
 	dim := len(e1)
 	if weight1 == 0 && weight2 == 0 {

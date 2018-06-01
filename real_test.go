@@ -228,7 +228,7 @@ func TestMCMC(t *testing.T) {
 	var space = realSpace{}
 	var mcmcConf =  MCMCConf{
 		Dim: 5, FrameSize: 8, B: 100, Amp: 1,
-		Norm: 3, Nu: 10, InitK: 3, McmcIter: 3,
+		Norm: 2, Nu: 1, InitK: 3, McmcIter: 3,
 		InitIter: 1, Initializer:RandInitializer, Space: space,
 	}
 	var distrib, ok = NewMultivT(MultivTConf{mcmcConf})

@@ -139,13 +139,13 @@ func (m *MCMC) alter(proposal Clust) Clust {
 }
 
 // Compute probability between two proposals using MCMC distribution
-func (m *MCMC) proba(proposal1, proposal2 Clust) (p float64) {
-	var c1 = *proposal1.Centers()
-	var c2 = *proposal2.Centers()
-	p = m.distrib.Pdf(c1[0], c2[0])
-	for i, e1 := range c1[1:] {
-		var e2 = c2[i]
-		pdf := m.distrib.Pdf(e1, e2)
+func (m *MCMC) proba(x, mu Clust) (p float64) {
+	var x1 = *x.Centers()
+	var x2 = *mu.Centers()
+	p = m.distrib.Pdf(x1[0], x2[0])
+	for i, xe := range x1[1:] {
+		var mue = x2[i]
+		pdf := m.distrib.Pdf(xe, mue)
 		p *= pdf
 	}
 	return p
@@ -178,7 +178,7 @@ func (m *MCMC) Run() {
 		propCenters = m.iterate(propK, propCenters)
 		var prop = m.alter(propCenters)
 		var propLoss = m.loss(prop)
-		var propPdf = m.proba(prop, propCenters)
+		var propPdf = m.proba(propCenters, prop)
 		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
 			curK = propK
 			m.cur = prop

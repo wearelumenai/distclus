@@ -61,7 +61,7 @@ func kmClust(space clustering_go.RealSpace, batch []clustering_go.Elemt) {
 }
 
 func main() {
-	var batch = s1Parser("sample/data/s1.txt")
+	var batch = s1Parser("examples/data/s1.txt")
 	var space = clustering_go.RealSpace{}
 	kmClust(space, batch)
 	mcmcClust(space, batch)

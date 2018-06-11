@@ -186,7 +186,7 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var localSpace = RealSpace{}
-	var init = func(k int, elemts []Elemt, space space) (Clust, error) {
+	var init = func(k int, elemts []Elemt, space Space) (Clust, error) {
 		var centroids = make([]Elemt, 3)
 		centroids[0] = []float64{7.2, 6, 8, 11, 10}
 		centroids[1] = []float64{-9, -10, -8, -8, -7.5}

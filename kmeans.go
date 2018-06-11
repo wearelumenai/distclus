@@ -11,13 +11,13 @@ type KMeans struct {
 	iter        int
 	k           int
 	data        []Elemt
-	space       space
+	space       Space
 	status      ClustStatus
 	initializer Initializer
 	clust       Clust
 }
 
-func NewKMeans(k int, iter int, space space, initializer Initializer) KMeans {
+func NewKMeans(k int, iter int, space Space, initializer Initializer) KMeans {
 	var km KMeans
 	if k < 1 {
 		panic(fmt.Sprintf("Illegal value for k: %v", k))
@@ -98,7 +98,7 @@ func (km *KMeans) Run() {
 }
 
 // Run au kmeans++ on a batch to return a k centers configuration
-func KmeansPP(k int, batch *[]Elemt, space space, src *rand.Rand) (c Clust, err error) {
+func KmeansPP(k int, batch *[]Elemt, space Space, src *rand.Rand) (c Clust, err error) {
 	if k < 1 {
 		panic("k is lower than 1")
 	}
@@ -115,7 +115,7 @@ func KmeansPP(k int, batch *[]Elemt, space space, src *rand.Rand) (c Clust, err 
 }
 
 // Run au kmeans++ iteration on a batch to return a k+1 centers configuration
-func KmeansPPIter(clust Clust, batch *[]Elemt, space space, src *rand.Rand) (Clust, error) {
+func KmeansPPIter(clust Clust, batch *[]Elemt, space Space, src *rand.Rand) (Clust, error) {
 	l := len(*batch)
 	var dists = make([]float64, l)
 	for i, elt := range *batch {
@@ -126,7 +126,7 @@ func KmeansPPIter(clust Clust, batch *[]Elemt, space space, src *rand.Rand) (Clu
 }
 
 // Kmeans++ clustering initializer
-func KmeansPPInitializer(k int, elemts []Elemt, space space) (c Clust, err error) {
+func KmeansPPInitializer(k int, elemts []Elemt, space Space) (c Clust, err error) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 	return KmeansPP(k, &elemts, space, src)
 }

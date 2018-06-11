@@ -32,7 +32,7 @@ type MCMCConf struct {
 	McmcIter, InitIter int
 	probaK             []float64
 	// Space where data are include
-	Space space
+	Space Space
 	// Centers initializer
 	Initializer Initializer
 	// Random source seed
@@ -115,7 +115,7 @@ func (m *MCMC) Predict(elemt Elemt) (c Elemt, idx int, err error) {
 
 // Make an iteration for a proposal running with kmeans
 func (m *MCMC) iterate(k int, proposal Clust) Clust {
-	var initializer = func(k2 int, elemts []Elemt, space space) (Clust, error) {
+	var initializer = func(k2 int, elemts []Elemt, space Space) (Clust, error) {
 		return proposal, nil
 	}
 	var km = NewKMeans(k, 1, m.config.Space, initializer)

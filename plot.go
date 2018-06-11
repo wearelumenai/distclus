@@ -9,7 +9,7 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-func PlotClust(clust Clust, batch *[]Elemt, space space, title, xLab, yLab, png string) {
+func PlotClust(clust Clust, batch *[]Elemt, space Space, title, xLab, yLab, png string) {
 	var clusts = clust.Assign(batch, space)
 	k := len(*clust.Centers())
 	p, err := plot.New()

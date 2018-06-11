@@ -15,7 +15,7 @@ const (
 	Closed
 )
 
-type Initializer = func(k int, nodes []Elemt, space space) (Clust, error)
+type Initializer = func(k int, nodes []Elemt, space Space) (Clust, error)
 
 // Online Clust algorithm interface.
 type OnlineClust interface {
@@ -52,7 +52,7 @@ func (c *Clust) SetCenters(centers []Elemt) {
 }
 
 // Assign elements on elemts at each centers
-func (c* Clust) Assign(elemts *[]Elemt, space space) [][]Elemt {
+func (c* Clust) Assign(elemts *[]Elemt, space Space) [][]Elemt {
 	var clusters = make([][]Elemt, len(c.centers))
 	for _, elemt := range *elemts {
 		var idx = assign(elemt, c.centers, space)
@@ -62,13 +62,13 @@ func (c* Clust) Assign(elemts *[]Elemt, space space) [][]Elemt {
 }
 
 // Assign a element to a center and return the center and its index
-func (c* Clust) UAssign(elemt Elemt, space space) (center Elemt, idx int) {
+func (c* Clust) UAssign(elemt Elemt, space Space) (center Elemt, idx int) {
 	idx = assign(elemt, c.centers, space)
 	return c.Center(idx), idx
 }
 
 // Compute loss of centers configuration with given data
-func (c *Clust) Loss(data *[]Elemt, space space, norm float64) float64 {
+func (c *Clust) Loss(data *[]Elemt, space Space, norm float64) float64 {
 	var sum float64
 	for _, elemt := range *data {
 		var min = math.MaxFloat64
@@ -115,7 +115,7 @@ func NewRandClustering(k int, elemts []Elemt) Clust {
 }
 
 // Returns the index of the closest element to elemt in elemts.
-func assign(elemt Elemt, elemts []Elemt, space space) int {
+func assign(elemt Elemt, elemts []Elemt, space Space) int {
 	if len(elemts) < 1 {
 		panic("elemts collection is empty")
 	}
@@ -134,9 +134,9 @@ func assign(elemt Elemt, elemts []Elemt, space space) int {
 	return index
 }
 
-// Return the mean of nodes based on the space combination method.
+// Return the mean of nodes based on the Space combination method.
 // If nodes are empty function panic.
-func mean(elemts []Elemt, space space) Elemt {
+func mean(elemts []Elemt, space Space) Elemt {
 	l := len(elemts)
 	if l < 1 {
 		panic("elemts are empty")
@@ -151,7 +151,7 @@ func mean(elemts []Elemt, space space) Elemt {
 }
 
 // Random clustering initializer
-func RandInitializer(k int, elemts []Elemt, _ space) (c Clust, err error) {
+func RandInitializer(k int, elemts []Elemt, _ Space) (c Clust, err error) {
 	if p := recover(); p != nil {
 		return c, fmt.Errorf("%v", p)
 	}

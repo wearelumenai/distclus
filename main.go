@@ -3,16 +3,16 @@ package main
 import (
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
-	"github.com/blqn/clustering-go"
 	"time"
 	"encoding/csv"
 	"strconv"
 	"fmt"
 	"io"
+	"distclus/core"
 )
 
 var (
-	app = kingpin.New("distclus", "Go clustering")
+	app = kingpin.New("core", "Go clustering")
 
 	dtype = app.Flag("type", "Data type(real).").
 		Short('t').Default("real").Enum("real")
@@ -56,13 +56,13 @@ func main() {
 	}
 }
 func runMcmc() {
-	var space distclus.Space
-	var data []distclus.Elemt
+	var space core.Space
+	var data []core.Elemt
 	var dim int
 	var initializer = parseInitializer(*mcmcInitializer)
 	switch *dtype {
 	case "real":
-		space = distclus.RealSpace{}
+		space = core.RealSpace{}
 		data, dim = parseFloatCsv()
 	}
 	if *seed == -1 {
@@ -71,7 +71,7 @@ func runMcmc() {
 	if *mcmcFrameSize < 1 {
 		*mcmcFrameSize = len(data)
 	}
-	var mcmcConf = distclus.MCMCConf{
+	var mcmcConf = core.MCMCConf{
 		Dim:         dim,
 		FrameSize:   *mcmcFrameSize,
 		B:           *mcmcB,
@@ -85,11 +85,11 @@ func runMcmc() {
 		Initializer: initializer,
 		Seed:        uint64(*seed),
 	}
-	var distrib, ok = distclus.NewMultivT(distclus.MultivTConf{mcmcConf})
+	var distrib, ok = core.NewMultivT(core.MultivTConf{mcmcConf})
 	if !ok{
 		panic("can't initialize mcmc")
 	}
-	var mcmc = distclus.NewMCMC(mcmcConf, &distrib)
+	var mcmc = core.NewMCMC(mcmcConf, &distrib)
 	for _, elt := range data {
 		mcmc.Push(elt)
 	}
@@ -126,7 +126,7 @@ func printLabels(res []int, out *string) {
 	}
 }
 
-func printCenters(res distclus.Clust, out *string) {
+func printCenters(res core.Clust, out *string) {
 	var o io.Writer
 	if len(*out) != 0{
 		var f, err = os.Create(*out)
@@ -148,17 +148,17 @@ func printCenters(res distclus.Clust, out *string) {
 	}
 }
 
-func parseInitializer(init string) (initializer func(k int, elemts []distclus.Elemt, space distclus.Space) (c distclus.Clust, err error)) {
+func parseInitializer(init string) (initializer func(k int, elemts []core.Elemt, space core.Space) (c core.Clust, err error)) {
 	switch init {
 	case "random":
-		initializer = distclus.KmeansPPInitializer
+		initializer = core.KmeansPPInitializer
 	case "kmeans++":
-		initializer = distclus.RandInitializer
+		initializer = core.RandInitializer
 	}
 	return initializer
 }
 
-func parseFloatCsv() ([]distclus.Elemt, int) {
+func parseFloatCsv() ([]core.Elemt, int) {
 	file, err := os.Open(*fdata)
 	if err != nil {
 		panic(err)
@@ -173,7 +173,7 @@ func parseFloatCsv() ([]distclus.Elemt, int) {
 	if len(rows) == 0 {
 		panic("file empty")
 	}
-	var parsed []distclus.Elemt
+	var parsed []core.Elemt
 	var rlen = len(rows[0])
 	if rlen == 0 {
 		panic("first row is empty")

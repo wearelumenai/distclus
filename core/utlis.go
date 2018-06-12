@@ -1,4 +1,4 @@
-package distclus
+package core
 
 import (
 	"golang.org/x/exp/rand"

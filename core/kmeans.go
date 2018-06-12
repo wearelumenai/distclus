@@ -1,4 +1,4 @@
-package distclus
+package core
 
 import (
 	"errors"

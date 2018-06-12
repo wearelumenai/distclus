@@ -1,4 +1,4 @@
-package distclus
+package core
 
 // Node interface representing a clusterisable entity.
 type Elemt interface{}

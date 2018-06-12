@@ -8,6 +8,7 @@ import (
 	"encoding/csv"
 	"strconv"
 	"fmt"
+	"io"
 )
 
 var (
@@ -21,6 +22,10 @@ var (
 		Short('s').Default("-1").Int()
 	fdata = app.Flag("data", "data file path(supported format: CSV)").
 		Short('f').Required().String()
+	olabels = app.Flag("out_labels", "filename where to print labels in csv, if not set printed in stdout.").
+		Short('l').String()
+	ocenters = app.Flag("out_centers", "filename where to print centers in csv, if not set printed in stdout.").
+		Short('c').String()
 
 	mcmc  = app.Command("mcmc", "Compute an MCMC")
 	mcmcB = mcmc.Flag("mcmc_b", "b parameter").
@@ -91,9 +96,56 @@ func runMcmc() {
 	mcmc.Run()
 	mcmc.Close()
 	var centers, _ = mcmc.Centroids()
-	k := len(*centers.Centers())
-	println("centers: ", k)
-	distclus.PlotClust(centers, &data, space, "s1MCMC", "X", "Y", "s1MCMC")
+	var labels = make([]int, len(data))
+	for i := range labels {
+		_, labels[i] = centers.UAssign(data[i], space)
+	}
+	printLabels(labels, olabels)
+	printCenters(centers, ocenters)
+}
+
+func printLabels(res []int, out *string) {
+	var o io.Writer
+	if len(*out) != 0{
+		var f, err = os.Create(*out)
+		if err != nil {
+			panic(err)
+		}
+		o = f
+		defer f.Close()
+	} else {
+		o = os.Stdout
+	}
+	var writer = csv.NewWriter(o)
+	defer writer.Flush()
+	for _, label := range res {
+		err := writer.Write([]string{strconv.Itoa(label)})
+		if err != nil {
+			panic (fmt.Sprintf("Cannot write to file %s", err))
+		}
+	}
+}
+
+func printCenters(res distclus.Clust, out *string) {
+	var o io.Writer
+	if len(*out) != 0{
+		var f, err = os.Create(*out)
+		if err != nil {
+			panic(err)
+		}
+		o = f
+		defer f.Close()
+	} else {
+		o = os.Stdout
+	}
+	var writer = csv.NewWriter(o)
+	defer writer.Flush()
+	for _, label := range *res.Centers() {
+		err := writer.Write([]string{fmt.Sprint(label)})
+		if err != nil {
+			panic (fmt.Sprintf("Cannot write to file %s", err))
+		}
+	}
 }
 
 func parseInitializer(init string) (initializer func(k int, elemts []distclus.Elemt, space distclus.Space) (c distclus.Clust, err error)) {

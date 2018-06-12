@@ -14,35 +14,35 @@ import (
 var (
 	app = kingpin.New("distclus", "Go clustering")
 
-	dtype = app.Flag("type", "Data type").
+	dtype = app.Flag("type", "Data type(real).").
 		Short('t').Default("real").Enum("real")
-	norm = app.Flag("norm", "distance normalisation coefficient").
+	norm = app.Flag("norm", "Distance normalisation coefficient.").
 		Short('n').Default("2").Float()
-	seed = app.Flag("seed", "seed for random initializer(time by default ~ -1)").
+	seed = app.Flag("seed", "Seed for random initializer(time by default ~ -1).").
 		Short('s').Default("-1").Int()
-	fdata = app.Flag("data", "data file path(supported format: CSV)").
+	fdata = app.Flag("data", "Data file path(supported format: CSV).").
 		Short('f').Required().String()
-	olabels = app.Flag("out_labels", "filename where to print labels in csv, if not set printed in stdout.").
+	olabels = app.Flag("out_labels", "Filename where to print labels in csv, if not set printed in stdout.").
 		Short('l').String()
-	ocenters = app.Flag("out_centers", "filename where to print centers in csv, if not set printed in stdout.").
+	ocenters = app.Flag("out_centers", "Filename where to print centers in csv, if not set printed in stdout.").
 		Short('c').String()
 
-	mcmc  = app.Command("mcmc", "Compute an MCMC")
+	mcmc  = app.Command("mcmc", "Compute an MCMC clustering.")
 	mcmcB = mcmc.Flag("mcmc_b", "b parameter").
 		Short('B').Default("100").Float()
-	mcmcAmp = mcmc.Flag("mcmc_amp", "amp parameter").
+	mcmcAmp = mcmc.Flag("mcmc_amp", "amp MCMC parameter.").
 		Short('A').Default("1").Float()
-	mcmcNu = mcmc.Flag("mcmc_nu", "degrees of freedom number").
+	mcmcNu = mcmc.Flag("mcmc_nu", "Number of degrees of freedom.").
 		Short('D').Default("2").Float()
-	mcmcInitK = mcmc.Flag("mcmc_initk", "k initialisation value").
+	mcmcInitK = mcmc.Flag("mcmc_initk", "k initialisation value.").
 		Short('K').Default("8").Int()
-	mcmcFrameSize = mcmc.Flag("mcmc_framesize", "framesize to consider in data history").
+	mcmcFrameSize = mcmc.Flag("mcmc_framesize", "Frame size to consider in data history(default -1 ~ data set len).").
 		Short('F').Default("-1").Int()
-	mcmcInitializer = mcmc.Flag("mcmc_initializer", "Algorithm initializer").
+	mcmcInitializer = mcmc.Flag("mcmc_initializer", "Algorithm initializer(random, kmeans++).").
 		Default("random").Short('i').Enum("random", "kmeans++")
-	mcmcIter = mcmc.Flag("mcmc_iter", "max iteration of mcmc clustering").
+	mcmcIter = mcmc.Flag("mcmc_iter", "Max iteration of mcmc clustering.").
 		Short('I').Default("-1").Int()
-	mcmcInitIter = mcmc.Flag("mcmc_init_iter", "number of initialisation iteration").
+	mcmcInitIter = mcmc.Flag("mcmc_init_iter", "Number of initialisation iteration.").
 		Default("1").Int()
 )
 

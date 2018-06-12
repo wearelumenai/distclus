@@ -91,6 +91,7 @@ func NewClustering(centroids []Elemt) (Clust, error) {
 
 // Random initializer for Clust model.
 func NewRandClustering(k int, elemts []Elemt) Clust {
+	//TODO: Pass seed
 	if len(elemts) < k {
 		panic("not enough elements to initialize")
 	}

@@ -38,6 +38,7 @@ func NewMultivT(c MultivTConf) (m MultivT, ok bool) {
 	m.src = rand.New(rand.NewSource(c.Seed))
 	d, ok := distmv.NewStudentsT(make([]float64, c.Dim), m.sigma, c.Nu, m.src)
 	m.d = d
+	m.c = c
 	return m, ok
 }
 

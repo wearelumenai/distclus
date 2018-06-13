@@ -9,9 +9,9 @@ import (
 )
 
 type KMeans struct {
+	Data        []core.Elemt
 	iter        int
 	k           int
-	data        []core.Elemt
 	space       core.Space
 	status      ClustStatus
 	initializer Initializer
@@ -41,11 +41,11 @@ func NewKMeans(k int, iter int, space core.Space, initializer Initializer) KMean
 }
 
 func (km *KMeans) initialize() (error) {
-	if len(km.data) < km.k {
-		return errors.New("can't initialize kmeans model centroids, not enough data")
+	if len(km.Data) < km.k {
+		return errors.New("can't initialize kmeans model centroids, not enough Data")
 	}
 
-	var clust = km.initializer(km.k, km.data, km.space, km.src)
+	var clust = km.initializer(km.k, km.Data, km.space, km.src)
 
 	km.clust = clust
 	km.status = Initialized
@@ -64,7 +64,7 @@ func (km *KMeans) Centroids() (c Clust, err error) {
 }
 
 func (km *KMeans) Push(elemt core.Elemt) {
-	km.data = append(km.data, elemt)
+	km.Data = append(km.Data, elemt)
 }
 
 func (km *KMeans) Close() {
@@ -90,19 +90,23 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 	return pred, idx, err
 }
 
-func (km *KMeans) iteration() {
-	var clusters = km.clust.Assign(km.data, km.space)
+func (km *KMeans) iterate(clust *Clust) {
+	var clusters = clust.Assign(km.Data, km.space)
 	for k, cluster := range clusters {
 		if len(cluster) != 0 {
-			km.clust[k] = mean(cluster, km.space)
+			(*clust)[k] = DBA(cluster, km.space)
 		}
 	}
 }
 
 func (km *KMeans) Run() {
+	KMeansLoop(km, km.iterate)
+}
+
+func KMeansLoop(km *KMeans, iteration func(*Clust)) {
 	km.status = Running
 	km.initialize()
 	for iter := 0; iter < km.iter; iter++ {
-		km.iteration()
+		iteration(&km.clust)
 	}
 }

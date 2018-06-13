@@ -17,7 +17,7 @@ const (
 
 // Online Clust algorithm interface.
 type OnlineClust interface {
-	// Add an element to Clust data set.
+	// Add an element to Clust Data set.
 	Push(elemt core.Elemt)
 	// Return model current centroids configuration.
 	Centroids() (Clust, error)
@@ -48,7 +48,7 @@ func (c Clust) UAssign(elemt core.Elemt, space core.Space) (center core.Elemt, i
 	return c[idx], idx
 }
 
-// Compute loss of centers configuration with given data
+// Compute loss of centers configuration with given Data
 func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 	var sum float64
 	for _, elemt := range data {
@@ -81,9 +81,9 @@ func assign(elemt core.Elemt, elemts []core.Elemt, space core.Space) int {
 	return index
 }
 
-// Return the mean of nodes based on the core.Space combination method.
+// Return the DBA of nodes based on the core.Space combination method.
 // If nodes are empty function panic.
-func mean(elemts []core.Elemt, space core.Space) core.Elemt {
+func DBA(elemts []core.Elemt, space core.Space) core.Elemt {
 	l := len(elemts)
 	if l < 1 {
 		panic("elemts are empty")
@@ -97,6 +97,6 @@ func mean(elemts []core.Elemt, space core.Space) core.Elemt {
 	return mean
 }
 
-func (c Clust) initializer(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust {
+func (c Clust) Initializer(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	return c
 }

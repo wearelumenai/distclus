@@ -32,9 +32,9 @@ type MCMCConf struct {
 	// Iteration numbers for mcmc and centers initialisation
 	McmcIter, InitIter int
 	probaK             []float64
-	// Space where data are include
+	// Space where Data are include
 	Space core.Space
-	// Centers initializer
+	// Centers Initializer
 	Initializer Initializer
 	// Random source seed
 	Seed uint64
@@ -67,7 +67,7 @@ type MCMC struct {
 	distrib MCMCDistrib
 	uniform distuv.Uniform
 	store   map[int]Clust
-	data    []core.Elemt
+	Data    []core.Elemt
 	cur     Clust
 	status  ClustStatus
 	src     *rand.Rand
@@ -89,11 +89,11 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 
 // Compute loss proposal based on Clust.Loss
 func (m *MCMC) loss(proposal Clust) float64 {
-	return proposal.Loss(m.data, m.config.Space, m.config.Norm)
+	return proposal.Loss(m.Data, m.config.Space, m.config.Norm)
 }
 
 func (m *MCMC) Push(elemt core.Elemt) {
-	m.data = append(m.data, elemt)
+	m.Data = append(m.Data, elemt)
 }
 
 func (m *MCMC) Centroids() (Clust, error) {
@@ -119,7 +119,8 @@ func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	case Created:
 		err = fmt.Errorf("no Clust available")
 	default:
-		pred, idx = m.cur.UAssign(elemt, m.config.Space)
+		var clust, _ = m.Centroids()
+		pred, idx = clust.UAssign(elemt, m.config.Space)
 	}
 
 	if push {
@@ -129,28 +130,23 @@ func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	return pred, idx, err
 }
 
-// Make an iteration for a proposal running with kmeans
-func (m *MCMC) iterate(k int, proposal Clust) Clust {
-	var km = NewKMeans(k, 1, m.config.Space, proposal.initializer)
+// Make an iterate for a proposal running with kmeans
+func (m *MCMC) iterate(k int, clust *Clust) {
+	var km = NewKMeans(k, 1, m.config.Space, clust.Initializer)
 
-	km.data = m.data
+	km.Data = m.Data
 
 	km.Run()
 	km.Close()
 
-	var clust, _ = km.Centroids()
-	return clust
+	clust = &km.clust
 }
 
 // Alter a proposal using MCMC distribution
-func (m *MCMC) alter(proposal Clust) Clust {
-	var clust = make(Clust, len(proposal))
-
-	for i, p := range proposal {
-		clust[i] = m.distrib.Sample(p)
+func (m *MCMC) alter(clust *Clust) {
+	for i, p := range *clust {
+		(*clust)[i] = m.distrib.Sample(p)
 	}
-
-	return clust
 }
 
 // Compute probability between two proposals using MCMC distribution
@@ -179,6 +175,10 @@ func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool
 }
 
 func (m *MCMC) Run() {
+	MCMCLoop(m, m.iterate, m.loss)
+}
+
+func MCMCLoop(m *MCMC, iterate func(k int, clust *Clust), loss func(proposal Clust) float64) {
 	var curK = m.config.InitK
 	m.cur = m.initialize(curK)
 
@@ -187,17 +187,19 @@ func (m *MCMC) Run() {
 
 	for i := 0; i < m.config.McmcIter; i++ {
 		var propK = m.nextK(curK)
-		var propCenters = m.getCenters(propK, m.cur)
+		var propCenters = m.GetCenters(propK, m.cur)
 
-		propCenters = m.iterate(propK, propCenters)
+		iterate(propK, &propCenters)
+		var memo = make(Clust, len(propCenters))
+		copy(memo, propCenters)
+		m.alter(&propCenters)
 
-		var prop = m.alter(propCenters)
-		var propLoss = m.loss(prop)
-		var propPdf = m.proba(propCenters, prop)
+		var propLoss = loss(propCenters)
+		var propPdf = m.proba(memo, propCenters)
 
 		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
 			curK = propK
-			m.cur = prop
+			m.cur = propCenters
 			curLoss = propLoss
 			curPdf = propPdf
 			m.setCenters(m.cur)
@@ -210,7 +212,7 @@ func (m *MCMC) Close() {
 }
 
 // Get a configuration center(retrieve from store if k is exist else create with genCenters
-func (m *MCMC) getCenters(k int, prev Clust) Clust {
+func (m *MCMC) GetCenters(k int, prev Clust) Clust {
 	var centers, ok = m.store[k]
 
 	if !ok {
@@ -232,7 +234,7 @@ func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 	var prevK = len(prev)
 
 	if prevK < k {
-		clust = KmeansPPIter(prev, m.data, m.config.Space, m.src)
+		clust = KmeansPPIter(prev, m.Data, m.config.Space, m.src)
 	}
 
 	if prevK > k {
@@ -256,7 +258,7 @@ func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 func (m *MCMC) initialize(k int) Clust {
 	var km = NewKMeans(k, m.config.InitIter, m.config.Space, m.config.Initializer)
 
-	for _, elemt := range m.data {
+	for _, elemt := range m.Data {
 		km.Push(elemt)
 	}
 

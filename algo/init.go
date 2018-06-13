@@ -27,7 +27,7 @@ func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand
 	return clust
 }
 
-// Run au kmeans++ iteration on a batch to return a k+1 centers configuration
+// Run au kmeans++ iterate on a batch to return a k+1 centers configuration
 func KmeansPPIter(clust Clust, batch []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	var dists = make([]float64, len(batch))
 
@@ -39,7 +39,7 @@ func KmeansPPIter(clust Clust, batch []core.Elemt, space core.Space, src *rand.R
 	return append(clust, batch[WeightedChoice(dists, src)])
 }
 
-// Random clustering initializer
+// Random clustering Initializer
 func RandInitializer(k int, elemts []core.Elemt, _ core.Space, src *rand.Rand) Clust {
 	if len(elemts) < k {
 		panic("not enough elements to initialize")

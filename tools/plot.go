@@ -12,7 +12,7 @@ import (
 )
 
 func PlotClust(clust algo.Clust, batch []core.Elemt, space core.Space, title, xLab, yLab, png string) {
-	var clusts = clust.Assign(batch, space)
+	var clusts = clust.AssignAll(batch, space)
 	k := len(clust)
 	p, err := plot.New()
 	if err != nil {

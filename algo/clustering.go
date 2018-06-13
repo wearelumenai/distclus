@@ -32,20 +32,20 @@ type OnlineClust interface {
 // Indexed clustering result
 type Clust []core.Elemt
 
-// Assign elements on elemts at each centers
-func (c Clust) Assign(elemts []core.Elemt, space core.Space) [][]core.Elemt {
+// AssignAll elements on elemts at each centers
+func (c Clust) AssignAll(elemts []core.Elemt, space core.Space) [][]core.Elemt {
 	var clusters = make([][]core.Elemt, len(c))
 	for _, elemt := range elemts {
-		var idx = assign(elemt, c, space)
+		var idx, _ = assign(elemt, c, space)
 		clusters[idx] = append(clusters[idx], elemt)
 	}
 	return clusters
 }
 
-// Assign a element to a center and return the center and its index
-func (c Clust) UAssign(elemt core.Elemt, space core.Space) (center core.Elemt, idx int) {
-	idx = assign(elemt, c, space)
-	return c[idx], idx
+// AssignAll a element to a center and return the center and its index
+func (c Clust) Assign(elemt core.Elemt, space core.Space) (core.Elemt, int, float64) {
+	var idx, dist = assign(elemt, c, space)
+	return c[idx], idx, dist
 }
 
 // Compute loss of centers configuration with given Data
@@ -62,38 +62,45 @@ func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 }
 
 // Returns the index of the closest element to elemt in elemts.
-func assign(elemt core.Elemt, elemts []core.Elemt, space core.Space) int {
+func assign(elemt core.Elemt, elemts []core.Elemt, space core.Space) (int, float64) {
 	if len(elemts) < 1 {
 		panic("elemts collection is empty")
 	}
+
 	distances := make([]float64, len(elemts))
 	for i, node := range elemts {
 		distances[i] = space.Dist(elemt, node)
 	}
-	current := distances[0]
+
+	var lowest = distances[0]
 	var index int
 	for i, dist := range distances {
-		if dist < current {
-			current = dist
+		if dist < lowest {
+			lowest = dist
 			index = i
 		}
 	}
-	return index
+
+	return index, lowest
 }
 
 // Return the DBA of nodes based on the core.Space combination method.
 // If nodes are empty function panic.
 func DBA(elemts []core.Elemt, space core.Space) core.Elemt {
 	l := len(elemts)
+
 	if l < 1 {
 		panic("elemts are empty")
 	}
-	mean := elemts[0]
-	weight := 1
-	for _, node := range elemts {
-		mean = space.Combine(node, 1, mean, weight)
+
+	var mean = elemts[0]
+	var weight = 1
+
+	for i, _ := range elemts[1:] {
+		mean = space.Combine(elemts[i], 1, mean, weight)
 		weight += 1
 	}
+
 	return mean
 }
 

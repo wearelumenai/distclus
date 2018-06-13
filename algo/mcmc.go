@@ -40,7 +40,7 @@ type MCMCConf struct {
 	Seed uint64
 }
 
-// Probability for next k (-1, 0, +1)
+// Probability for next K (-1, 0, +1)
 func (c *MCMCConf) ProbaK() []float64 {
 	if len(c.probaK) == 0 {
 		c.probaK = []float64{1, 8, 1}
@@ -63,21 +63,61 @@ func (c *MCMCConf) Lamb() float64 {
 }
 
 type MCMC struct {
-	config  MCMCConf
+	MCMCConf
+	MCMCSupport
+	Data    []core.Elemt
 	distrib MCMCDistrib
 	uniform distuv.Uniform
 	store   map[int]Clust
-	Data    []core.Elemt
 	cur     Clust
 	status  ClustStatus
 	src     *rand.Rand
+}
+
+type MCMCSupport interface {
+	Iterate(MCMC, int) Clust
+	Loss(MCMC, Clust) float64
+}
+
+type SeqMCMCSupport struct {
+}
+
+func (SeqMCMCSupport) Iterate(m MCMC, k int) Clust {
+	var clust, _ = m.Centroids()
+	var km = NewKMeans(KMeansConf{k, 1, m.Space}, clust.Initializer)
+
+	km.Data = m.Data
+
+	km.Run()
+	km.Close()
+
+	var result, _ = km.Centroids()
+	return result
+}
+
+func (SeqMCMCSupport) Loss(m MCMC, proposal Clust) float64 {
+	return proposal.Loss(m.Data, m.Space, m.Norm)
+}
+
+// initialise a configuration of K centers
+func (m *MCMC) initialize(k int) Clust {
+	var km = NewKMeans(KMeansConf{k, m.InitIter, m.Space}, m.Initializer)
+
+	km.Data = m.Data
+
+	km.Run()
+	km.Close()
+
+	var clust, _ = km.Centroids()
+	return clust
 }
 
 // Constructor for MCMC
 func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 	var m MCMC
 
-	m.config = conf
+	m.MCMCConf = conf
+	m.MCMCSupport = SeqMCMCSupport{}
 	m.store = make(map[int]Clust)
 	m.status = Created
 	m.distrib = distrib
@@ -85,11 +125,6 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.src}
 
 	return m
-}
-
-// Compute loss proposal based on Clust.Loss
-func (m *MCMC) loss(proposal Clust) float64 {
-	return proposal.Loss(m.Data, m.config.Space, m.config.Norm)
 }
 
 func (m *MCMC) Push(elemt core.Elemt) {
@@ -120,7 +155,7 @@ func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 		err = fmt.Errorf("no Clust available")
 	default:
 		var clust, _ = m.Centroids()
-		pred, idx = clust.UAssign(elemt, m.config.Space)
+		pred, idx, _ = clust.Assign(elemt, m.Space)
 	}
 
 	if push {
@@ -130,23 +165,16 @@ func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	return pred, idx, err
 }
 
-// Make an iterate for a proposal running with kmeans
-func (m *MCMC) iterate(k int, clust *Clust) {
-	var km = NewKMeans(k, 1, m.config.Space, clust.Initializer)
-
-	km.Data = m.Data
-
-	km.Run()
-	km.Close()
-
-	clust = &km.clust
-}
-
 // Alter a proposal using MCMC distribution
-func (m *MCMC) alter(clust *Clust) {
-	for i, p := range *clust {
-		(*clust)[i] = m.distrib.Sample(p)
+func (m *MCMC) alter() Clust {
+	var clust, _ = m.Centroids()
+	var result = make(Clust, len(clust))
+
+	for i := range clust {
+		result[i] = m.distrib.Sample(clust[i])
 	}
+
+	return result
 }
 
 // Compute probability between two proposals using MCMC distribution
@@ -158,16 +186,16 @@ func (m *MCMC) proba(x, mu Clust) (p float64) {
 	return p
 }
 
-// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and k
+// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
 func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
 	// adjust lambda to avoid very large gibbs measure
-	var lamb = m.config.Lamb()
+	var lamb = m.Lamb()
 	if lamb*pLoss > 50 {
 		lamb = 50 / pLoss
 	}
 
 	var rProp = cPdf / pPdf
-	var rInit = math.Pow(2*m.config.B, float64(m.config.Dim*(cK-pK)))
+	var rInit = math.Pow(2*m.B, float64(m.Dim*(cK-pK)))
 	var rGibbs = math.Exp(-lamb * (pLoss - cLoss))
 
 	var rho = rGibbs * rInit * rProp
@@ -175,27 +203,22 @@ func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool
 }
 
 func (m *MCMC) Run() {
-	MCMCLoop(m, m.iterate, m.loss)
-}
-
-func MCMCLoop(m *MCMC, iterate func(k int, clust *Clust), loss func(proposal Clust) float64) {
-	var curK = m.config.InitK
+	m.status = Running
+	var curK = m.InitK
 	m.cur = m.initialize(curK)
 
-	var curLoss = m.loss(m.cur)
+	var curLoss = m.Loss(*m, m.cur)
 	var curPdf = m.proba(m.cur, m.cur)
 
-	for i := 0; i < m.config.McmcIter; i++ {
+	for i := 0; i < m.McmcIter; i++ {
 		var propK = m.nextK(curK)
 		var propCenters = m.GetCenters(propK, m.cur)
 
-		iterate(propK, &propCenters)
-		var memo = make(Clust, len(propCenters))
-		copy(memo, propCenters)
-		m.alter(&propCenters)
+		propCenters = m.Iterate(*m, propK)
+		var prop = m.alter()
 
-		var propLoss = loss(propCenters)
-		var propPdf = m.proba(memo, propCenters)
+		var propLoss = m.Loss(*m, prop)
+		var propPdf = m.proba(prop, propCenters)
 
 		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
 			curK = propK
@@ -211,7 +234,7 @@ func (m *MCMC) Close() {
 	m.status = Closed
 }
 
-// Get a configuration center(retrieve from store if k is exist else create with genCenters
+// Get a configuration center(retrieve from store if K is exist else create with genCenters
 func (m *MCMC) GetCenters(k int, prev Clust) Clust {
 	var centers, ok = m.store[k]
 
@@ -228,13 +251,13 @@ func (m *MCMC) setCenters(clust Clust) {
 	m.store[len(clust)] = clust
 }
 
-// Generate a configuration of k centers based on previous configuration
+// Generate a configuration of K centers based on previous configuration
 func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 	var err error
 	var prevK = len(prev)
 
 	if prevK < k {
-		clust = KmeansPPIter(prev, m.Data, m.config.Space, m.src)
+		clust = KmeansPPIter(prev, m.Data, m.Space, m.src)
 	}
 
 	if prevK > k {
@@ -254,24 +277,9 @@ func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 	return clust
 }
 
-// initialise a configuration of k centers
-func (m *MCMC) initialize(k int) Clust {
-	var km = NewKMeans(k, m.config.InitIter, m.config.Space, m.config.Initializer)
-
-	for _, elemt := range m.Data {
-		km.Push(elemt)
-	}
-
-	km.Run()
-	km.Close()
-
-	var clust, _ = km.Centroids()
-	return clust
-}
-
 // Compute next centers number based on ProbaK
 func (m *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.config.ProbaK(), m.src)]
+	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.ProbaK(), m.src)]
 
 	if newK < 1 {
 		return 1

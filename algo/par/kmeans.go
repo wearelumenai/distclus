@@ -3,45 +3,34 @@ package par
 import (
 	"distclus/algo"
 	"distclus/core"
+	"golang.org/x/exp/rand"
 )
 
-type KMeans struct {
-	seq algo.KMeans
+type ParKMeansSupport struct {
 	space core.Space
 }
 
-func (km *KMeans) Push(elemt core.Elemt) {
-	km.seq.Push(elemt)
+func (iter ParKMeansSupport) Initialize(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) algo.Clust {
+	panic("implement me")
 }
 
-func (km *KMeans) Centroids() (algo.Clust, error) {
-	return km.seq.Centroids()
-}
+func (iter ParKMeansSupport) Iterate(km algo.KMeans) algo.Clust {
+	var clust, _ = km.Centroids()
+	var assign = clust.AssignAll(km.Data, iter.space)
+	var result = make(algo.Clust, len(clust))
 
-func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
-	return km.seq.Predict(elemt, push)
-}
-
-func (km *KMeans) iterate(clust *algo.Clust) {
-	var assign = clust.Assign(km.seq.Data, km.space)
 	for k, cluster := range assign {
 		if len(cluster) != 0 {
-			(*clust)[k] = algo.DBA(cluster, km.space)
+			result[k] = algo.DBA(cluster, iter.space)
 		}
 	}
+
+	return result
 }
 
-func (km *KMeans) Run() {
-	km.seq.Run()
-}
 
-func (km *KMeans) Close() {
-	km.seq.Close()
-}
-
-func NewKMeans(k int, iter int, space core.Space, initializer algo.Initializer) KMeans {
-	var km = KMeans{}
-	km.seq = algo.NewKMeans(k,iter,space,initializer)
-	km.space = space
+func NewKMeans(k int, iter int, space core.Space, initializer algo.Initializer) algo.KMeans {
+	var km = algo.KMeans{}
+	km.KMeansSupport = ParKMeansSupport{space:space}
 	return km
 }

@@ -17,7 +17,7 @@ func TestRandomInitKMeans(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = core.RealSpace{}
-	var km = NewKMeans(3, 10, space, RandInitializer)
+	var km = NewKMeans(KMeansConf{3, 10, space}, RandInitializer)
 	for _, elt := range data {
 		km.Push(elt)
 	}
@@ -50,7 +50,7 @@ func TestDeterminedInitKMeans(t *testing.T) {
 		return clust
 	}
 
-	var km = NewKMeans(3, 10, localSpace, init)
+	var km = NewKMeans(KMeansConf{3, 10, localSpace}, init)
 	for _, elt := range data {
 		km.Push(elt)
 	}
@@ -58,7 +58,7 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	km.Close()
 
 	var clust, _ = km.Centroids()
-	var assign = clust.Assign(data, localSpace)
+	var assign = clust.AssignAll(data, localSpace)
 	var c1 = len(assign[0])
 	if c1 != 3 {
 		t.Errorf("Expected 3, got %v", c1)

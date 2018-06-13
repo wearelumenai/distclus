@@ -7,10 +7,10 @@ import (
 
 type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust
 
-// Run au kmeans++ on a batch to return a k centers configuration
+// Run au kmeans++ on a batch to return a K centers configuration
 func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	if k < 1 {
-		panic("k is lower than 1")
+		panic("K is lower than 1")
 	}
 
 	if len(elemts) < k {
@@ -27,13 +27,13 @@ func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand
 	return clust
 }
 
-// Run au kmeans++ iterate on a batch to return a k+1 centers configuration
+// Run au kmeans++ iterate on a batch to return a K+1 centers configuration
 func KmeansPPIter(clust Clust, batch []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	var dists = make([]float64, len(batch))
 
 	for i, elt := range batch {
-		var center, _ = clust.UAssign(elt, space)
-		dists[i] = space.Dist(elt, center)
+		var _, _, dist = clust.Assign(elt, space)
+		dists[i] = dist
 	}
 
 	return append(clust, batch[WeightedChoice(dists, src)])

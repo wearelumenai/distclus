@@ -8,32 +8,57 @@ import (
 	"distclus/core"
 )
 
+type KMeansConf struct {
+	K     int
+	Iter  int
+	Space core.Space
+}
+
 type KMeans struct {
+	KMeansConf
+	KMeansSupport
 	Data        []core.Elemt
-	iter        int
-	k           int
-	space       core.Space
 	status      ClustStatus
 	initializer Initializer
 	clust       Clust
 	src         *rand.Rand
 }
 
-func NewKMeans(k int, iter int, space core.Space, initializer Initializer) KMeans {
+type KMeansSupport interface {
+	Iterate(km KMeans) Clust
+}
+
+type SeqKMeansIterate struct {
+}
+
+func (SeqKMeansIterate) Iterate(km KMeans) Clust {
+	var clust, _ = km.Centroids()
+	var assign = clust.AssignAll(km.Data, km.Space)
+	var result = make(Clust, len(clust))
+
+	for k, cluster := range assign {
+		if len(cluster) != 0 {
+			result[k] = DBA(cluster, km.Space)
+		}
+	}
+
+	return result
+}
+
+func NewKMeans(conf KMeansConf, initializer Initializer) KMeans {
 	var km KMeans
 
-	if k < 1 {
-		panic(fmt.Sprintf("Illegal value for k: %v", k))
+	if conf.K < 1 {
+		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
 	}
 
-	if k < 0 {
-		panic(fmt.Sprintf("Illegal value for iter: %v", k))
+	if conf.K < 0 {
+		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.K))
 	}
 
-	km.iter = iter
-	km.k = k
+	km.KMeansConf = conf
+	km.KMeansSupport = SeqKMeansIterate{}
 	km.initializer = initializer
-	km.space = space
 	km.status = Created
 	km.src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 
@@ -41,11 +66,11 @@ func NewKMeans(k int, iter int, space core.Space, initializer Initializer) KMean
 }
 
 func (km *KMeans) initialize() (error) {
-	if len(km.Data) < km.k {
+	if len(km.Data) < km.K {
 		return errors.New("can't initialize kmeans model centroids, not enough Data")
 	}
 
-	var clust = km.initializer(km.k, km.Data, km.space, km.src)
+	var clust = km.initializer(km.K, km.Data, km.Space, km.src)
 
 	km.clust = clust
 	km.status = Initialized
@@ -80,7 +105,7 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 	case Created:
 		err = fmt.Errorf("no Clust available")
 	default:
-		pred, idx = km.clust.UAssign(elemt, km.space)
+		pred, idx, _ = km.clust.Assign(elemt, km.Space)
 	}
 
 	if push {
@@ -90,23 +115,10 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 	return pred, idx, err
 }
 
-func (km *KMeans) iterate(clust *Clust) {
-	var clusters = clust.Assign(km.Data, km.space)
-	for k, cluster := range clusters {
-		if len(cluster) != 0 {
-			(*clust)[k] = DBA(cluster, km.space)
-		}
-	}
-}
-
 func (km *KMeans) Run() {
-	KMeansLoop(km, km.iterate)
-}
-
-func KMeansLoop(km *KMeans, iteration func(*Clust)) {
 	km.status = Running
 	km.initialize()
-	for iter := 0; iter < km.iter; iter++ {
-		iteration(&km.clust)
+	for iter := 0; iter < km.Iter; iter++ {
+		km.clust = km.Iterate(*km)
 	}
 }

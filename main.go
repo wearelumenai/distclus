@@ -99,7 +99,7 @@ func runMcmc() {
 	var centers, _ = mcmc.Centroids()
 	var labels = make([]int, len(data))
 	for i := range labels {
-		_, labels[i] = centers.UAssign(data[i], space)
+		_, labels[i], _ = centers.Assign(data[i], space)
 	}
 	printLabels(labels, olabels)
 	printCenters(centers, ocenters)

@@ -51,8 +51,7 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 }
 
 func kmClust(space core.RealSpace, batch []core.Elemt) {
-	k := 16
-	var km = algo.NewKMeans(k, 100, space, algo.KmeansPPInitializer)
+	var km = algo.NewKMeans(algo.KMeansConf{16, 100, space}, algo.KmeansPPInitializer)
 	for _, e := range batch {
 		km.Push(e)
 	}

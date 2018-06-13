@@ -2,62 +2,35 @@ package par
 
 import (
 	"distclus/algo"
-	"distclus/core"
 )
 
-type MCMCConf struct {
-	algo.MCMCConf
+type ParMCMCSupport struct {
+	config algo.MCMCConf
 }
 
-type MCMC struct {
-	seq algo.MCMC
-	config MCMCConf
-}
+func (supp ParMCMCSupport) Iterate(m algo.MCMC, k int) algo.Clust {
+	var clust, _ = m.Centroids()
+	var km = NewKMeans(k, 1, supp.config.Space, clust.Initializer)
 
-func NewMCMC(conf MCMCConf, distrib algo.MCMCDistrib) MCMC  {
-	var mcmc MCMC
-
-	mcmc.seq = algo.NewMCMC(conf.MCMCConf, distrib)
-	mcmc.config = conf
-
-	return mcmc
-}
-
-func (mcmc *MCMC) Push(elemt core.Elemt) {
-	mcmc.seq.Push(elemt)
-}
-
-func (mcmc *MCMC) Centroids() (algo.Clust, error) {
-	return mcmc.seq.Centroids()
-}
-
-func (*MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
-	panic("implement me")
-}
-
-// Compute loss proposal based on Clust.Loss
-func (m *MCMC) loss(proposal algo.Clust) float64 {
-	return proposal.Loss(m.seq.Data, m.config.Space, m.config.Norm)
-}
-
-// Make an iterate for a proposal running with kmeans
-func (m *MCMC) iterate(k int, clust *algo.Clust) {
-	var km = algo.NewKMeans(k, 1, m.config.Space, clust.Initializer)
-
-	km.Data = m.seq.Data
+	km.Data = m.Data
 
 	km.Run()
 	km.Close()
 
-	var c, _ = km.Centroids()
-	clust = &c
+	var result, _ = km.Centroids()
+	return result
+
 }
 
-func (mcmc *MCMC) Run() {
-	algo.MCMCLoop(&mcmc.seq, mcmc.iterate, mcmc.loss)
+func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal algo.Clust) float64 {
+	return proposal.Loss(m.Data, supp.config.Space, supp.config.Norm)
 }
 
-func (mcmc *MCMC) Close() {
-	mcmc.seq.Close()
+func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib) algo.MCMC  {
+	var mcmc = algo.NewMCMC(conf, distrib)
+
+	mcmc.MCMCSupport = ParMCMCSupport{conf}
+
+	return mcmc
 }
 

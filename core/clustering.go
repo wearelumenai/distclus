@@ -1,9 +1,8 @@
 package core
 
 import (
-	"fmt"
 	"math"
-	"math/rand"
+	"golang.org/x/exp/rand"
 )
 
 type ClustStatus int
@@ -15,8 +14,6 @@ const (
 	Closed
 )
 
-type Initializer = func(k int, nodes []Elemt, space Space) (Clust, error)
-
 // Online Clust algorithm interface.
 type OnlineClust interface {
 	// Add an element to Clust data set.
@@ -24,7 +21,7 @@ type OnlineClust interface {
 	// Return model current centroids configuration.
 	Centroids() (Clust, error)
 	// Make a prediction on a element and return the associated center and its index.
-	Predict(elemt Elemt) (Elemt, int, error)
+	Predict(elemt Elemt, push bool) (Elemt, int, error)
 	// Run Clust algorithm.
 	Run()
 	// Close algorithm Clust process.
@@ -32,87 +29,35 @@ type OnlineClust interface {
 }
 
 // Indexed clustering result
-type Clust struct {
-	centers []Elemt
-}
-
-// Return centers array pointer
-func (c *Clust) Centers() *[]Elemt {
-	return &c.centers
-}
-
-// Return center at the idx index
-func (c *Clust) Center(idx int) Elemt {
-	return c.centers[idx]
-}
-
-// Set centers
-func (c *Clust) SetCenters(centers []Elemt) {
-	c.centers = centers
-}
+type Clust []Elemt
 
 // Assign elements on elemts at each centers
-func (c* Clust) Assign(elemts *[]Elemt, space Space) [][]Elemt {
-	var clusters = make([][]Elemt, len(c.centers))
-	for _, elemt := range *elemts {
-		var idx = assign(elemt, c.centers, space)
+func (c Clust) Assign(elemts []Elemt, space Space) [][]Elemt {
+	var clusters = make([][]Elemt, len(c))
+	for _, elemt := range elemts {
+		var idx = assign(elemt, c, space)
 		clusters[idx] = append(clusters[idx], elemt)
 	}
 	return clusters
 }
 
 // Assign a element to a center and return the center and its index
-func (c* Clust) UAssign(elemt Elemt, space Space) (center Elemt, idx int) {
-	idx = assign(elemt, c.centers, space)
-	return c.Center(idx), idx
+func (c Clust) UAssign(elemt Elemt, space Space) (center Elemt, idx int) {
+	idx = assign(elemt, c, space)
+	return c[idx], idx
 }
 
 // Compute loss of centers configuration with given data
-func (c *Clust) Loss(data *[]Elemt, space Space, norm float64) float64 {
+func (c Clust) Loss(data []Elemt, space Space, norm float64) float64 {
 	var sum float64
-	for _, elemt := range *data {
+	for _, elemt := range data {
 		var min = math.MaxFloat64
-		for _, center := range c.centers {
+		for _, center := range c {
 			min = math.Min(min, math.Pow(space.dist(elemt, center), norm))
 		}
 		sum += min
 	}
-	return sum / float64(len(*data))
-}
-
-// Clustering constructor
-func NewClustering(centroids []Elemt) (Clust, error) {
-	var c Clust
-	if len(centroids) < 1 {
-		return c, fmt.Errorf("centroids collection is empty")
-	}
-	return Clust{centroids}, nil
-}
-
-// Random initializer for Clust model.
-func NewRandClustering(k int, elemts []Elemt) Clust {
-	//TODO: Pass seed
-	if len(elemts) < k {
-		panic("not enough elements to initialize")
-	}
-	var centroids = make([]Elemt, k)
-	var choices = make([]int, 0)
-	var i int
-	for i < k {
-		choice := rand.Intn(len(elemts))
-		find := false
-		for _, v := range choices {
-			if v == choice {
-				find = true
-			}
-		}
-		if !find {
-			centroids[i] = elemts[choice]
-			choices = append(choices, choice)
-			i++
-		}
-	}
-	return Clust{centroids}
+	return sum / float64(len(data))
 }
 
 // Returns the index of the closest element to elemt in elemts.
@@ -151,10 +96,6 @@ func mean(elemts []Elemt, space Space) Elemt {
 	return mean
 }
 
-// Random clustering initializer
-func RandInitializer(k int, elemts []Elemt, _ Space) (c Clust, err error) {
-	if p := recover(); p != nil {
-		return c, fmt.Errorf("%v", p)
-	}
-	return NewRandClustering(k, elemts), err
+func (c Clust) initializer(k int, nodes []Elemt, space Space, src *rand.Rand) Clust {
+	return c
 }

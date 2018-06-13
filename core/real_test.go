@@ -170,7 +170,7 @@ func TestRandomInitKMeans(t *testing.T) {
 	km.Run()
 	km.Close()
 	var clust = km.clust
-	if len(clust.centers) != 3 {
+	if len(clust) != 3 {
 		t.Errorf("Expected 3, got %v", 3)
 	}
 }
@@ -185,22 +185,24 @@ func TestDeterminedInitKMeans(t *testing.T) {
 	data[5] = []float64{42, 41.2, 42, 40.2, 45}
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
+
 	var localSpace = RealSpace{}
-	var init = func(k int, elemts []Elemt, space Space) (Clust, error) {
-		var centroids = make([]Elemt, 3)
-		centroids[0] = []float64{7.2, 6, 8, 11, 10}
-		centroids[1] = []float64{-9, -10, -8, -8, -7.5}
-		centroids[2] = []float64{42, 41.2, 42.2, 40.2, 45}
-		var c, _ = NewClustering(centroids)
-		return c, nil
+
+	var init = func(k int, elemts []Elemt, space Space, _ *rand.Rand) Clust {
+		var clust = make(Clust, 3)
+		clust[0] = []float64{7.2, 6, 8, 11, 10}
+		clust[1] = []float64{-9, -10, -8, -8, -7.5}
+		clust[2] = []float64{42, 41.2, 42.2, 40.2, 45}
+		return clust
 	}
+
 	var km = NewKMeans(3, 10, localSpace, init)
 	for _, elt := range data {
 		km.Push(elt)
 	}
 	km.Run()
 	km.Close()
-	var clusters = km.clust.Assign(&data, localSpace)
+	var clusters = km.clust.Assign(data, localSpace)
 	var c1 = len(clusters[0])
 	if c1 != 3 {
 		t.Errorf("Expected 3, got %v", c1)
@@ -226,10 +228,10 @@ func TestMCMC(t *testing.T) {
 	data[6] = []float64{42, 41.2, 42.2, 40.2, 45}
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = RealSpace{}
-	var mcmcConf =  MCMCConf{
-		Dim: 5, FrameSize: 8, B: 100, Amp: 1,
-		Norm: 2, Nu: 1, InitK: 3, McmcIter: 3,
-		InitIter: 1, Initializer:RandInitializer, Space: space,
+	var mcmcConf = MCMCConf{
+		Dim:      5, FrameSize: 8, B: 100, Amp: 1,
+		Norm:     2, Nu: 1, InitK: 3, McmcIter: 3,
+		InitIter: 1, Initializer: RandInitializer, Space: space,
 	}
 	var distrib, ok = NewMultivT(MultivTConf{mcmcConf})
 	if !ok {
@@ -242,7 +244,7 @@ func TestMCMC(t *testing.T) {
 	mcmc.Run()
 	mcmc.Close()
 	var clust, _ = mcmc.Centroids()
-	res := len(clust.centers)
+	res := len(clust)
 	if res != 3 {
 		t.Errorf("Expected 3, got %v", res)
 	}
@@ -260,8 +262,8 @@ func TestKmeansPP(t *testing.T) {
 	data[7] = []float64{50, 51.2, 49, 40, 45.2}
 	var space = RealSpace{}
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = KmeansPP(3, &data, space, src)
-	res := len(clust.centers)
+	var clust = KmeansPPInitializer(3, data, space, src)
+	res := len(clust)
 	if res != 3 {
 		t.Errorf("Expected 3, got %v", res)
 	}

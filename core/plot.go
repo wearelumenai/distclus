@@ -9,9 +9,9 @@ import (
 	"gonum.org/v1/plot/vg"
 )
 
-func PlotClust(clust Clust, batch *[]Elemt, space Space, title, xLab, yLab, png string) {
+func PlotClust(clust Clust, batch []Elemt, space Space, title, xLab, yLab, png string) {
 	var clusts = clust.Assign(batch, space)
-	k := len(*clust.Centers())
+	k := len(clust)
 	p, err := plot.New()
 	if err != nil {
 		panic(err)
@@ -31,7 +31,7 @@ func PlotClust(clust Clust, batch *[]Elemt, space Space, title, xLab, yLab, png 
 	}
 	cpts := make(plotter.XYs, k)
 	for i := range pts {
-		c := clust.Center(i).([]float64)
+		c := clust[i].([]float64)
 		cpts[i].X = c[0]
 		cpts[i].Y = c[1]
 	}

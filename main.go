@@ -140,7 +140,7 @@ func printCenters(res core.Clust, out *string) {
 	}
 	var writer = csv.NewWriter(o)
 	defer writer.Flush()
-	for _, label := range *res.Centers() {
+	for _, label := range res {
 		err := writer.Write([]string{fmt.Sprint(label)})
 		if err != nil {
 			panic (fmt.Sprintf("Cannot write to file %s", err))
@@ -148,13 +148,16 @@ func printCenters(res core.Clust, out *string) {
 	}
 }
 
-func parseInitializer(init string) (initializer func(k int, elemts []core.Elemt, space core.Space) (c core.Clust, err error)) {
+func parseInitializer(init string) core.Initializer {
+	var initializer core.Initializer
+
 	switch init {
 	case "random":
 		initializer = core.KmeansPPInitializer
 	case "kmeans++":
 		initializer = core.RandInitializer
 	}
+
 	return initializer
 }
 

@@ -43,9 +43,9 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 	mcmc.Run()
 	mcmc.Close()
 	var centers, _ = mcmc.Centroids()
-	k := len(*centers.Centers())
+	k := len(centers)
 	println("centers: ", k)
-	core.PlotClust(centers, &batch, space, "s1MCMC", "X", "Y", "s1MCMC")
+	core.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1MCMC")
 }
 
 func kmClust(space core.RealSpace, batch []core.Elemt) {
@@ -57,7 +57,7 @@ func kmClust(space core.RealSpace, batch []core.Elemt) {
 	km.Run()
 	km.Close()
 	var centers, _ = km.Centroids()
-	core.PlotClust(centers, &batch, space, "s1MCMC", "X", "Y", "s1Kmeans")
+	core.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1Kmeans")
 }
 
 func main() {

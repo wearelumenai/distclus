@@ -1,9 +1,10 @@
-package core
+package algo
 
 import (
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distmv"
+	"distclus/core"
 )
 
 // Configuration for multivariateT distribution
@@ -43,7 +44,7 @@ func NewMultivT(c MultivTConf) (m MultivT, ok bool) {
 }
 
 // Sample from a (uncorrelated) multivariate t distribution
-func (m MultivT) Sample(mu Elemt) Elemt {
+func (m MultivT) Sample(mu core.Elemt) core.Elemt {
 	var mu_ = mu.([]float64)
 	var dim = len(mu_)
 	var res = make([]float64, dim)
@@ -55,7 +56,7 @@ func (m MultivT) Sample(mu Elemt) Elemt {
 }
 
 // Density of a (uncorrelated) multivariate t distribution
-func (m MultivT) Pdf(mu, x Elemt) float64 {
+func (m MultivT) Pdf(mu, x core.Elemt) float64 {
 	var mu_ = mu.([]float64)
 	var x_ = x.([]float64)
 	var dif = make([]float64, len(mu_))

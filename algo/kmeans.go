@@ -1,24 +1,25 @@
-package core
+package algo
 
 import (
 	"errors"
 	"fmt"
 	"time"
 	"golang.org/x/exp/rand"
+	"distclus/core"
 )
 
 type KMeans struct {
 	iter        int
 	k           int
-	data        []Elemt
-	space       Space
+	data        []core.Elemt
+	space       core.Space
 	status      ClustStatus
 	initializer Initializer
 	clust       Clust
 	src         *rand.Rand
 }
 
-func NewKMeans(k int, iter int, space Space, initializer Initializer) KMeans {
+func NewKMeans(k int, iter int, space core.Space, initializer Initializer) KMeans {
 	var km KMeans
 
 	if k < 1 {
@@ -62,7 +63,7 @@ func (km *KMeans) Centroids() (c Clust, err error) {
 	return c, err
 }
 
-func (km *KMeans) Push(elemt Elemt) {
+func (km *KMeans) Push(elemt core.Elemt) {
 	km.data = append(km.data, elemt)
 }
 
@@ -70,8 +71,8 @@ func (km *KMeans) Close() {
 	km.status = Closed
 }
 
-func (km *KMeans) Predict(elemt Elemt, push bool) (Elemt, int, error) {
-	var pred Elemt
+func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
+	var pred core.Elemt
 	var idx int
 	var err error
 

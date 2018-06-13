@@ -1,18 +1,19 @@
-package core
+package algo
 
 import (
 	"fmt"
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
+	"distclus/core"
 )
 
 // MCMC distribution interface
 type MCMCDistrib interface {
 	// Sample from a distribution with mu expectancy
-	Sample(mu Elemt) Elemt
+	Sample(mu core.Elemt) core.Elemt
 	// Density from a distribution with mu expectancy and x point
-	Pdf(x, mu Elemt) float64
+	Pdf(x, mu core.Elemt) float64
 }
 
 type MCMCConf struct {
@@ -32,7 +33,7 @@ type MCMCConf struct {
 	McmcIter, InitIter int
 	probaK             []float64
 	// Space where data are include
-	Space Space
+	Space core.Space
 	// Centers initializer
 	Initializer Initializer
 	// Random source seed
@@ -66,7 +67,7 @@ type MCMC struct {
 	distrib MCMCDistrib
 	uniform distuv.Uniform
 	store   map[int]Clust
-	data    []Elemt
+	data    []core.Elemt
 	cur     Clust
 	status  ClustStatus
 	src     *rand.Rand
@@ -91,7 +92,7 @@ func (m *MCMC) loss(proposal Clust) float64 {
 	return proposal.Loss(m.data, m.config.Space, m.config.Norm)
 }
 
-func (m *MCMC) Push(elemt Elemt) {
+func (m *MCMC) Push(elemt core.Elemt) {
 	m.data = append(m.data, elemt)
 }
 
@@ -109,8 +110,8 @@ func (m *MCMC) Centroids() (Clust, error) {
 	return clust, err
 }
 
-func (m *MCMC) Predict(elemt Elemt, push bool) (Elemt, int, error) {
-	var pred Elemt
+func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
+	var pred core.Elemt
 	var idx int
 	var err error
 

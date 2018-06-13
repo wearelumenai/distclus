@@ -1,11 +1,14 @@
-package core
+package algo
 
-import "golang.org/x/exp/rand"
+import (
+	"golang.org/x/exp/rand"
+	"distclus/core"
+)
 
-type Initializer = func(k int, nodes []Elemt, space Space, src *rand.Rand) Clust
+type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust
 
 // Run au kmeans++ on a batch to return a k centers configuration
-func KmeansPPInitializer(k int, elemts []Elemt, space Space, src *rand.Rand) Clust {
+func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	if k < 1 {
 		panic("k is lower than 1")
 	}
@@ -25,19 +28,19 @@ func KmeansPPInitializer(k int, elemts []Elemt, space Space, src *rand.Rand) Clu
 }
 
 // Run au kmeans++ iteration on a batch to return a k+1 centers configuration
-func KmeansPPIter(clust Clust, batch []Elemt, space Space, src *rand.Rand) Clust {
+func KmeansPPIter(clust Clust, batch []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	var dists = make([]float64, len(batch))
 
 	for i, elt := range batch {
 		var center, _ = clust.UAssign(elt, space)
-		dists[i] = space.dist(elt, center)
+		dists[i] = space.Dist(elt, center)
 	}
 
 	return append(clust, batch[WeightedChoice(dists, src)])
 }
 
 // Random clustering initializer
-func RandInitializer(k int, elemts []Elemt, _ Space, src *rand.Rand) Clust {
+func RandInitializer(k int, elemts []core.Elemt, _ core.Space, src *rand.Rand) Clust {
 	if len(elemts) < k {
 		panic("not enough elements to initialize")
 	}

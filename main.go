@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"distclus/core"
+	"distclus/algo"
 )
 
 var (
@@ -71,7 +72,7 @@ func runMcmc() {
 	if *mcmcFrameSize < 1 {
 		*mcmcFrameSize = len(data)
 	}
-	var mcmcConf = core.MCMCConf{
+	var mcmcConf = algo.MCMCConf{
 		Dim:         dim,
 		FrameSize:   *mcmcFrameSize,
 		B:           *mcmcB,
@@ -85,11 +86,11 @@ func runMcmc() {
 		Initializer: initializer,
 		Seed:        uint64(*seed),
 	}
-	var distrib, ok = core.NewMultivT(core.MultivTConf{mcmcConf})
+	var distrib, ok = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 	if !ok{
 		panic("can't initialize mcmc")
 	}
-	var mcmc = core.NewMCMC(mcmcConf, &distrib)
+	var mcmc = algo.NewMCMC(mcmcConf, &distrib)
 	for _, elt := range data {
 		mcmc.Push(elt)
 	}
@@ -126,7 +127,7 @@ func printLabels(res []int, out *string) {
 	}
 }
 
-func printCenters(res core.Clust, out *string) {
+func printCenters(res algo.Clust, out *string) {
 	var o io.Writer
 	if len(*out) != 0{
 		var f, err = os.Create(*out)
@@ -148,14 +149,14 @@ func printCenters(res core.Clust, out *string) {
 	}
 }
 
-func parseInitializer(init string) core.Initializer {
-	var initializer core.Initializer
+func parseInitializer(init string) algo.Initializer {
+	var initializer algo.Initializer
 
 	switch init {
 	case "random":
-		initializer = core.KmeansPPInitializer
+		initializer = algo.KmeansPPInitializer
 	case "kmeans++":
-		initializer = core.RandInitializer
+		initializer = algo.RandInitializer
 	}
 
 	return initializer

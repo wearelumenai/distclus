@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"distclus/core"
 	"time"
+	"distclus/algo"
+	"distclus/tools"
 )
 
 func s1Parser(path string) []core.Elemt {
@@ -28,15 +30,15 @@ func s1Parser(path string) []core.Elemt {
 }
 
 func mcmcClust(space core.RealSpace, batch []core.Elemt) {
-	var mcmcConf = core.MCMCConf{
+	var mcmcConf = algo.MCMCConf{
 		Dim:         2, FrameSize: 8, B: 100, Amp: 1,
 		Norm:        2, Nu: 1, InitK: 3, McmcIter: 100,
 		InitIter:    1, Space: space,
-		Initializer: core.KmeansPPInitializer,
+		Initializer: algo.KmeansPPInitializer,
 		Seed:        uint64(time.Now().UTC().Unix()),
 	}
-	var distrib, _ = core.NewMultivT(core.MultivTConf{mcmcConf})
-	var mcmc = core.NewMCMC(mcmcConf, &distrib)
+	var distrib, _ = algo.NewMultivT(algo.MultivTConf{mcmcConf})
+	var mcmc = algo.NewMCMC(mcmcConf, &distrib)
 	for _, elt := range batch {
 		mcmc.Push(elt)
 	}
@@ -45,19 +47,19 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 	var centers, _ = mcmc.Centroids()
 	k := len(centers)
 	println("centers: ", k)
-	core.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1MCMC")
+	tools.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1MCMC")
 }
 
 func kmClust(space core.RealSpace, batch []core.Elemt) {
 	k := 16
-	var km = core.NewKMeans(k, 100, space, core.KmeansPPInitializer)
+	var km = algo.NewKMeans(k, 100, space, algo.KmeansPPInitializer)
 	for _, e := range batch {
 		km.Push(e)
 	}
 	km.Run()
 	km.Close()
 	var centers, _ = km.Centroids()
-	core.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1Kmeans")
+	tools.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1Kmeans")
 }
 
 func main() {

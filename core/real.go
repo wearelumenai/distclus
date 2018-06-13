@@ -27,7 +27,7 @@ func (space RealSpace) checkCombine(elemt1, elemt2 Elemt) ([]float64, []float64)
 }
 
 // Compute euclidean distance between two nodes
-func (space RealSpace) dist(elemt1, elemt2 Elemt) float64 {
+func (space RealSpace) Dist(elemt1, elemt2 Elemt) float64 {
 	e1, e2 := space.checkCombine(elemt1, elemt2)
 	diff := make([]float64, len(e1))
 	for i := 0; i < len(e1); i++ {
@@ -41,7 +41,7 @@ func (space RealSpace) dist(elemt1, elemt2 Elemt) float64 {
 }
 
 // Compute combination between two nodes
-func (space RealSpace) combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) Elemt {
+func (space RealSpace) Combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) Elemt {
 	e1, e2 := space.checkCombine(elemt1, elemt2)
 	dim := len(e1)
 	if weight1 == 0 && weight2 == 0 {

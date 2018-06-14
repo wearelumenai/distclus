@@ -87,16 +87,15 @@ func assign(elemt core.Elemt, elemts []core.Elemt, space core.Space) (int, float
 // Return the DBA of nodes based on the core.Space combination method.
 // If nodes are empty function panic.
 func DBA(elemts []core.Elemt, space core.Space) core.Elemt {
-	l := len(elemts)
 
-	if l < 1 {
+	if l := len(elemts); l < 1 {
 		panic("elemts are empty")
 	}
 
 	var mean = elemts[0]
 	var weight = 1
 
-	for i, _ := range elemts[1:] {
+	for i:=1; i<len(elemts); i++ {
 		mean = space.Combine(elemts[i], 1, mean, weight)
 		weight += 1
 	}

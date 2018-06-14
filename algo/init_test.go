@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 	"golang.org/x/exp/rand"
+	"distclus/core"
 )
 
 func TestWeightedChoice(t *testing.T) {
@@ -20,5 +21,15 @@ func TestWeightedChoice(t *testing.T) {
 	var diff = sum[2] - 80000
 	if diff < 79000 && diff > 81000{
 		t.Errorf("Value out of range")
+	}
+}
+
+func TestDBA(t *testing.T) {
+	var sp = core.RealSpace{}
+	var elemts = []core.Elemt{[]float64{2.}, []float64{4.}}
+	var dba = DBA(elemts, sp)
+
+	if e := dba.([]float64)[0]; e!=3. {
+		t.Error("Expected 3 got", e)
 	}
 }

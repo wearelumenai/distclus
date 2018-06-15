@@ -5,6 +5,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distmv"
 	"distclus/core"
+	"time"
 )
 
 // Configuration for multivariateT distribution
@@ -14,33 +15,40 @@ type MultivTConf struct {
 
 // Real(float64[]) distribution wrapping StudentsT of Gonum
 type MultivT struct {
-	c MultivTConf
-	sigma   mat.Symmetric
-	d       *distmv.StudentsT
-	src     *rand.Rand
+	MultivTConf
+	sigma mat.Symmetric
+	d     *distmv.StudentsT
+	rgen  *rand.Rand
 }
 
 // Constructor for multivT distribution
-func NewMultivT(c MultivTConf) (m MultivT, ok bool) {
-	var sigma = make([]float64, c.Dim*c.Dim)
+func NewMultivT(conf MultivTConf) MultivT {
+	var sigma = make([]float64, conf.Dim*conf.Dim)
 	var nextX int
 	var nextY int
-	var tau = c.Tau()
+	var tau = conf.Tau()
 	for i := range sigma {
-		var x = i/c.Dim
-		var y = i%c.Dim
-		if x == nextX && y == nextY{
+		var x = i / conf.Dim
+		var y = i % conf.Dim
+		if x == nextX && y == nextY {
 			sigma[i] = tau
 			nextX += 1
 			nextY += 1
 		}
 	}
-	m.sigma = mat.NewSymDense(c.Dim, sigma)
-	m.src = rand.New(rand.NewSource(c.Seed))
-	d, ok := distmv.NewStudentsT(make([]float64, c.Dim), m.sigma, c.Nu, m.src)
-	m.d = d
-	m.c = c
-	return m, ok
+	var m = MultivT{}
+	m.sigma = mat.NewSymDense(conf.Dim, sigma)
+
+	if conf.RGen == nil {
+		var seed = uint64(time.Now().UTC().Unix())
+		m.rgen = rand.New(rand.NewSource(seed))
+	} else {
+		m.rgen = conf.RGen
+	}
+
+	m.MultivTConf = conf
+	m.d, _ = distmv.NewStudentsT(make([]float64, conf.Dim), m.sigma, conf.Nu, m.rgen)
+	return m
 }
 
 // Sample from a (uncorrelated) multivariate t distribution

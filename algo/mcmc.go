@@ -6,6 +6,9 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 	"distclus/core"
+	"time"
+	"errors"
+	"sync"
 )
 
 // MCMC distribution interface
@@ -34,10 +37,10 @@ type MCMCConf struct {
 	probaK             []float64
 	// Space where Data are include
 	Space core.Space
-	// Centers Initializer
-	Initializer Initializer
 	// Random source seed
-	Seed uint64
+	RGen *rand.Rand
+
+	mu *sync.RWMutex
 }
 
 // Probability for next K (-1, 0, +1)
@@ -67,31 +70,36 @@ type MCMC struct {
 	MCMCSupport
 	Data    []core.Elemt
 	distrib MCMCDistrib
-	uniform distuv.Uniform
-	store   map[int]Clust
-	cur     Clust
-	status  ClustStatus
-	src     *rand.Rand
+	// Centers Initializer
+	initializer Initializer
+	uniform     distuv.Uniform
+	store       map[int]Clust
+	clust       Clust
+	status      ClustStatus
+	rgen        *rand.Rand
+	closing     chan bool
+	closed      chan bool
 }
 
 type MCMCSupport interface {
-	Iterate(MCMC, int) Clust
+	Iterate(MCMC, Clust) Clust
 	Loss(MCMC, Clust) float64
 }
 
 type SeqMCMCSupport struct {
 }
 
-func (SeqMCMCSupport) Iterate(m MCMC, k int) Clust {
-	var clust, _ = m.Centroids()
-	var km = NewKMeans(KMeansConf{k, 1, m.Space}, clust.Initializer)
+func (SeqMCMCSupport) Iterate(m MCMC, clust Clust) Clust {
+	conf := KMeansConf{len(clust), 1, m.Space, m.rgen}
+	var km = NewKMeans(conf, clust.Initializer)
 
 	km.Data = m.Data
 
-	km.Run()
+	km.Run(false)
 	km.Close()
 
 	var result, _ = km.Centroids()
+
 	return result
 }
 
@@ -101,11 +109,11 @@ func (SeqMCMCSupport) Loss(m MCMC, proposal Clust) float64 {
 
 // initialise a configuration of K centers
 func (m *MCMC) initialize(k int) Clust {
-	var km = NewKMeans(KMeansConf{k, m.InitIter, m.Space}, m.Initializer)
+	var km = NewKMeans(KMeansConf{k, m.InitIter, m.Space, m.rgen}, m.initializer)
 
 	km.Data = m.Data
 
-	km.Run()
+	km.Run(false)
 	km.Close()
 
 	var clust, _ = km.Centroids()
@@ -113,61 +121,79 @@ func (m *MCMC) initialize(k int) Clust {
 }
 
 // Constructor for MCMC
-func NewMCMC(conf MCMCConf, distrib MCMCDistrib) MCMC {
-	var m MCMC
+func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 
+	if conf.InitK < 1 {
+		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
+	}
+
+	if conf.McmcIter < 0 {
+		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.McmcIter))
+	}
+
+	var m MCMC
 	m.MCMCConf = conf
 	m.MCMCSupport = SeqMCMCSupport{}
 	m.store = make(map[int]Clust)
 	m.status = Created
+	m.initializer = initializer
 	m.distrib = distrib
-	m.src = rand.New(rand.NewSource(conf.Seed))
-	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.src}
+
+	if conf.RGen == nil {
+		var seed = uint64(time.Now().UTC().Unix())
+		m.rgen = rand.New(rand.NewSource(seed))
+	} else {
+		m.rgen = conf.RGen
+	}
+
+	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.rgen}
+	m.closing = make(chan bool, 1)
+	m.closed = make(chan bool, 1)
+	m.mu = &sync.RWMutex{}
 
 	return m
 }
 
-func (m *MCMC) Push(elemt core.Elemt) {
-	m.Data = append(m.Data, elemt)
-}
-
-func (m *MCMC) Centroids() (Clust, error) {
-	var clust Clust
-	var err error
-
+func (m *MCMC) Centroids() (c Clust, err error) {
 	switch m.status {
 	case Created:
-		err = fmt.Errorf("no Clust available")
+		err = fmt.Errorf("clustering not started")
 	default:
-		clust = m.cur
+		c = m.clust
 	}
 
-	return clust, err
+	return
+}
+
+func (m *MCMC) Push(elemt core.Elemt) (err error) {
+	switch m.status {
+	case Closed:
+		err = errors.New("clustering ended")
+	default:
+		m.Data = append(m.Data, elemt)
+	}
+
+	return err
 }
 
 func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	var pred core.Elemt
 	var idx int
-	var err error
 
-	switch m.status {
-	case Created:
-		err = fmt.Errorf("no Clust available")
-	default:
-		var clust, _ = m.Centroids()
+	var clust, err = m.Centroids()
+
+	if err == nil {
 		pred, idx, _ = clust.Assign(elemt, m.Space)
-	}
-
-	if push {
-		m.Push(elemt)
+		if push {
+			err = m.Push(elemt)
+		}
 	}
 
 	return pred, idx, err
 }
 
 // Alter a proposal using MCMC distribution
-func (m *MCMC) alter() Clust {
-	var clust, _ = m.Centroids()
+func (m *MCMC) alter(clust Clust) Clust {
 	var result = make(Clust, len(clust))
 
 	for i := range clust {
@@ -181,7 +207,7 @@ func (m *MCMC) alter() Clust {
 func (m *MCMC) proba(x, mu Clust) (p float64) {
 	p = 1.0
 	for i := range x {
-		p *= m.distrib.Pdf(x[i], mu[i])
+		p *= m.distrib.Pdf(mu[i], x[i])
 	}
 	return p
 }
@@ -202,36 +228,54 @@ func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool
 	return m.uniform.Rand() < rho
 }
 
-func (m *MCMC) Run() {
+func (m *MCMC) Run(async bool) {
 	m.status = Running
+
 	var curK = m.InitK
-	m.cur = m.initialize(curK)
+	m.clust = m.initialize(curK)
 
-	var curLoss = m.Loss(*m, m.cur)
-	var curPdf = m.proba(m.cur, m.cur)
+	var do = func() {
+		var curLoss = m.Loss(*m, m.clust)
+		var curPdf = m.proba(m.clust, m.clust)
 
-	for i := 0; i < m.McmcIter; i++ {
-		var propK = m.nextK(curK)
-		var propCenters = m.GetCenters(propK, m.cur)
+		for i, loop := 0, true; i < m.McmcIter && loop; i++ {
+			select {
+			case <-m.closing:
+				loop = false
+			default:
+				var propK = m.nextK(curK)
+				var propCenters = m.GetCenters(propK, m.clust)
 
-		propCenters = m.Iterate(*m, propK)
-		var prop = m.alter()
+				propCenters = m.Iterate(*m, propCenters)
 
-		var propLoss = m.Loss(*m, prop)
-		var propPdf = m.proba(prop, propCenters)
+				var prop = m.alter(propCenters)
 
-		if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
-			curK = propK
-			m.cur = propCenters
-			curLoss = propLoss
-			curPdf = propPdf
-			m.setCenters(m.cur)
+				var propLoss = m.Loss(*m, prop)
+				var propPdf = m.proba(prop, propCenters)
+
+				if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
+					curK = propK
+					m.clust = prop
+					curLoss = propLoss
+					curPdf = propPdf
+					m.setCenters(m.clust)
+				}
+			}
 		}
+		m.status = Closed
+		m.closed <- true
+	}
+
+	if async {
+		go do()
+	} else {
+		do()
 	}
 }
 
 func (m *MCMC) Close() {
-	m.status = Closed
+	m.closing <- true
+	<-m.closed
 }
 
 // Get a configuration center(retrieve from store if K is exist else create with genCenters
@@ -253,33 +297,31 @@ func (m *MCMC) setCenters(clust Clust) {
 
 // Generate a configuration of K centers based on previous configuration
 func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
-	var err error
 	var prevK = len(prev)
 
 	if prevK < k {
-		clust = KmeansPPIter(prev, m.Data, m.Space, m.src)
+		clust = make(Clust, k)
+		copy(clust, prev)
+		clust[k-1] = KmeansPPIter(prev, m.Data, m.Space, m.rgen)
 	}
 
 	if prevK > k {
-		var del = m.src.Intn(prevK)
-		var centers = prev
-		clust = append(centers[:del], centers[del+1:]...)
+		var del = m.rgen.Intn(prevK)
+		clust = make(Clust, k)
+		copy(clust[:del], prev[:del])
+		copy(clust[del:], prev[del+1:])
 	}
 
 	if prevK == k {
 		clust = prev
 	}
 
-	if err != nil {
-		panic(err)
-	}
-
-	return clust
+	return
 }
 
 // Compute next centers number based on ProbaK
 func (m *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.ProbaK(), m.src)]
+	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.ProbaK(), m.rgen)]
 
 	if newK < 1 {
 		return 1

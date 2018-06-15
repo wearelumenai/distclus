@@ -4,13 +4,13 @@ import (
 	"math"
 	"golang.org/x/exp/rand"
 	"distclus/core"
+	"errors"
 )
 
 type ClustStatus int
 
 const (
 	Created     ClustStatus = iota
-	Initialized
 	Running
 	Closed
 )
@@ -18,13 +18,13 @@ const (
 // Online Clust algorithm interface.
 type OnlineClust interface {
 	// Add an element to Clust Data set.
-	Push(elemt core.Elemt)
+	Push(elemt core.Elemt) error
 	// Return model current centroids configuration.
 	Centroids() (Clust, error)
 	// Make a prediction on a element and return the associated center and its index.
 	Predict(elemt core.Elemt, push bool) (core.Elemt, int, error)
 	// Run Clust algorithm.
-	Run()
+	Run(async bool)
 	// Close algorithm Clust process.
 	Close()
 }
@@ -32,7 +32,7 @@ type OnlineClust interface {
 // Indexed clustering result
 type Clust []core.Elemt
 
-// AssignAll elements on elemts at each centers
+// AssignAll testElemts on elemts at each centers
 func (c Clust) AssignAll(elemts []core.Elemt, space core.Space) [][]core.Elemt {
 	var clusters = make([][]core.Elemt, len(c))
 	for _, elemt := range elemts {
@@ -62,21 +62,22 @@ func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 }
 
 // Returns the index of the closest element to elemt in elemts.
-func assign(elemt core.Elemt, elemts []core.Elemt, space core.Space) (int, float64) {
-	if len(elemts) < 1 {
-		panic("elemts collection is empty")
+func assign(elemt core.Elemt, clust Clust, space core.Space) (int, float64) {
+
+	if len(clust)<1{
+		panic("empty clust")
 	}
 
-	distances := make([]float64, len(elemts))
-	for i, node := range elemts {
+	distances := make([]float64, len(clust))
+	for i, node := range clust {
 		distances[i] = space.Dist(elemt, node)
 	}
 
 	var lowest = distances[0]
 	var index int
-	for i, dist := range distances {
-		if dist < lowest {
-			lowest = dist
+	for i := 1; i < len(distances); i++ {
+		if distances[i] < lowest {
+			lowest = distances[i]
 			index = i
 		}
 	}
@@ -86,23 +87,24 @@ func assign(elemt core.Elemt, elemts []core.Elemt, space core.Space) (int, float
 
 // Return the DBA of nodes based on the core.Space combination method.
 // If nodes are empty function panic.
-func DBA(elemts []core.Elemt, space core.Space) core.Elemt {
+func DBA(elemts []core.Elemt, space core.Space) (dba core.Elemt, err error) {
 
 	if l := len(elemts); l < 1 {
-		panic("elemts are empty")
+		err = errors.New("elemts are empty")
+		return
 	}
 
-	var mean = elemts[0]
+	dba = elemts[0]
 	var weight = 1
 
 	for i:=1; i<len(elemts); i++ {
-		mean = space.Combine(elemts[i], 1, mean, weight)
+		dba = space.Combine(elemts[i], 1, dba, weight)
 		weight += 1
 	}
 
-	return mean
+	return
 }
 
-func (c Clust) Initializer(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust {
+func (c Clust) Initializer(int, []core.Elemt, core.Space, *rand.Rand) Clust {
 	return c
 }

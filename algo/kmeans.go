@@ -1,17 +1,18 @@
 package algo
 
 import (
-	"errors"
 	"fmt"
 	"time"
 	"golang.org/x/exp/rand"
 	"distclus/core"
+	"errors"
 )
 
 type KMeansConf struct {
 	K     int
 	Iter  int
 	Space core.Space
+	RGen  *rand.Rand
 }
 
 type KMeans struct {
@@ -21,24 +22,27 @@ type KMeans struct {
 	status      ClustStatus
 	initializer Initializer
 	clust       Clust
-	src         *rand.Rand
+	rgen        *rand.Rand
+	closing     chan bool
+	closed      chan bool
 }
 
 type KMeansSupport interface {
-	Iterate(km KMeans) Clust
+	Iterate(km KMeans, proposal Clust) Clust
 }
 
 type SeqKMeansIterate struct {
 }
 
-func (SeqKMeansIterate) Iterate(km KMeans) Clust {
-	var clust, _ = km.Centroids()
+func (SeqKMeansIterate) Iterate(km KMeans, clust Clust) Clust {
 	var assign = clust.AssignAll(km.Data, km.Space)
 	var result = make(Clust, len(clust))
 
 	for k, cluster := range assign {
 		if len(cluster) != 0 {
-			result[k] = DBA(cluster, km.Space)
+			result[k], _ = DBA(cluster, km.Space)
+		} else {
+			result[k] = clust[k]
 		}
 	}
 
@@ -46,79 +50,98 @@ func (SeqKMeansIterate) Iterate(km KMeans) Clust {
 }
 
 func NewKMeans(conf KMeansConf, initializer Initializer) KMeans {
-	var km KMeans
 
 	if conf.K < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
 	}
 
-	if conf.K < 0 {
-		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.K))
+	if conf.Iter < 0 {
+		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.Iter))
 	}
 
+	var km KMeans
 	km.KMeansConf = conf
 	km.KMeansSupport = SeqKMeansIterate{}
 	km.initializer = initializer
 	km.status = Created
-	km.src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 
-	return km
-}
-
-func (km *KMeans) initialize() (error) {
-	if len(km.Data) < km.K {
-		return errors.New("can't initialize kmeans model centroids, not enough Data")
+	if conf.RGen == nil {
+		var seed = uint64(time.Now().UTC().Unix())
+		km.rgen = rand.New(rand.NewSource(seed))
+	} else {
+		km.rgen = conf.RGen
 	}
 
-	var clust = km.initializer(km.K, km.Data, km.Space, km.src)
+	km.closing = make(chan bool, 1)
+	km.closed = make(chan bool, 1)
 
-	km.clust = clust
-	km.status = Initialized
-	return nil
+	return km
 }
 
 func (km *KMeans) Centroids() (c Clust, err error) {
 	switch km.status {
 	case Created:
-		err = fmt.Errorf("no Clust available")
+		err = fmt.Errorf("clustering not started")
 	default:
 		c = km.clust
 	}
 
-	return c, err
+	return
 }
 
-func (km *KMeans) Push(elemt core.Elemt) {
-	km.Data = append(km.Data, elemt)
+func (km *KMeans) Push(elemt core.Elemt) (err error) {
+	switch km.status {
+	case Closed:
+		err = errors.New("clustering ended")
+	default:
+		km.Data = append(km.Data, elemt)
+	}
+
+	return err
 }
 
 func (km *KMeans) Close() {
-	km.status = Closed
+	km.closing <- true
+	<-km.closed
 }
 
 func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	var pred core.Elemt
 	var idx int
-	var err error
 
-	switch km.status {
-	case Created:
-		err = fmt.Errorf("no Clust available")
-	default:
-		pred, idx, _ = km.clust.Assign(elemt, km.Space)
-	}
+	var clust, err = km.Centroids()
 
-	if push {
-		km.Push(elemt)
+	if err == nil {
+		pred, idx, _ = clust.Assign(elemt, km.Space)
+		if push {
+			err = km.Push(elemt)
+		}
 	}
 
 	return pred, idx, err
 }
 
-func (km *KMeans) Run() {
+func (km *KMeans) Run(async bool) {
 	km.status = Running
-	km.initialize()
-	for iter := 0; iter < km.Iter; iter++ {
-		km.clust = km.Iterate(*km)
+	km.clust = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
+
+	var do = func() {
+		for iter, loop := 0, true; iter < km.Iter && loop; iter++ {
+			select {
+			case <-km.closing:
+				loop = false
+			default:
+				km.clust = km.Iterate(*km, km.clust)
+			}
+		}
+
+		km.status = Closed
+		km.closed <- true
+	}
+
+	if async {
+		go do()
+	} else {
+		do()
 	}
 }

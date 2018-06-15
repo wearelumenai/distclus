@@ -5,6 +5,7 @@ import (
 	"time"
 	"golang.org/x/exp/rand"
 	"distclus/core"
+	"reflect"
 )
 
 func TestWeightedChoice(t *testing.T) {
@@ -24,40 +25,72 @@ func TestWeightedChoice(t *testing.T) {
 	}
 }
 
-func TestDBA(t *testing.T) {
-	var sp = core.RealSpace{}
-	var elemts = []core.Elemt{[]float64{2.}, []float64{4.}}
+func TestGivenInitializer(t *testing.T) {
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	var clust = GivenInitializer(4, testElemts, core.RealSpace{}, src)
 
-	var dba = DBA(elemts, sp)
-	if e := dba.([]float64)[0]; e != 3. {
-		t.Error("Expected 3 got", e)
+	if l := len(clust) ; l != 4 {
+		t.Error("Expected 4 centers got", l)
 	}
 
-	elemts = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.}, []float64{6.},
-		[]float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{3.},
-		[]float64{1.}, []float64{-1.}, []float64{4.}}
-
-	var s = 0.
-	for i := 0; i < len(elemts); i++ {
-		s += (elemts[i]).([]float64)[0]
+	for i:= 0; i<4; i++ {
+		if !reflect.DeepEqual(clust[i], testElemts[i]) {
+			t.Error("Expected", testElemts[i], "got", clust[i])
+		}
 	}
-	dba = DBA(elemts, sp)
+}
 
-	var m = s / float64(len(elemts))
-	var e = dba.([]float64)[0]
-	if m != e {
-		t.Error("Expected", m, "got", e)
-	}
+func TestKmeansPPInitializer(t *testing.T) {
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	var clust = KmeansPPInitializer(14, testElemts, core.RealSpace{}, src)
 
-	var elemts2 = make([]core.Elemt, len(elemts))
-	for i := range elemts {
-		e := (elemts[i]).([]float64)[0]
-		elemts2[i] = []float64{e, 2*e}
+	if l := len(clust) ; l != 14 {
+		t.Error("Expected 4 centers got", l)
 	}
 
-	var dba2 = DBA(elemts2, sp)
-	var ee = dba2.([]float64)
-	if ee[0] != m || ee[1] != 2*m {
-		t.Error("Expected [m m] got", ee)
+	for i:= 0; i<14; i++ {
+		for j:=0; j<14; j++ {
+			if i!=j && reflect.DeepEqual(clust[i], clust[j]) {
+				t.Error("Expected distinct centers")
+			}
+		}
 	}
+}
+
+func TestRandInitializer(t *testing.T) {
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	var clust = RandInitializer(14, testElemts, core.RealSpace{}, src)
+
+	if l := len(clust) ; l != 14 {
+		t.Error("Expected 4 centers got", l)
+	}
+
+	for i:= 0; i<14; i++ {
+		for j:=0; j<14; j++ {
+			if i!=j && reflect.DeepEqual(clust[i], clust[j]) {
+				t.Error("Expected distinct centers")
+			}
+		}
+	}
+}
+
+func TestCheckInitialization(t *testing.T) {
+
+	var testPanic = func() {
+		if x := recover(); x == nil {
+			t.Error("Expected error")
+		}
+	}
+
+	func() {
+		defer testPanic()
+
+		check(0, data)
+	}()
+
+	func() {
+		defer testPanic()
+
+		check(15, data)
+	}()
 }

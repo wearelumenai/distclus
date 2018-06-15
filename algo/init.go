@@ -7,64 +7,72 @@ import (
 
 type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust
 
-// Run au kmeans++ on a batch to return a K centers configuration
-func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
+func check(k int, elemts []core.Elemt) {
 	if k < 1 {
 		panic("K is lower than 1")
 	}
-
 	if len(elemts) < k {
-		panic("not enough elements to initialize")
+		panic("not enough testElemts to initialize")
 	}
+}
 
-	var idx = src.Intn(len(elemts))
-	var clust = Clust{elemts[idx]}
+// GivenInitializer initializes a clustering algorithm with the k first testElemts.
+func GivenInitializer (k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
+	check(k, elemts)
+
+	var clust = make(Clust, k)
+	copy(clust, elemts)
+
+	return clust
+}
+
+// KmeansPPInitializer initializes a clustering algorithm with kmeans++
+func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
+	check(k, elemts)
+
+	var clust = make(Clust, k)
+	var draw = src.Intn(len(elemts))
+	clust[0] = elemts[draw]
 
 	for i := 1; i < k; i++ {
-		clust = KmeansPPIter(clust, elemts, space, src)
+		clust[i] = KmeansPPIter(clust[:i], elemts, space, src)
 	}
 
 	return clust
 }
 
-// Run au kmeans++ iterate on a batch to return a K+1 centers configuration
-func KmeansPPIter(clust Clust, batch []core.Elemt, space core.Space, src *rand.Rand) Clust {
-	var dists = make([]float64, len(batch))
+// Run au kmeans++ iteration : draw an element the does not belong to clust
+func KmeansPPIter(clust Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) core.Elemt {
+	var dists = make([]float64, len(elemts))
 
-	for i, elt := range batch {
+	for i, elt := range elemts {
 		var _, _, dist = clust.Assign(elt, space)
 		dists[i] = dist
 	}
 
-	return append(clust, batch[WeightedChoice(dists, src)])
+	var draw = WeightedChoice(dists, src)
+	return elemts[draw]
 }
 
-// Random clustering Initializer
+// RandomInitializer initializes a clustering with random testElemts
 func RandInitializer(k int, elemts []core.Elemt, _ core.Space, src *rand.Rand) Clust {
-	if len(elemts) < k {
-		panic("not enough elements to initialize")
-	}
+	check(k, elemts)
 
 	var clust = make(Clust, k)
-	var choices = make([]int, k)
+	var chosen = make(map[int]int)
 	var i int
 
 	for i < k {
 		var choice = src.Intn(len(elemts))
-		var find = false
+		var _, found = chosen[choice]
 
-		for _, v := range choices {
-			if v == choice {
-				find = true
-			}
-		}
-
-		if !find {
+		if !found {
 			clust[i] = elemts[choice]
-			choices[i] = choice
+			chosen[choice] = i
 			i++
 		}
 	}
+
 	return clust
 }
 

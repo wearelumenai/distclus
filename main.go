@@ -10,6 +10,7 @@ import (
 	"io"
 	"distclus/core"
 	"distclus/algo"
+	"golang.org/x/exp/rand"
 )
 
 var (
@@ -61,40 +62,39 @@ func runMcmc() {
 	var data []core.Elemt
 	var dim int
 	var initializer = parseInitializer(*mcmcInitializer)
+	var rgen *rand.Rand
+
 	switch *dtype {
 	case "real":
 		space = core.RealSpace{}
 		data, dim = parseFloatCsv()
 	}
-	if *seed == -1 {
+	if *seed > -1 {
 		*seed = int(time.Now().UTC().Unix())
+		rgen = rand.New(rand.NewSource(uint64(*seed)))
 	}
 	if *mcmcFrameSize < 1 {
 		*mcmcFrameSize = len(data)
 	}
 	var mcmcConf = algo.MCMCConf{
-		Dim:         dim,
-		FrameSize:   *mcmcFrameSize,
-		B:           *mcmcB,
-		Amp:         *mcmcAmp,
-		Norm:        *norm,
-		Nu:          *mcmcNu,
-		InitK:       *mcmcInitK,
-		McmcIter:    *mcmcIter,
-		InitIter:    *mcmcInitIter,
-		Space:       space,
-		Initializer: initializer,
-		Seed:        uint64(*seed),
+		Dim:       dim,
+		FrameSize: *mcmcFrameSize,
+		B:         *mcmcB,
+		Amp:       *mcmcAmp,
+		Norm:      *norm,
+		Nu:        *mcmcNu,
+		InitK:     *mcmcInitK,
+		McmcIter:  *mcmcIter,
+		InitIter:  *mcmcInitIter,
+		Space:     space,
+		RGen:      rgen,
 	}
-	var distrib, ok = algo.NewMultivT(algo.MultivTConf{mcmcConf})
-	if !ok{
-		panic("can't initialize mcmc")
-	}
-	var mcmc = algo.NewMCMC(mcmcConf, &distrib)
+	var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
+	var mcmc = algo.NewMCMC(mcmcConf, &distrib, initializer)
 	for _, elt := range data {
 		mcmc.Push(elt)
 	}
-	mcmc.Run()
+	mcmc.Run(false)
 	mcmc.Close()
 	var centers, _ = mcmc.Centroids()
 	var labels = make([]int, len(data))

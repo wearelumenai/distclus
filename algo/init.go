@@ -17,7 +17,7 @@ func check(k int, elemts []core.Elemt) {
 }
 
 // GivenInitializer initializes a clustering algorithm with the k first testElemts.
-func GivenInitializer (k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
+func GivenInitializer (k int, elemts []core.Elemt, _ core.Space, _ *rand.Rand) Clust {
 	check(k, elemts)
 
 	var clust = make(Clust, k)

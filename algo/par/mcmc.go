@@ -8,8 +8,9 @@ type ParMCMCSupport struct {
 	config algo.MCMCConf
 }
 
-func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust algo.Clust) algo.Clust {
-	var km = NewKMeans(len(clust), 1, supp.config.Space, clust.Initializer)
+func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust algo.Clust, iter int) algo.Clust {
+	var conf = algo.KMeansConf{K: len(clust), Iter: iter, Space: supp.config.Space}
+	var km = NewKMeans(conf, clust.Initializer)
 
 	km.Data = m.Data
 

@@ -10,25 +10,25 @@ type ParKMeansSupport struct {
 	space core.Space
 }
 
-func (iter ParKMeansSupport) Initialize(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) algo.Clust {
+func (support ParKMeansSupport) Initialize(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) algo.Clust {
 	panic("implement me")
 }
 
-func (iter ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.Clust {
-	var assign = clust.AssignAll(km.Data, iter.space)
+func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.Clust {
+	var assign = clust.AssignAll(km.Data, support.space)
 	var result = make(algo.Clust, len(clust))
 
 	for k, cluster := range assign {
 		if len(cluster) != 0 {
-			result[k], _ = algo.DBA(cluster, iter.space)
+			result[k], _ = algo.DBA(cluster, support.space)
 		}
 	}
 
 	return result
 }
 
-func NewKMeans(k int, iter int, space core.Space, initializer algo.Initializer) algo.KMeans {
-	var km = algo.KMeans{}
-	km.KMeansSupport = ParKMeansSupport{space: space}
+func NewKMeans(conf algo.KMeansConf, initializer algo.Initializer) algo.KMeans {
+	var km = algo.NewKMeans(conf, initializer)
+	km.KMeansSupport = ParKMeansSupport{space: conf.Space}
 	return km
 }

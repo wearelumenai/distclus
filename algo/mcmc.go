@@ -82,15 +82,15 @@ type MCMC struct {
 }
 
 type MCMCSupport interface {
-	Iterate(MCMC, Clust) Clust
+	Iterate(MCMC, Clust, int) Clust
 	Loss(MCMC, Clust) float64
 }
 
 type SeqMCMCSupport struct {
 }
 
-func (SeqMCMCSupport) Iterate(m MCMC, clust Clust) Clust {
-	conf := KMeansConf{len(clust), 1, m.Space, m.rgen}
+func (SeqMCMCSupport) Iterate(m MCMC, clust Clust, iter int) Clust {
+	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
 	var km = NewKMeans(conf, clust.Initializer)
 
 	km.Data = m.Data
@@ -109,15 +109,8 @@ func (SeqMCMCSupport) Loss(m MCMC, proposal Clust) float64 {
 
 // initialise a configuration of K centers
 func (m *MCMC) initialize(k int) Clust {
-	var km = NewKMeans(KMeansConf{k, m.InitIter, m.Space, m.rgen}, m.initializer)
-
-	km.Data = m.Data
-
-	km.Run(false)
-	km.Close()
-
-	var clust, _ = km.Centroids()
-	return clust
+	var init = m.initializer(k, m.Data, m.MCMCConf.Space, m.rgen)
+	return m.Iterate(*m, init, m.InitIter)
 }
 
 // Constructor for MCMC
@@ -246,7 +239,7 @@ func (m *MCMC) Run(async bool) {
 				var propK = m.nextK(curK)
 				var propCenters = m.GetCenters(propK, m.clust)
 
-				propCenters = m.Iterate(*m, propCenters)
+				propCenters = m.Iterate(*m, propCenters, 1)
 
 				var prop = m.alter(propCenters)
 

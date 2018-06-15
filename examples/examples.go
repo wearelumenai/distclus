@@ -6,7 +6,6 @@ import (
 	"strings"
 	"strconv"
 	"distclus/core"
-	"time"
 	"distclus/algo"
 	"distclus/tools"
 )
@@ -34,11 +33,9 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 		Dim:         2, FrameSize: 8, B: 100, Amp: 1,
 		Norm:        2, Nu: 1, InitK: 3, McmcIter: 100,
 		InitIter:    1, Space: space,
-		Initializer: algo.KmeansPPInitializer,
-		Seed:        uint64(time.Now().UTC().Unix()),
 	}
-	var distrib, _ = algo.NewMultivT(algo.MultivTConf{mcmcConf})
-	var mcmc = algo.NewMCMC(mcmcConf, &distrib)
+	var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
+	var mcmc = algo.NewMCMC(mcmcConf, &distrib, algo.KmeansPPInitializer)
 	for _, elt := range batch {
 		mcmc.Push(elt)
 	}
@@ -51,7 +48,7 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 }
 
 func kmClust(space core.RealSpace, batch []core.Elemt) {
-	var km = algo.NewKMeans(algo.KMeansConf{16, 100, space}, algo.KmeansPPInitializer)
+	var km = algo.NewKMeans(algo.KMeansConf{K: 16, Iter: 100, Space: space}, algo.KmeansPPInitializer)
 	for _, e := range batch {
 		km.Push(e)
 	}

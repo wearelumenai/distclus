@@ -31,10 +31,10 @@ type KMeansSupport interface {
 	Iterate(km KMeans, proposal Clust) Clust
 }
 
-type SeqKMeansIterate struct {
+type SeqKMeansSupport struct {
 }
 
-func (SeqKMeansIterate) Iterate(km KMeans, clust Clust) Clust {
+func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
 	var assign = clust.AssignAll(km.Data, km.Space)
 	var result = make(Clust, len(clust))
 
@@ -61,7 +61,7 @@ func NewKMeans(conf KMeansConf, initializer Initializer) KMeans {
 
 	var km KMeans
 	km.KMeansConf = conf
-	km.KMeansSupport = SeqKMeansIterate{}
+	km.KMeansSupport = SeqKMeansSupport{}
 	km.initializer = initializer
 	km.status = Created
 

@@ -34,7 +34,7 @@ func (space RealSpace) Dist(elemt1, elemt2 Elemt) float64 {
 		diff[i] = e1[i] - e2[i]
 	}
 	var sum float64
-	for _, val := range (diff) {
+	for _, val := range diff {
 		sum += math.Pow(val, 2)
 	}
 	return math.Sqrt(sum)

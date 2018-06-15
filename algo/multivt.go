@@ -53,23 +53,23 @@ func NewMultivT(conf MultivTConf) MultivT {
 
 // Sample from a (uncorrelated) multivariate t distribution
 func (m MultivT) Sample(mu core.Elemt) core.Elemt {
-	var mu_ = mu.([]float64)
-	var dim = len(mu_)
+	var cmu = mu.([]float64)
+	var dim = len(cmu)
 	var res = make([]float64, dim)
 	var s = m.d.Rand(make([]float64, dim))
 	for i := range s {
-		res[i] = mu_[i] + s[i]
+		res[i] = cmu[i] + s[i]
 	}
 	return res
 }
 
 // Density of a (uncorrelated) multivariate t distribution
 func (m MultivT) Pdf(mu, x core.Elemt) float64 {
-	var mu_ = mu.([]float64)
-	var x_ = x.([]float64)
-	var dif = make([]float64, len(mu_))
-	for i := range mu_ {
-		dif[i] = mu_[i] - x_[i]
+	var cmu = mu.([]float64)
+	var cx = x.([]float64)
+	var dif = make([]float64, len(cmu))
+	for i := range cmu {
+		dif[i] = cmu[i] - cx[i]
 	}
 	return m.d.Prob(dif)
 }

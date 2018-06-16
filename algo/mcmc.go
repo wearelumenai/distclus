@@ -8,7 +8,6 @@ import (
 	"distclus/core"
 	"time"
 	"errors"
-	"sync"
 )
 
 // MCMC distribution interface
@@ -39,8 +38,6 @@ type MCMCConf struct {
 	Space core.Space
 	// Random source seed
 	RGen *rand.Rand
-
-	mu *sync.RWMutex
 }
 
 // Probability for next K (-1, 0, +1)
@@ -107,12 +104,6 @@ func (SeqMCMCSupport) Loss(m MCMC, proposal Clust) float64 {
 	return proposal.Loss(m.Data, m.Space, m.Norm)
 }
 
-// initialise a configuration of K centers
-func (m *MCMC) initialize(k int) Clust {
-	var init = m.initializer(k, m.Data, m.MCMCConf.Space, m.rgen)
-	return m.Iterate(*m, init, m.InitIter)
-}
-
 // Constructor for MCMC
 func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 
@@ -142,7 +133,6 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.rgen}
 	m.closing = make(chan bool, 1)
 	m.closed = make(chan bool, 1)
-	m.mu = &sync.RWMutex{}
 
 	return m
 }
@@ -185,6 +175,59 @@ func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	return pred, idx, err
 }
 
+func (m *MCMC) Run(async bool) {
+	m.status = Running
+
+	var init = m.initializer(m.InitK, m.Data, m.MCMCConf.Space, m.rgen)
+	m.clust = m.Iterate(*m, init, m.InitIter)
+
+	if async {
+		go m.process()
+	} else {
+		m.process()
+	}
+}
+
+func (m *MCMC) Close() {
+	m.closing <- true
+	<-m.closed
+}
+
+func (m *MCMC) process() {
+	var curK = m.InitK
+	var curLoss = m.Loss(*m, m.clust)
+	var curPdf = m.proba(m.clust, m.clust)
+
+	for i, loop := 0, true; i < m.McmcIter && loop; i++ {
+		select {
+		case <-m.closing:
+			loop = false
+
+		default:
+			var propK = m.nextK(curK)
+			var propCenters = m.getCenters(propK, m.clust)
+
+			propCenters = m.Iterate(*m, propCenters, 1)
+
+			var prop = m.alter(propCenters)
+
+			var propLoss = m.Loss(*m, prop)
+			var propPdf = m.proba(prop, propCenters)
+
+			if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
+				curK = propK
+				m.clust = prop
+				curLoss = propLoss
+				curPdf = propPdf
+				m.setCenters(m.clust)
+			}
+		}
+	}
+
+	m.status = Closed
+	m.closed <- true
+}
+
 // Alter a proposal using MCMC distribution
 func (m *MCMC) alter(clust Clust) Clust {
 	var result = make(Clust, len(clust))
@@ -221,58 +264,19 @@ func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool
 	return m.uniform.Rand() < rho
 }
 
-func (m *MCMC) Run(async bool) {
-	m.status = Running
+// Compute next centers number based on ProbaK
+func (m *MCMC) nextK(k int) int {
+	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.ProbaK(), m.rgen)]
 
-	var curK = m.InitK
-	m.clust = m.initialize(curK)
-
-	var do = func() {
-		var curLoss = m.Loss(*m, m.clust)
-		var curPdf = m.proba(m.clust, m.clust)
-
-		for i, loop := 0, true; i < m.McmcIter && loop; i++ {
-			select {
-			case <-m.closing:
-				loop = false
-			default:
-				var propK = m.nextK(curK)
-				var propCenters = m.GetCenters(propK, m.clust)
-
-				propCenters = m.Iterate(*m, propCenters, 1)
-
-				var prop = m.alter(propCenters)
-
-				var propLoss = m.Loss(*m, prop)
-				var propPdf = m.proba(prop, propCenters)
-
-				if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
-					curK = propK
-					m.clust = prop
-					curLoss = propLoss
-					curPdf = propPdf
-					m.setCenters(m.clust)
-				}
-			}
-		}
-		m.status = Closed
-		m.closed <- true
+	if newK < 1 {
+		return 1
 	}
 
-	if async {
-		go do()
-	} else {
-		do()
-	}
-}
-
-func (m *MCMC) Close() {
-	m.closing <- true
-	<-m.closed
+	return newK
 }
 
 // Get a configuration center(retrieve from store if K is exist else create with genCenters
-func (m *MCMC) GetCenters(k int, prev Clust) Clust {
+func (m *MCMC) getCenters(k int, prev Clust) Clust {
 	var centers, ok = m.store[k]
 
 	if !ok {
@@ -310,15 +314,4 @@ func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 	}
 
 	return
-}
-
-// Compute next centers number based on ProbaK
-func (m *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.ProbaK(), m.rgen)]
-
-	if newK < 1 {
-		return 1
-	}
-
-	return newK
 }

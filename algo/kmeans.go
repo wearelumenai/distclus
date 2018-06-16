@@ -100,11 +100,6 @@ func (km *KMeans) Push(elemt core.Elemt) (err error) {
 	return err
 }
 
-func (km *KMeans) Close() {
-	km.closing <- true
-	<-km.closed
-}
-
 func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	var pred core.Elemt
 	var idx int
@@ -125,23 +120,30 @@ func (km *KMeans) Run(async bool) {
 	km.status = Running
 	km.clust = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
 
-	var do = func() {
-		for iter, loop := 0, true; iter < km.Iter && loop; iter++ {
-			select {
-			case <-km.closing:
-				loop = false
-			default:
-				km.clust = km.Iterate(*km, km.clust)
-			}
-		}
-
-		km.status = Closed
-		km.closed <- true
-	}
-
 	if async {
-		go do()
+		go km.process()
 	} else {
-		do()
+		km.process()
 	}
+}
+
+func (km *KMeans)process() {
+	for iter, loop := 0, true; iter < km.Iter && loop; iter++ {
+		select {
+
+		case <-km.closing:
+			loop = false
+
+		default:
+			km.clust = km.Iterate(*km, km.clust)
+		}
+	}
+
+	km.status = Closed
+	km.closed <- true
+}
+
+func (km *KMeans) Close() {
+	km.closing <- true
+	<-km.closed
 }

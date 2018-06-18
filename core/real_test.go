@@ -149,3 +149,20 @@ func TestRealCombine2_1x0And4_2x0(t *testing.T) {
 	}()
 	val = space.Combine(e1, 0, e2, 0)
 }
+
+func TestRealSpace_Copy(t *testing.T) {
+	var e1 = []float64{2, 1}
+	sp := RealSpace{}
+	var e2 = sp.check(sp.Copy(e1))
+
+	if e1[0] != e2[0] || e1[1] != e2[1] {
+		t.Error("Expected same elements")
+	}
+
+	e2[0] = 3.
+	e2[1] = 6.
+
+	if e1[0] == e2[0] || e1[1] == e2[1] {
+		t.Error("Expected different elements")
+	}
+}

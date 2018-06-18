@@ -55,3 +55,11 @@ func (space RealSpace) Combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 
 	}
 	return combination
 }
+
+// Create a copy of a vector
+func (space RealSpace) Copy(elemt Elemt) Elemt {
+	var rv = space.check(elemt)
+	var crv = make([]float64, len(rv))
+	copy(crv, rv)
+	return crv
+}

@@ -296,20 +296,26 @@ func (m *MCMC) setCenters(clust Clust) {
 func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 	var prevK = len(prev)
 
-	if prevK < k {
+	switch {
+	case prevK < k:
 		clust = make(Clust, k)
-		copy(clust, prev)
+		for i := 0; i < prevK; i++ {
+			clust[i] = m.Space.Copy(prev[i])
+		}
 		clust[k-1] = KmeansPPIter(prev, m.Data, m.Space, m.rgen)
-	}
 
-	if prevK > k {
+	case prevK > k:
 		var del = m.rgen.Intn(prevK)
 		clust = make(Clust, k)
-		copy(clust[:del], prev[:del])
-		copy(clust[del:], prev[del+1:])
-	}
+		for i := 0; i < k; i++ {
+			if i < del {
+				clust[i] = m.Space.Copy(prev[i])
+			} else {
+				clust[i] = m.Space.Copy(prev[i+1])
+			}
+		}
 
-	if prevK == k {
+	case prevK == k:
 		clust = prev
 	}
 

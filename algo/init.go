@@ -17,11 +17,13 @@ func check(k int, elemts []core.Elemt) {
 }
 
 // GivenInitializer initializes a clustering algorithm with the k first testElemts.
-func GivenInitializer (k int, elemts []core.Elemt, _ core.Space, _ *rand.Rand) Clust {
+func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) Clust {
 	check(k, elemts)
 
 	var clust = make(Clust, k)
-	copy(clust, elemts)
+	for i:= 0; i < k; i++ {
+		clust[i] = space.Copy(elemts[i])
+	}
 
 	return clust
 }
@@ -51,11 +53,11 @@ func KmeansPPIter(clust Clust, elemts []core.Elemt, space core.Space, src *rand.
 	}
 
 	var draw = WeightedChoice(dists, src)
-	return elemts[draw]
+	return space.Copy(elemts[draw])
 }
 
 // RandomInitializer initializes a clustering with random testElemts
-func RandInitializer(k int, elemts []core.Elemt, _ core.Space, src *rand.Rand) Clust {
+func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
 	check(k, elemts)
 
 	var clust = make(Clust, k)
@@ -67,7 +69,7 @@ func RandInitializer(k int, elemts []core.Elemt, _ core.Space, src *rand.Rand) C
 		var _, found = chosen[choice]
 
 		if !found {
-			clust[i] = elemts[choice]
+			clust[i] = space.Copy(elemts[choice])
 			chosen[choice] = i
 			i++
 		}
@@ -82,10 +84,12 @@ func WeightedChoice(weights []float64, rand *rand.Rand) (idx int) {
 	for _, x := range weights{
 		sum += x
 	}
+
 	var cursor = rand.Float64() * sum
 	for cursor > 0 {
 		cursor -= weights[idx]
 		idx++
 	}
+
 	return idx - 1
 }

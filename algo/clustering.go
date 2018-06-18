@@ -94,7 +94,7 @@ func DBA(elemts []core.Elemt, space core.Space) (dba core.Elemt, err error) {
 		return
 	}
 
-	dba = elemts[0]
+	dba = space.Copy(elemts[0])
 	var weight = 1
 
 	for i:=1; i<len(elemts); i++ {

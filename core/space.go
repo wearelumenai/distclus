@@ -7,4 +7,5 @@ type Elemt interface{}
 type Space interface {
 	Dist(elemt1, elemt2 Elemt) float64
 	Combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) Elemt
+	Copy(elemt Elemt) Elemt
 }

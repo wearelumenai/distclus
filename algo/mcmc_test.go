@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 	"golang.org/x/exp/rand"
+	"unsafe"
 )
 
 var mcmcConf = MCMCConf{
@@ -99,15 +100,24 @@ func TestMCMC_getCenters(t *testing.T) {
 		t.Error("Expected same centers")
 	}
 
-	if &clust2[0] == &clust3[0] || &clust2[0] == &clust4[0] || &clust3[0] == &clust4[0] {
+	var ptr = func (elemt core.Elemt) unsafe.Pointer {
+		var s = elemt.([]float64)
+		var hdr = (*reflect.SliceHeader)(unsafe.Pointer(&s))
+		return unsafe.Pointer(hdr.Data)
+	}
+
+	if ptr(clust2[0]) == ptr(clust3[0]) ||
+		ptr(clust2[0]) == ptr(clust4[0]) ||
+		ptr(clust3[0]) == ptr(clust4[0]) {
 		t.Error("Expected copy")
 	}
 
-	if &clust2[1] == &clust3[1] || &clust2[1] == &clust4[1] || &clust3[1] == &clust4[1] {
+	if ptr(clust2[1]) == ptr(clust3[1]) ||
+		ptr(clust2[1]) == ptr(clust4[1]) ||
+		ptr(clust3[1]) == ptr(clust4[1]) {
 		t.Error("Expected copy")
 	}
-
-	if &clust3[2] == &clust4[2] {
+	if ptr(clust3[2]) == ptr(clust4[2]) {
 		t.Error("Expected copy")
 	}
 }

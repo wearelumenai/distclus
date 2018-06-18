@@ -19,14 +19,14 @@ var distrib = NewMultivT(MultivTConf{mcmcConf})
 func TestMCMC_Centroids(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var km = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
 
 	for _, elemt := range data {
-		km.Push(elemt)
+		mcmc.Push(elemt)
 	}
 
-	km.Run(false)
-	var clust, _ = km.Centroids()
+	mcmc.Run(false)
+	var clust, _ = mcmc.Centroids()
 
 	for i := 0; i < conf.InitK; i++ {
 		if !reflect.DeepEqual(clust[i], data[i]) {
@@ -34,7 +34,82 @@ func TestMCMC_Centroids(t *testing.T) {
 		}
 	}
 
-	km.Close()
+	mcmc.Close()
+}
+
+func TestMCMC_getCenters(t *testing.T) {
+	var conf = mcmcConf
+	conf.McmcIter = 0
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
+
+	for _, elemt := range data {
+		mcmc.Push(elemt)
+	}
+
+	mcmc.Run(false)
+
+	var clust3, _ = mcmc.Centroids()
+	var clust = mcmc.getCenters(3, clust3)
+
+	if !reflect.DeepEqual(clust3, clust) {
+		t.Error("Expected same centers")
+	}
+
+	clust = mcmc.getCenters(4, clust)
+
+	if len(clust) != 4 {
+		t.Error("Expected 4 centers")
+	}
+
+	if !reflect.DeepEqual(clust[:3], clust3) {
+		t.Error("Expected same 3 fisrt centers")
+	}
+
+	for i := 0; i < 3; i++ {
+		if reflect.DeepEqual(clust[3], clust3[i]) {
+			t.Error("Expected different 4th center")
+		}
+	}
+
+	var clust4 = clust
+	clust = mcmc.getCenters(3, clust4)
+
+	if !reflect.DeepEqual(clust, clust3) {
+		t.Error("Expected same centers")
+	}
+
+	clust = mcmc.getCenters(2, clust)
+
+	for i := 0; i < 2; i++ {
+		if !reflect.DeepEqual(clust[i], clust3[i]) && !reflect.DeepEqual(clust[i], clust3[i+1]) {
+			t.Error("Expected same centers")
+		}
+	}
+
+	var clust2 = clust
+	clust = mcmc.getCenters(3, clust)
+
+	if !reflect.DeepEqual(clust, clust3) {
+		t.Error("Expected same centers")
+	}
+
+	clust = mcmc.getCenters(4, clust)
+
+	if !reflect.DeepEqual(clust, clust4) {
+		t.Error("Expected same centers")
+	}
+
+	if &clust2[0] == &clust3[0] || &clust2[0] == &clust4[0] || &clust3[0] == &clust4[0] {
+		t.Error("Expected copy")
+	}
+
+	if &clust2[1] == &clust3[1] || &clust2[1] == &clust4[1] || &clust3[1] == &clust4[1] {
+		t.Error("Expected copy")
+	}
+
+	if &clust3[2] == &clust4[2] {
+		t.Error("Expected copy")
+	}
 }
 
 func TestMCMC_Run(t *testing.T) {
@@ -43,14 +118,14 @@ func TestMCMC_Run(t *testing.T) {
 	conf.InitK = 1
 	var seed = uint64(1872365454256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var km = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
 
 	for _, elemt := range data {
-		km.Push(elemt)
+		mcmc.Push(elemt)
 	}
 
-	km.Run(false)
-	var clust, _ = km.Centroids()
+	mcmc.Run(false)
+	var clust, _ = mcmc.Centroids()
 
 	for i := 0; i < len(clust); i++ {
 		if reflect.DeepEqual(clust[i], data[i]) {
@@ -58,22 +133,22 @@ func TestMCMC_Run(t *testing.T) {
 		}
 	}
 
-	km.Close()
+	mcmc.Close()
 }
 
 func TestMCMC_Predict(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var km = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
 
 	for _, elemt := range data {
-		km.Push(elemt)
+		mcmc.Push(elemt)
 	}
 
-	km.Run(false)
+	mcmc.Run(false)
 
 	for i, elemt := range data {
-		var c, idx, _ = km.Predict(elemt, false)
+		var c, idx, _ = mcmc.Predict(elemt, false)
 
 		if i == 0 || i == 3 || i == 4 {
 			if idx != 0 || !reflect.DeepEqual(c, data[0]) {
@@ -94,25 +169,25 @@ func TestMCMC_Predict(t *testing.T) {
 		}
 	}
 
-	km.Close()
+	mcmc.Close()
 }
 
 func TestMCMC_Predict2(t *testing.T) {
 	var conf = mcmcConf
 	var seed = uint64(187236548914256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var km = NewMCMC(conf, distrib, KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
 
 	for _, elemt := range data {
-		km.Push(elemt)
+		mcmc.Push(elemt)
 	}
 
-	km.Run(false)
-	var clust, _ = km.Centroids()
+	mcmc.Run(false)
+	var clust, _ = mcmc.Centroids()
 
 	var iclust = make([]int, 3)
 	for i := 0; i < 3; i++ {
-		var c, ix, _ = km.Predict(data[i], false)
+		var c, ix, _ = mcmc.Predict(data[i], false)
 		iclust[i] = ix
 
 		if !reflect.DeepEqual(c, clust[ix]) {
@@ -121,7 +196,7 @@ func TestMCMC_Predict2(t *testing.T) {
 	}
 
 	for i := 3; i < len(data); i++ {
-		var c, idx, _ = km.Predict(data[i], false)
+		var c, idx, _ = mcmc.Predict(data[i], false)
 
 		if i == 3 || i == 4 {
 			if idx != iclust[0] || !reflect.DeepEqual(c, clust[idx]) {
@@ -142,123 +217,123 @@ func TestMCMC_Predict2(t *testing.T) {
 		}
 	}
 
-	km.Close()
+	mcmc.Close()
 }
 
 func TestMCMC_Close(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 1 << 30
-	var km = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
 
 	for _, elemt := range data {
-		km.Push(elemt)
+		mcmc.Push(elemt)
 	}
 
-	if km.status != Created {
-		t.Error("Expected status", Created, "got", km.status)
+	if mcmc.status != Created {
+		t.Error("Expected status", Created, "got", mcmc.status)
 	}
 
-	km.Run(true)
+	mcmc.Run(true)
 
-	if km.status != Running {
-		t.Error("Expected status", Running, "got", km.status)
+	if mcmc.status != Running {
+		t.Error("Expected status", Running, "got", mcmc.status)
 	}
 
-	km.Close()
+	mcmc.Close()
 
-	if km.status != Closed {
-		t.Error("Expected status", Closed, "got", km.status)
+	if mcmc.status != Closed {
+		t.Error("Expected status", Closed, "got", mcmc.status)
 	}
 }
 
 func TestMCMC_Async(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 1 << 30
-	var km = NewMCMC(conf, distrib, KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
 
 	for _, elemt := range data {
-		km.Push(elemt)
+		mcmc.Push(elemt)
 	}
 
-	km.Run(true)
+	mcmc.Run(true)
 
 	time.Sleep(300 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
-	var c, ix, _ = km.Predict(obs, true)
+	var c, ix, _ = mcmc.Predict(obs, true)
 
 	time.Sleep(600 * time.Millisecond)
-	var clust, _ = km.Centroids()
+	var clust, _ = mcmc.Centroids()
 
 	if reflect.DeepEqual(clust[ix], c) {
 		t.Error("Expected center change")
 	}
 
-	var _, ix1, _ = km.Predict(data[1], false)
-	var _, ix5, _ = km.Predict(data[5], false)
+	var _, ix1, _ = mcmc.Predict(data[1], false)
+	var _, ix5, _ = mcmc.Predict(data[5], false)
 
 	if ix != ix5 || ix != ix1 {
 		t.Error("Expected same center")
 	}
 
-	km.Close()
+	mcmc.Close()
 }
 
 func TestMCMC_Workflow(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 1 << 30
-	var km = NewMCMC(conf, distrib, KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
 
 	var err error
 
-	err = km.Push(data[0])
-	err = km.Push(data[1])
-	err = km.Push(data[2])
+	err = mcmc.Push(data[0])
+	err = mcmc.Push(data[1])
+	err = mcmc.Push(data[2])
 
 	if err != nil {
 		t.Error("Expected no workflow error")
 	}
 
-	_, err = km.Centroids()
+	_, err = mcmc.Centroids()
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = km.Predict(data[3], false)
+	_, _, err = mcmc.Predict(data[3], false)
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	km.Run(true)
+	mcmc.Run(true)
 
-	err = km.Push(data[3])
+	err = mcmc.Push(data[3])
 
 	if err != nil {
 		t.Error("Expected no workflow error")
 	}
 
-	_, _, err = km.Predict(data[4], true)
+	_, _, err = mcmc.Predict(data[4], true)
 
 	if err != nil {
 		t.Error("Expected no workflow error")
 	}
 
-	km.Close()
+	mcmc.Close()
 
-	err = km.Push(data[5])
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = km.Predict(data[5], true)
+	err = mcmc.Push(data[5])
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = km.Predict(data[5], false)
+	_, _, err = mcmc.Predict(data[5], true)
+
+	if err == nil {
+		t.Error("Expected workflow error")
+	}
+
+	_, _, err = mcmc.Predict(data[5], false)
 
 	if err != nil {
 		t.Error("Expected no workflow error")

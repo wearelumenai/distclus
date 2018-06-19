@@ -50,7 +50,7 @@ func (c Clust) Assign(elemt core.Elemt, space core.Space) (core.Elemt, int, floa
 
 // Compute loss of centers configuration with given Data
 func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
-	var sum float64
+	var sum = 0.
 	for _, elemt := range data {
 		var min = space.Dist(elemt, c[0])
 		for i := 1; i < len(c); i++ {

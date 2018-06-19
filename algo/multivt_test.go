@@ -27,19 +27,19 @@ func TestMultivT_Pdf(t *testing.T) {
 	}
 
 	var distrib = NewMultivT(MultivTConf{conf})
-	var d0 = distrib.Pdf(mu[0], x[0])
+	var d0 = math.Exp(distrib.Pdf(mu[0], x[0]))
 
 	if math.Abs(d0-0.319520) > 1e-6 {
 		t.Error("Expected 0.319520 got", d0)
 	}
 
-	var d1 = distrib.Pdf(mu[1], x[1])
+	var d1 = math.Exp(distrib.Pdf(mu[1], x[1]))
 
 	if math.Abs(d1-0.0286968) > 1e-6 {
 		t.Error("Expected 0.0286968 got", d1)
 	}
 
-	var d2 = distrib.Pdf(mu[2], x[2])
+	var d2 = math.Exp(distrib.Pdf(mu[2], x[2]))
 
 	if math.Abs(d2-0.0253301) > 1e-6 {
 		t.Error("Expected 0.0253301 got", d0)
@@ -51,7 +51,7 @@ func TestMultivT_Sample(t *testing.T) {
 		Dim:      3, FrameSize: 8, B: 100, Amp: 1,
 		Norm:     2, Nu: 3, InitK: 3, McmcIter: 20,
 		InitIter: 1, Space: core.RealSpace{},
-		RGen: rand.New(rand.NewSource(6305689164243)),
+		RGen:     rand.New(rand.NewSource(6305689164243)),
 	}
 
 	var distrib = NewMultivT(MultivTConf{conf})
@@ -60,7 +60,7 @@ func TestMultivT_Sample(t *testing.T) {
 	var mu = []float64{0., 0., 0.}
 	var m = make([]float64, 3)
 
-	n := 100000
+	n := 1000000
 	for i := 0; i < n; i++ {
 		var s = distrib.Sample(mu).([]float64)
 		for j := 0; j < len(m); j++ {
@@ -73,5 +73,4 @@ func TestMultivT_Sample(t *testing.T) {
 			t.Error("Expected", mu[j], "got", m[j])
 		}
 	}
-
 }

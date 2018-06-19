@@ -6,6 +6,8 @@ import (
 	"gonum.org/v1/gonum/stat/distmv"
 	"distclus/core"
 	"time"
+	"gonum.org/v1/gonum/stat/distuv"
+	"math"
 )
 
 // Configuration for multivariateT distribution
@@ -16,28 +18,27 @@ type MultivTConf struct {
 // Real(float64[]) distribution wrapping StudentsT of Gonum
 type MultivT struct {
 	MultivTConf
-	sigma mat.Symmetric
-	d     *distmv.StudentsT
-	rgen  *rand.Rand
+	sigma  mat.Symmetric
+	normal *distmv.Normal
+	chi2   *distuv.ChiSquared
+	rgen   *rand.Rand
+	k      float64
+	d      float64
+	i      float64
 }
 
 // Constructor for multivT distribution
 func NewMultivT(conf MultivTConf) MultivT {
-	var sigma = make([]float64, conf.Dim*conf.Dim)
-	var nextX int
-	var nextY int
+	mu := make([]float64, conf.Dim)
+	var sigma = make([]float64, conf.Dim)
 	var tau = conf.Tau()
-	for i := range sigma {
-		var x = i / conf.Dim
-		var y = i % conf.Dim
-		if x == nextX && y == nextY {
-			sigma[i] = tau
-			nextX += 1
-			nextY += 1
-		}
+
+	for i := 0; i < conf.Dim; i++ {
+		sigma[i] = tau
+		mu[i] = 0.
 	}
 	var m = MultivT{}
-	m.sigma = mat.NewSymDense(conf.Dim, sigma)
+	m.sigma = mat.NewDiagonal(conf.Dim, sigma)
 
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
@@ -47,29 +48,37 @@ func NewMultivT(conf MultivTConf) MultivT {
 	}
 
 	m.MultivTConf = conf
-	m.d, _ = distmv.NewStudentsT(make([]float64, conf.Dim), m.sigma, conf.Nu, m.rgen)
+	m.normal, _ = distmv.NewNormal(mu, m.sigma, m.rgen)
+	m.chi2 = &distuv.ChiSquared{K: conf.Nu, Src: m.rgen}
+	m.i = (float64(conf.Dim) + conf.Nu) / 2.
+	m.d = conf.Nu * tau
+	k1 := math.Gamma(m.i)
+	k2 := math.Gamma(float64(conf.Nu) / 2.)
+	k3 := math.Pow(math.Pi*m.d, float64(conf.Dim)/2.)
+	m.k = math.Log(k1 / k2 / k3)
+
 	return m
 }
 
 // Sample from a (uncorrelated) multivariate t distribution
 func (m MultivT) Sample(mu core.Elemt) core.Elemt {
+	var g = math.Sqrt(m.chi2.K/m.chi2.Rand())
+	var z = m.normal.Rand(nil)
 	var cmu = mu.([]float64)
-	var dim = len(cmu)
-	var res = make([]float64, dim)
-	var s = m.d.Rand(make([]float64, dim))
-	for i := range s {
-		res[i] = cmu[i] + s[i]
+	for i := range z {
+		z[i] = cmu[i] + z[i]*g
 	}
-	return res
+	return z
 }
 
 // Density of a (uncorrelated) multivariate t distribution
 func (m MultivT) Pdf(mu, x core.Elemt) float64 {
 	var cmu = mu.([]float64)
 	var cx = x.([]float64)
-	var dif = make([]float64, len(cmu))
+	var nk = 0.
 	for i := range cmu {
-		dif[i] = cmu[i] - cx[i]
+		f := cmu[i] - cx[i]
+		nk += f * f
 	}
-	return m.d.Prob(dif)
+	return m.k + (-m.i * math.Log(1.+nk/m.d))
 }

@@ -74,6 +74,8 @@ type MCMC struct {
 	clust       Clust
 	status      ClustStatus
 	rgen        *rand.Rand
+	lamb        float64
+	lb          float64
 	closing     chan bool
 	closed      chan bool
 }
@@ -122,6 +124,8 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	m.status = Created
 	m.initializer = initializer
 	m.distrib = distrib
+	m.lamb = conf.Lamb()
+	m.lb = math.Log(2*m.B)
 
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
@@ -241,9 +245,9 @@ func (m *MCMC) alter(clust Clust) Clust {
 
 // Compute probability between two proposals using MCMC distribution
 func (m *MCMC) proba(x, mu Clust) (p float64) {
-	p = 1.0
+	p = 0.
 	for i := range x {
-		p *= m.distrib.Pdf(mu[i], x[i])
+		p += m.distrib.Pdf(mu[i], x[i])
 	}
 	return p
 }
@@ -251,16 +255,12 @@ func (m *MCMC) proba(x, mu Clust) (p float64) {
 // Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
 func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
 	// adjust lambda to avoid very large gibbs measure
-	var lamb = m.Lamb()
-	if lamb*pLoss > 50 {
-		lamb = 50 / pLoss
-	}
 
-	var rProp = cPdf / pPdf
-	var rInit = math.Pow(2*m.B, float64(m.Dim*(cK-pK)))
-	var rGibbs = math.Exp(-lamb * (pLoss - cLoss))
+	var rProp = cPdf - pPdf
+	var rInit = m.lb * float64(m.Dim*(cK-pK))
+	var rGibbs = -m.lamb * (pLoss - cLoss)
 
-	var rho = rGibbs * rInit * rProp
+	var rho = math.Exp(rGibbs + rInit + rProp)
 	return m.uniform.Rand() < rho
 }
 

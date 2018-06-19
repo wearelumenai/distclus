@@ -35,7 +35,7 @@ var (
 	mcmcAmp = mcmc.Flag("mcmc_amp", "amp MCMC parameter.").
 		Short('A').Default("10").Float()
 	mcmcNu = mcmc.Flag("mcmc_nu", "Number of degrees of freedom.").
-		Short('D').Default("2").Float()
+		Short('D').Default("3").Float()
 	mcmcInitK = mcmc.Flag("mcmc_initk", "k initialisation value.").
 		Short('K').Default("8").Int()
 	mcmcFrameSize = mcmc.Flag("mcmc_framesize", "Frame size to consider in data history(default -1 ~ data set len).").
@@ -57,6 +57,7 @@ func main() {
 		runMcmc()
 	}
 }
+
 func runMcmc() {
 	var data []core.Elemt
 	var distrib algo.MCMCDistrib
@@ -73,11 +74,6 @@ func runMcmc() {
 		InitIter:  *mcmcInitIter,
 	}
 
-	if *mcmcFrameSize < 1 {
-		mcmcConf.FrameSize = len(data)
-	} else {
-		mcmcConf.FrameSize = *mcmcFrameSize
-	}
 
 	if *seed > -1 {
 		*seed = int(time.Now().UTC().Unix())
@@ -88,6 +84,11 @@ func runMcmc() {
 	case "real":
 		mcmcConf.Space = core.RealSpace{}
 		data, mcmcConf.Dim = parseFloatCsv(*fdata)
+		if *mcmcFrameSize < 1 {
+			mcmcConf.FrameSize = len(data)
+		} else {
+			mcmcConf.FrameSize = *mcmcFrameSize
+		}
 		distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 	}
 

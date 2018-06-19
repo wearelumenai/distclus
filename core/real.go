@@ -11,7 +11,7 @@ type RealSpace struct{}
 func (space RealSpace) Dist(elemt1, elemt2 Elemt) float64 {
 	var e1 = elemt1.([]float64)
 	var e2 = elemt2.([]float64)
-	var sum float64
+	var sum = 0.
 	for i := 0; i < len(e1); i++ {
 		var v = e1[i] - e2[i]
 		sum += v*v

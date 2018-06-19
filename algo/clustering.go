@@ -1,16 +1,16 @@
 package algo
 
 import (
-	"math"
 	"golang.org/x/exp/rand"
 	"distclus/core"
 	"errors"
+	"math"
 )
 
 type ClustStatus int
 
 const (
-	Created     ClustStatus = iota
+	Created ClustStatus = iota
 	Running
 	Closed
 )
@@ -52,11 +52,15 @@ func (c Clust) Assign(elemt core.Elemt, space core.Space) (core.Elemt, int, floa
 func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 	var sum float64
 	for _, elemt := range data {
-		var min = math.MaxFloat64
-		for _, center := range c {
-			min = math.Min(min, math.Pow(space.Dist(elemt, center), norm))
+		var min = space.Dist(elemt, c[0])
+		for i := 1; i < len(c); i++ {
+			var d = space.Dist(elemt, c[i])
+			if min > d {
+				min = d
+			}
 		}
-		sum += min
+
+		sum += math.Pow(min, norm)
 	}
 	return sum / float64(len(data))
 }
@@ -64,7 +68,7 @@ func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 // Returns the index of the closest element to elemt in elemts.
 func assign(elemt core.Elemt, clust Clust, space core.Space) (int, float64) {
 
-	if len(clust)<1{
+	if len(clust) < 1 {
 		panic("empty clust")
 	}
 
@@ -97,8 +101,8 @@ func DBA(elemts []core.Elemt, space core.Space) (dba core.Elemt, err error) {
 	dba = space.Copy(elemts[0])
 	var weight = 1
 
-	for i:=1; i<len(elemts); i++ {
-		dba = space.Combine(elemts[i], 1, dba, weight)
+	for i := 1; i < len(elemts); i++ {
+		space.Combine(dba, weight, elemts[i], 1)
 		weight += 1
 	}
 

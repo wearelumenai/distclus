@@ -36,52 +36,14 @@ func TestRealDist2_2And4_4(t *testing.T) {
 	}
 }
 
-func TestRealDist_And4_4(t *testing.T) {
-	var e1 []float64
-	e2 := []float64{4, 4}
-	space := RealSpace{}
-	var val float64
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", val)
-		}
-	}()
-	val = space.Dist(e1, e2)
-}
-
-func TestRealDist_And_(t *testing.T) {
-	var e1 []float64
-	var e2 []float64
-	space := RealSpace{}
-	var val float64
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", val)
-		}
-	}()
-	val = space.Dist(e1, e2)
-}
-
-func TestRealDist2_1x2And4x2(t *testing.T) {
-	e1 := []float64{2, 1}
-	e2 := []float64{4}
-	space := RealSpace{}
-	var val Elemt
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", val)
-		}
-	}()
-	val = space.Dist(e1, e2)
-}
 
 func TestRealCombine2x1And4x1(t *testing.T) {
 	e1 := []float64{2}
 	e2 := []float64{4}
 	space := RealSpace{}
-	val := space.Combine(e1, 1, e2, 1).([]float64)
-	if val[0] != 3 {
-		t.Errorf("Expected 3, got %v", val)
+	space.Combine(e1, 1, e2, 1)
+	if e1[0] != 3 {
+		t.Errorf("Expected 3, got %v", e1)
 	}
 }
 
@@ -89,71 +51,32 @@ func TestRealCombine2_1x2And4_2x2(t *testing.T) {
 	e1 := []float64{2, 1}
 	e2 := []float64{4, 2}
 	space := RealSpace{}
-	val := space.Combine(e1, 2, e2, 2).([]float64)
-	if val[0] != 3 {
-		t.Errorf("Expected 3, got %v", val[0])
+	space.Combine(e1, 2, e2, 2)
+	if e1[0] != 3 {
+		t.Errorf("Expected 3, got %v", e1[0])
 	}
-	if val[1] != 1.5 {
-		t.Errorf("Expected 3/2, got %v", val[1])
+	if e1[1] != 1.5 {
+		t.Errorf("Expected 3/2, got %v", e1[1])
 	}
-}
-
-func TestRealCombine2_1x2And4x2(t *testing.T) {
-	e1 := []float64{2, 1}
-	e2 := []float64{4}
-	space := RealSpace{}
-	var val Elemt
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", val)
-		}
-	}()
-	val = space.Combine(e1, 2, e2, 2).([]float64)
-}
-
-func TestRealCombine_And_(t *testing.T) {
-	var e1 []float64
-	var e2 []float64
-	space := RealSpace{}
-	var val Elemt
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", val)
-		}
-	}()
-	val = space.Combine(e1, 1, e2, 1)
 }
 
 func TestRealCombine2_1x0And4_2x1(t *testing.T) {
 	e1 := []float64{2, 1}
 	e2 := []float64{4, 2}
 	space := RealSpace{}
-	val := space.Combine(e1, 0, e2, 1).([]float64)
-	if val[0] != 4 {
-		t.Errorf("Expected 3, got %v", val[0])
+	space.Combine(e1, 0, e2, 1)
+	if e1[0] != 4 {
+		t.Errorf("Expected 3, got %v", e1[0])
 	}
-	if val[1] != 2 {
-		t.Errorf("Expected 3/2, got %v", val[1])
+	if e1[1] != 2 {
+		t.Errorf("Expected 3/2, got %v", e1[1])
 	}
-}
-
-func TestRealCombine2_1x0And4_2x0(t *testing.T) {
-	e1 := []float64{2, 1}
-	e2 := []float64{4, 2}
-	space := RealSpace{}
-	var val Elemt
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("Expected panic, got %v", val)
-		}
-	}()
-	val = space.Combine(e1, 0, e2, 0)
 }
 
 func TestRealSpace_Copy(t *testing.T) {
 	var e1 = []float64{2, 1}
 	sp := RealSpace{}
-	var e2 = sp.check(sp.Copy(e1))
+	var e2 = sp.Copy(e1).([]float64)
 
 	if e1[0] != e2[0] || e1[1] != e2[1] {
 		t.Error("Expected same elements")

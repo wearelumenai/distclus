@@ -33,7 +33,7 @@ var (
 	mcmcB = mcmc.Flag("mcmc_b", "b parameter").
 		Short('B').Default("100").Float()
 	mcmcAmp = mcmc.Flag("mcmc_amp", "amp MCMC parameter.").
-		Short('A').Default("1").Float()
+		Short('A').Default("10").Float()
 	mcmcNu = mcmc.Flag("mcmc_nu", "Number of degrees of freedom.").
 		Short('D').Default("2").Float()
 	mcmcInitK = mcmc.Flag("mcmc_initk", "k initialisation value.").
@@ -43,7 +43,7 @@ var (
 	mcmcInitializer = mcmc.Flag("mcmc_initializer", "Algorithm initializer(random, kmeans++).").
 		Default("random").Short('i').Enum("random", "kmeans++")
 	mcmcIter = mcmc.Flag("mcmc_iter", "Max iteration of mcmc clustering.").
-		Short('I').Default("-1").Int()
+		Short('I').Default("200").Int()
 	mcmcInitIter = mcmc.Flag("mcmc_init_iter", "Number of initialisation iteration.").
 		Default("1").Int()
 )
@@ -58,26 +58,11 @@ func main() {
 	}
 }
 func runMcmc() {
-	var space core.Space
 	var data []core.Elemt
-	var dim int
+	var distrib algo.MCMCDistrib
 	var initializer = parseInitializer(*mcmcInitializer)
-	var rgen *rand.Rand
 
-	switch *dtype {
-	case "real":
-		space = core.RealSpace{}
-		data, dim = parseFloatCsv()
-	}
-	if *seed > -1 {
-		*seed = int(time.Now().UTC().Unix())
-		rgen = rand.New(rand.NewSource(uint64(*seed)))
-	}
-	if *mcmcFrameSize < 1 {
-		*mcmcFrameSize = len(data)
-	}
 	var mcmcConf = algo.MCMCConf{
-		Dim:       dim,
 		FrameSize: *mcmcFrameSize,
 		B:         *mcmcB,
 		Amp:       *mcmcAmp,
@@ -86,23 +71,52 @@ func runMcmc() {
 		InitK:     *mcmcInitK,
 		McmcIter:  *mcmcIter,
 		InitIter:  *mcmcInitIter,
-		Space:     space,
-		RGen:      rgen,
 	}
-	var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
-	var mcmc = algo.NewMCMC(mcmcConf, &distrib, initializer)
+
+	if *mcmcFrameSize < 1 {
+		mcmcConf.FrameSize = len(data)
+	} else {
+		mcmcConf.FrameSize = *mcmcFrameSize
+	}
+
+	if *seed > -1 {
+		*seed = int(time.Now().UTC().Unix())
+		mcmcConf.RGen = rand.New(rand.NewSource(uint64(*seed)))
+	}
+
+	switch *dtype {
+	case "real":
+		mcmcConf.Space = core.RealSpace{}
+		data, mcmcConf.Dim = parseFloatCsv(*fdata)
+		distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
+	}
+
+
+	var start = time.Now()
+	var mcmc = algo.NewMCMC(mcmcConf, distrib, initializer)
+
 	for _, elt := range data {
 		mcmc.Push(elt)
 	}
+
+	fmt.Printf("%f\n", time.Since(start).Seconds())
+
 	mcmc.Run(false)
+
+	fmt.Printf("%f\n", time.Since(start).Seconds())
 	mcmc.Close()
+
 	var centers, _ = mcmc.Centroids()
 	var labels = make([]int, len(data))
 	for i := range labels {
-		_, labels[i], _ = centers.Assign(data[i], space)
+		_, labels[i], _ = centers.Assign(data[i], mcmcConf.Space)
 	}
-	printLabels(labels, olabels)
-	printCenters(centers, ocenters)
+
+	var clust, _ = mcmc.Centroids()
+	println(len(clust))
+
+	//printLabels(labels, olabels)
+	//printCenters(centers, ocenters)
 }
 
 func printLabels(res []int, out *string) {
@@ -162,8 +176,8 @@ func parseInitializer(init string) algo.Initializer {
 	return initializer
 }
 
-func parseFloatCsv() ([]core.Elemt, int) {
-	file, err := os.Open(*fdata)
+func parseFloatCsv(path string) ([]core.Elemt, int) {
+	file, err := os.Open(path)
 	if err != nil {
 		panic(err)
 	}

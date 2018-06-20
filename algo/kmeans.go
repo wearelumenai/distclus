@@ -34,15 +34,25 @@ type KMeansSupport interface {
 type SeqKMeansSupport struct {
 }
 
-func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
-	var assign = clust.AssignAll(km.Data, km.Space)
-	var result = make(Clust, len(clust))
 
-	for k, cluster := range assign {
-		if len(cluster) != 0 {
-			result[k], _ = DBA(cluster, km.Space)
+func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
+	var result = make(Clust, len(clust))
+	var cards = make([]int, len(clust))
+	for i, _ := range km.Data {
+		var _, ix, _ = clust.Assign(km.Data[i], km.Space)
+
+		if cards[ix] == 0 {
+			result[ix] = km.Space.Copy(km.Data[i])
+			cards[ix] = 1
 		} else {
-			result[k] = clust[k]
+			km.Space.Combine(result[ix], cards[ix], km.Data[i], 1)
+			cards[ix]+=1
+		}
+	}
+
+	for i:=0; i<len(result) ; i++ {
+		if result[i] == nil {
+			result[i] = clust[i]
 		}
 	}
 

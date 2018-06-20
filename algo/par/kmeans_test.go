@@ -1,4 +1,4 @@
-package algo
+package par
 
 import (
 	"distclus/core"
@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"time"
 	"golang.org/x/exp/rand"
+	"distclus/algo"
 	"math"
 )
 
@@ -20,29 +21,9 @@ var data = []core.Elemt{
 	[]float64{50, 51.2, 49, 40, 45.2},
 }
 
-func TestKMeans_Centroids(t *testing.T) {
-	var conf = KMeansConf{Iter: 0, K: 4, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
-
-	for _, elemt := range data {
-		km.Push(elemt)
-	}
-
-	km.Run(false)
-	var clust, _ = km.Centroids()
-
-	for i := 0; i < conf.K; i++ {
-		if !reflect.DeepEqual(clust[i], data[i]) {
-			t.Error("Expected", data[i], "got", clust[i])
-		}
-	}
-
-	km.Close()
-}
-
 func TestKMeans_Run(t *testing.T) {
-	var conf = KMeansConf{Iter: 1, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
+	var conf = algo.KMeansConf{Iter: 1, K: 3, Space: core.RealSpace{}}
+	var km = NewKMeans(conf, algo.GivenInitializer)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -61,8 +42,8 @@ func TestKMeans_Run(t *testing.T) {
 }
 
 func TestKMeans_Predict(t *testing.T) {
-	var conf = KMeansConf{Iter: 0, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
+	var conf = algo.KMeansConf{Iter: 0, K: 3, Space: core.RealSpace{}}
+	var km = NewKMeans(conf, algo.GivenInitializer)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -110,8 +91,8 @@ func almostEqual(e1 []float64, e2 []float64) bool {
 func TestKMeans_Predict2(t *testing.T) {
 	var seed = uint64(187236548914256543)
 	rgen := rand.New(rand.NewSource(seed))
-	var conf = KMeansConf{Iter: 20, K: 3, Space: core.RealSpace{}, RGen: rgen}
-	var km = NewKMeans(conf, KmeansPPInitializer)
+	var conf = algo.KMeansConf{Iter: 20, K: 3, Space: core.RealSpace{}, RGen: rgen}
+	var km = NewKMeans(conf, algo.KmeansPPInitializer)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -129,7 +110,7 @@ func TestKMeans_Predict2(t *testing.T) {
 			t.Error("Expected center", clust[i], "got", c)
 		}
 
-		if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; i == 0 && !almostEqual(r, c.([]float64)) {
+		if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; i==0 && !almostEqual(r, c.([]float64)) {
 			t.Error("Expected", r, "got", c)
 		}
 
@@ -140,6 +121,7 @@ func TestKMeans_Predict2(t *testing.T) {
 		if r := []float64{134. / 3, 133.6 / 3, 133.2 / 3, 120.4 / 3, 135.2 / 3}; i == 2 && !almostEqual(r, c.([]float64)) {
 			t.Error("Expected", r, "got", c)
 		}
+
 	}
 
 	for i := 3; i < len(data); i++ {
@@ -167,34 +149,9 @@ func TestKMeans_Predict2(t *testing.T) {
 	km.Close()
 }
 
-func TestKMeans_Close(t *testing.T) {
-	var conf = KMeansConf{Iter: 1 << 30, K: 4, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
-
-	for _, elemt := range data {
-		km.Push(elemt)
-	}
-
-	if km.status != Created {
-		t.Error("Expected status", Created, "got", km.status)
-	}
-
-	km.Run(true)
-
-	if km.status != Running {
-		t.Error("Expected status", Running, "got", km.status)
-	}
-
-	km.Close()
-
-	if km.status != Closed {
-		t.Error("Expected status", Closed, "got", km.status)
-	}
-}
-
 func TestKMeans_Async(t *testing.T) {
-	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, KmeansPPInitializer)
+	var conf = algo.KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
+	var km = NewKMeans(conf, algo.KmeansPPInitializer)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -236,106 +193,4 @@ func TestKMeans_Async(t *testing.T) {
 	}
 
 	km.Close()
-}
-
-func TestKMeans_Workflow(t *testing.T) {
-	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, KmeansPPInitializer)
-
-	var err error
-
-	err = km.Push(data[0])
-	err = km.Push(data[1])
-	err = km.Push(data[2])
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
-
-	_, err = km.Centroids()
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = km.Predict(data[3], false)
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	km.Run(true)
-
-	err = km.Push(data[3])
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
-
-	_, _, err = km.Predict(data[4], true)
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
-
-	km.Close()
-
-	err = km.Push(data[5])
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = km.Predict(data[5], true)
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = km.Predict(data[5], false)
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
-}
-
-func TestKMeans_Conf(t *testing.T) {
-	var testPanic = func() {
-		if x := recover(); x == nil {
-			t.Error("Expected error")
-		}
-	}
-
-	func() {
-		defer testPanic()
-		var conf = KMeansConf{Iter: -10, K: 3, Space: core.RealSpace{}}
-		NewKMeans(conf, KmeansPPInitializer)
-	}()
-
-	func() {
-		defer testPanic()
-		var conf = KMeansConf{Iter: 10, K: -3, Space: core.RealSpace{}}
-		NewKMeans(conf, KmeansPPInitializer)
-	}()
-}
-
-func TestKMeans_Empty(t *testing.T) {
-	var init = Clust{
-		[]float64{0, 0, 0, 0, 0},
-		[]float64{1000, 1000, 1000, 1000, 1000},
-	}
-	var conf = KMeansConf{Iter: 1, K: 2, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, init.Initializer)
-
-	for _, elemt := range data {
-		km.Push(elemt)
-	}
-
-	km.Run(true)
-
-	var clust, _ = km.Centroids()
-
-	if !reflect.DeepEqual(clust[1], init[1]) {
-		t.Error("Expected mpty cluster")
-	}
 }

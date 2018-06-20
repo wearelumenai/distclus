@@ -184,7 +184,8 @@ func TestMCMC_Predict(t *testing.T) {
 
 func TestMCMC_Predict2(t *testing.T) {
 	var conf = mcmcConf
-	var seed = uint64(187236548914256543)
+	conf.probaK = []float64{1, 8, 1}
+	var seed = uint64(187232548913256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
 
@@ -258,6 +259,7 @@ func TestMCMC_Close(t *testing.T) {
 
 func TestMCMC_Async(t *testing.T) {
 	var conf = mcmcConf
+	conf.probaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
 	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
 

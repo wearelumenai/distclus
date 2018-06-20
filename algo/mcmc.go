@@ -45,7 +45,7 @@ type MCMCConf struct {
 // Probability for next K (-1, 0, +1)
 func (conf *MCMCConf) ProbaK() []float64 {
 	if len(conf.probaK) == 0 {
-		conf.probaK = []float64{1, 8, 1}
+		conf.probaK = []float64{1, 0, 9}
 	}
 	return conf.probaK
 }
@@ -72,7 +72,7 @@ func (conf *MCMCConf) Lambda() float64 {
 			r = 1
 		}
 
-		conf.lamb = conf.Amp * math.Sqrt(float64(conf.Dim+3)/float64(conf.FrameSize)) / (r * r)
+		conf.lamb = conf.Amp * math.Sqrt(float64(conf.Dim+3)/float64(conf.FrameSize))
 	}
 
 	return conf.lamb
@@ -92,6 +92,7 @@ type MCMC struct {
 	rgen        *rand.Rand
 	closing     chan bool
 	closed      chan bool
+	iter, acc   int
 }
 
 type MCMCSupport interface {
@@ -151,6 +152,10 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	m.closed = make(chan bool, 1)
 
 	return m
+}
+
+func (mcmc *MCMC) AcceptRatio() float64 {
+	return float64(mcmc.acc) / float64(mcmc.iter)
 }
 
 func (mcmc *MCMC) Centroids() (c Clust, err error) {
@@ -236,7 +241,9 @@ func (mcmc *MCMC) process() {
 				curLoss = propLoss
 				curPdf = propPdf
 				mcmc.setCenters(mcmc.clust)
+				mcmc.acc += 1
 			}
+			mcmc.iter += 1
 		}
 	}
 

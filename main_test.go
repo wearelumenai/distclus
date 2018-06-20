@@ -22,7 +22,7 @@ func b1(log func (args ...interface{})) {
 	var mcmcConf = algo.MCMCConf{
 	}
 	mcmcConf.Space = core.RealSpace{}
-	in := "ca.csv"
+	in := "cas.csv"
 	data, mcmcConf.Dim = parseFloatCsv(&in)
 	mcmcConf.FrameSize = len(data)
 	mcmcConf.RGen = rand.New(rand.NewSource(uint64(seed)))

@@ -15,28 +15,28 @@ type ParKMeansSupport struct {
 // message exchanged between kmeans go routines, actually weighted means
 type msgKMeans struct {
 	// the mean for a subset of elements
-	dba  core.Elemt
+	dba core.Elemt
 	// the number of elements that participate to the mean
 	card int
 }
 
 // aggAssign receives element from in channel, assign them to a cluster and update the mean for this cluster.
 // when channel in is closed, send the means and their cardinality to out channel
-func aggAssign(clust algo.Clust, sp core.Space, in <-chan core.Elemt, out chan<- []msgKMeans, wg *sync.WaitGroup) {
+func aggAssign(clust algo.Clust, sp core.Space, elmts []core.Elemt, out chan<- []msgKMeans, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var we = make([]msgKMeans, len(clust))
 
-	for elmt := range in {
-		var _, ix, _ = clust.Assign(elmt, sp)
+	for i := range elmts {
+		var _, ix, _ = clust.Assign(elmts[i], sp)
 
 		if we[ix].card == 0 {
 			// first time we see this cluster, just copy the element
-			we[ix].dba = sp.Copy(elmt)
+			we[ix].dba = sp.Copy(elmts[i])
 			we[ix].card = 1
 		} else {
 			// combine for dba
-			sp.Combine(we[ix].dba, we[ix].card, elmt, 1)
+			sp.Combine(we[ix].dba, we[ix].card, elmts[i], 1)
 			we[ix].card += 1
 		}
 	}
@@ -57,11 +57,11 @@ func aggDBA(sp core.Space, in <-chan []msgKMeans, out chan<- []msgKMeans) {
 			// combine subsequent messages to result
 			for i := 0; i < len(result); i++ {
 				switch {
-				case result[i].card==0:
+				case result[i].card == 0:
 					// first time we see this cluster, just take the element
 					result[i] = we[i]
 
-				case we[i].card >0:
+				case we[i].card > 0:
 					// combine subsequent elements for this cluster
 					sp.Combine(result[i].dba, result[i].card, we[i].dba, we[i].card)
 					result[i].card += we[i].card
@@ -81,7 +81,7 @@ func aggDBA(sp core.Space, in <-chan []msgKMeans, out chan<- []msgKMeans) {
 func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.Clust {
 	// channels
 	var degree = runtime.NumCPU()
-	var in = make(chan core.Elemt, degree)
+	var offset = (len(km.Data)-1)/degree + 1
 	var pipe = make(chan []msgKMeans, degree)
 	var out = make(chan []msgKMeans, 1)
 	var wg = &sync.WaitGroup{}
@@ -89,18 +89,19 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 	// start workers
 	wg.Add(degree)
 	for i := 0; i < degree; i++ {
-		go aggAssign(clust, km.Space, in, pipe, wg)
+		var start = i * offset
+		var end = start + offset
+
+		if end > len(km.Data) {
+			end = len(km.Data)
+		}
+
+		var part = km.Data[start:end]
+		go aggAssign(clust, km.Space, part, pipe, wg)
 	}
 
 	// start aggregator
 	go aggDBA(km.Space, pipe, out)
-
-	// fan out data to workers
-	for i := 0; i < len(km.Data); i++ {
-		in <- km.Data[i]
-	}
-	// close worker in channel, this will stop the workers when data is exhausted
-	close(in)
 
 	// wait all workers to shutdown
 	wg.Wait()

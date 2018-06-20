@@ -37,15 +37,15 @@ type msgMCMC struct {
 
 // aggElemntLoss receives elements from in channel, compute their participation to the global loss
 // when in is closed, send the partial loss and the corresponding cardinality to out channel
-func aggElemtLoss(clust algo.Clust, space core.Space, norm float64, in <-chan core.Elemt, out chan<- msgMCMC, wg *sync.WaitGroup) {
+func aggElemtLoss(clust algo.Clust, space core.Space, norm float64, elmts []core.Elemt, out chan<- msgMCMC, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var msg msgMCMC
-	for elemt := range in {
-		var min = space.Dist(elemt, clust[0])
-		for i := 1; i < len(clust); i++ {
+	for i := range elmts {
+		var min = space.Dist(elmts[i], clust[0])
+		for j := 1; j < len(clust); j++ {
 			// find the cluster and the minimal distance
-			var d = space.Dist(elemt, clust[i])
+			var d = space.Dist(elmts[i], clust[j])
 			if min > d {
 				min = d
 			}
@@ -64,22 +64,22 @@ func aggElemtLoss(clust algo.Clust, space core.Space, norm float64, in <-chan co
 func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal algo.Clust) float64 {
 	// channels
 	var degree = runtime.NumCPU()
-	var in = make(chan core.Elemt, degree)
+	var offset = (len(m.Data)-1)/degree + 1
 	var out = make(chan msgMCMC, degree)
 	var wg = &sync.WaitGroup{}
 
 	// start workers
 	wg.Add(degree)
-	for i := 0; i < degree; i++ {
-		go aggElemtLoss(proposal, m.Space, m.Norm, in, out, wg)
-	}
+	for i := 0; i < degree; i++ {var start = i * offset
+		var end = start + offset
 
-	// fan out data to workers
-	for i:=0; i<len(m.Data); i++ {
-		in<-m.Data[i]
+		if end > len(m.Data) {
+			end = len(m.Data)
+		}
+
+		var part = m.Data[start:end]
+		go aggElemtLoss(proposal, m.Space, m.Norm, part, out, wg)
 	}
-	// close worker in channel, this will stop the workers when data is exhausted
-	close(in)
 
 	// wait all workers to shutdown
 	wg.Wait()

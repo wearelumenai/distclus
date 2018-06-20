@@ -69,7 +69,7 @@ func TestMultivT_Sample(t *testing.T) {
 	}
 
 	for j := 0; j < len(m); j++ {
-		if math.Abs(m[j]-mu[j]) > 2e-3 {
+		if math.Abs(m[j]-mu[j]) > 1e-4 {
 			t.Error("Expected", mu[j], "got", m[j])
 		}
 	}

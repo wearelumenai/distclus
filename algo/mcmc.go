@@ -24,7 +24,7 @@ type MCMCConf struct {
 	// Number of element to retain in the partition
 	FrameSize int
 	// Mcmc parameters
-	B, Amp, lamb, tau float64
+	B, Amp, R float64
 	// Loss normalisation coefficient
 	Norm float64
 	// Degrees of freedom
@@ -38,28 +38,44 @@ type MCMCConf struct {
 	Space core.Space
 	// Random source seed
 	RGen *rand.Rand
+	// memoize
+	lamb, l2b, tau float64
 }
 
 // Probability for next K (-1, 0, +1)
-func (c *MCMCConf) ProbaK() []float64 {
-	if len(c.probaK) == 0 {
-		c.probaK = []float64{1, 8, 1}
+func (conf *MCMCConf) ProbaK() []float64 {
+	if len(conf.probaK) == 0 {
+		conf.probaK = []float64{1, 8, 1}
 	}
-	return c.probaK
+	return conf.probaK
 }
 
-func (c *MCMCConf) Tau() float64 {
-	if c.tau == 0 {
-		c.tau = 1 / math.Sqrt(float64(c.FrameSize*20))
+func (conf *MCMCConf) Tau() float64 {
+	if conf.tau == 0 {
+		conf.tau = 1 / math.Sqrt(float64(conf.FrameSize*20))
 	}
-	return c.tau
+	return conf.tau
 }
 
-func (c *MCMCConf) Lamb() float64 {
-	if c.lamb == 0 {
-		c.lamb = c.Amp * math.Sqrt(float64(c.Dim+3)/float64(c.FrameSize))
+func (c *MCMCConf) L2B() float64 {
+	if c.l2b == 0 {
+		c.l2b = math.Log(2 * c.B)
 	}
-	return c.lamb
+	return c.l2b
+}
+
+func (conf *MCMCConf) Lambda() float64 {
+	if conf.lamb == 0 {
+		var r = conf.R
+
+		if r == 0 {
+			r = 1
+		}
+
+		conf.lamb = conf.Amp * math.Sqrt(float64(conf.Dim+3)/float64(conf.FrameSize)) / (r * r)
+	}
+
+	return conf.lamb
 }
 
 type MCMC struct {
@@ -74,8 +90,6 @@ type MCMC struct {
 	clust       Clust
 	status      ClustStatus
 	rgen        *rand.Rand
-	lamb        float64
-	lb          float64
 	closing     chan bool
 	closed      chan bool
 }
@@ -124,8 +138,6 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	m.status = Created
 	m.initializer = initializer
 	m.distrib = distrib
-	m.lamb = conf.Lamb()
-	m.lb = math.Log(2*m.B)
 
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
@@ -141,132 +153,132 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	return m
 }
 
-func (m *MCMC) Centroids() (c Clust, err error) {
-	switch m.status {
+func (mcmc *MCMC) Centroids() (c Clust, err error) {
+	switch mcmc.status {
 	case Created:
 		err = fmt.Errorf("clustering not started")
 	default:
-		c = m.clust
+		c = mcmc.clust
 	}
 
 	return
 }
 
-func (m *MCMC) Push(elemt core.Elemt) (err error) {
-	switch m.status {
+func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
+	switch mcmc.status {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		m.Data = append(m.Data, elemt)
+		mcmc.Data = append(mcmc.Data, elemt)
 	}
 
 	return err
 }
 
-func (m *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
+func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
 	var pred core.Elemt
 	var idx int
 
-	var clust, err = m.Centroids()
+	var clust, err = mcmc.Centroids()
 
 	if err == nil {
-		pred, idx, _ = clust.Assign(elemt, m.Space)
+		pred, idx, _ = clust.Assign(elemt, mcmc.Space)
 		if push {
-			err = m.Push(elemt)
+			err = mcmc.Push(elemt)
 		}
 	}
 
 	return pred, idx, err
 }
 
-func (m *MCMC) Run(async bool) {
-	m.status = Running
+func (mcmc *MCMC) Run(async bool) {
+	mcmc.status = Running
 
-	var init = m.initializer(m.InitK, m.Data, m.MCMCConf.Space, m.rgen)
-	m.clust = m.Iterate(*m, init, m.InitIter)
+	var init = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
+	mcmc.clust = mcmc.Iterate(*mcmc, init, mcmc.InitIter)
 
 	if async {
-		go m.process()
+		go mcmc.process()
 	} else {
-		m.process()
+		mcmc.process()
 	}
 }
 
-func (m *MCMC) Close() {
-	m.closing <- true
-	<-m.closed
+func (mcmc *MCMC) Close() {
+	mcmc.closing <- true
+	<-mcmc.closed
 }
 
-func (m *MCMC) process() {
-	var curK = m.InitK
-	var curLoss = m.Loss(*m, m.clust)
-	var curPdf = m.proba(m.clust, m.clust)
+func (mcmc *MCMC) process() {
+	var curK = mcmc.InitK
+	var curLoss = mcmc.Loss(*mcmc, mcmc.clust)
+	var curPdf = mcmc.proba(mcmc.clust, mcmc.clust)
 
-	for i, loop := 0, true; i < m.McmcIter && loop; i++ {
+	for i, loop := 0, true; i < mcmc.McmcIter && loop; i++ {
 		select {
-		case <-m.closing:
+		case <-mcmc.closing:
 			loop = false
 
 		default:
-			var propK = m.nextK(curK)
-			var propCenters = m.getCenters(propK, m.clust)
+			var propK = mcmc.nextK(curK)
+			var propCenters = mcmc.getCenters(propK, mcmc.clust)
 
-			propCenters = m.Iterate(*m, propCenters, 1)
+			propCenters = mcmc.Iterate(*mcmc, propCenters, 1)
 
-			var prop = m.alter(propCenters)
+			var prop = mcmc.alter(propCenters)
 
-			var propLoss = m.Loss(*m, prop)
-			var propPdf = m.proba(prop, propCenters)
+			var propLoss = mcmc.Loss(*mcmc, prop)
+			var propPdf = mcmc.proba(prop, propCenters)
 
-			if m.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
+			if mcmc.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
 				curK = propK
-				m.clust = prop
+				mcmc.clust = prop
 				curLoss = propLoss
 				curPdf = propPdf
-				m.setCenters(m.clust)
+				mcmc.setCenters(mcmc.clust)
 			}
 		}
 	}
 
-	m.status = Closed
-	m.closed <- true
+	mcmc.status = Closed
+	mcmc.closed <- true
 }
 
 // Alter a proposal using MCMC distribution
-func (m *MCMC) alter(clust Clust) Clust {
+func (mcmc *MCMC) alter(clust Clust) Clust {
 	var result = make(Clust, len(clust))
 
 	for i := range clust {
-		result[i] = m.distrib.Sample(clust[i])
+		result[i] = mcmc.distrib.Sample(clust[i])
 	}
 
 	return result
 }
 
 // Compute probability between two proposals using MCMC distribution
-func (m *MCMC) proba(x, mu Clust) (p float64) {
+func (mcmc *MCMC) proba(x, mu Clust) (p float64) {
 	p = 0.
 	for i := range x {
-		p += m.distrib.Pdf(mu[i], x[i])
+		p += mcmc.distrib.Pdf(mu[i], x[i])
 	}
 	return p
 }
 
 // Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
-func (m *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
+func (mcmc *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
 	// adjust lambda to avoid very large gibbs measure
 
 	var rProp = cPdf - pPdf
-	var rInit = m.lb * float64(m.Dim*(cK-pK))
-	var rGibbs = -m.lamb * (pLoss - cLoss)
+	var rInit = mcmc.L2B() * float64(mcmc.Dim*(cK-pK))
+	var rGibbs = -mcmc.Lambda() * (pLoss - cLoss)
 
 	var rho = math.Exp(rGibbs + rInit + rProp)
-	return m.uniform.Rand() < rho
+	return mcmc.uniform.Rand() < rho
 }
 
 // Compute next centers number based on ProbaK
-func (m *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[WeightedChoice(m.ProbaK(), m.rgen)]
+func (mcmc *MCMC) nextK(k int) int {
+	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK(), mcmc.rgen)]
 
 	if newK < 1 {
 		return 1
@@ -276,42 +288,42 @@ func (m *MCMC) nextK(k int) int {
 }
 
 // Get a configuration center(retrieve from store if K is exist else create with genCenters
-func (m *MCMC) getCenters(k int, prev Clust) Clust {
-	var centers, ok = m.store[k]
+func (mcmc *MCMC) getCenters(k int, prev Clust) Clust {
+	var centers, ok = mcmc.store[k]
 
 	if !ok {
-		centers = m.genCenters(k, prev)
-		m.store[k] = centers
+		centers = mcmc.genCenters(k, prev)
+		mcmc.store[k] = centers
 	}
 
 	return centers
 }
 
 // Set a configuration in store
-func (m *MCMC) setCenters(clust Clust) {
-	m.store[len(clust)] = clust
+func (mcmc *MCMC) setCenters(clust Clust) {
+	mcmc.store[len(clust)] = clust
 }
 
 // Generate a configuration of K centers based on previous configuration
-func (m *MCMC) genCenters(k int, prev Clust) (clust Clust) {
+func (mcmc *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 	var prevK = len(prev)
 
 	switch {
 	case prevK < k:
 		clust = make(Clust, k)
 		for i := 0; i < prevK; i++ {
-			clust[i] = m.Space.Copy(prev[i])
+			clust[i] = mcmc.Space.Copy(prev[i])
 		}
-		clust[k-1] = KmeansPPIter(prev, m.Data, m.Space, m.rgen)
+		clust[k-1] = KmeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
 
 	case prevK > k:
-		var del = m.rgen.Intn(prevK)
+		var del = mcmc.rgen.Intn(prevK)
 		clust = make(Clust, k)
 		for i := 0; i < k; i++ {
 			if i < del {
-				clust[i] = m.Space.Copy(prev[i])
+				clust[i] = mcmc.Space.Copy(prev[i])
 			} else {
-				clust[i] = m.Space.Copy(prev[i+1])
+				clust[i] = mcmc.Space.Copy(prev[i+1])
 			}
 		}
 

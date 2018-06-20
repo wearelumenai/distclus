@@ -22,23 +22,32 @@ func b1(log func (args ...interface{})) {
 	var mcmcConf = algo.MCMCConf{
 	}
 	mcmcConf.Space = core.RealSpace{}
-	data, mcmcConf.Dim = parseFloatCsv("ca.csv")
+	in := "ca.csv"
+	data, mcmcConf.Dim = parseFloatCsv(&in)
 	mcmcConf.FrameSize = len(data)
 	mcmcConf.RGen = rand.New(rand.NewSource(uint64(seed)))
 	mcmcConf.McmcIter = 200
 	mcmcConf.B = 100
-	mcmcConf.Amp = 5e-12
+	mcmcConf.Amp = 10
+	mcmcConf.R = 8e6
 	mcmcConf.InitIter = 0
 	mcmcConf.InitK = 1
 	mcmcConf.Norm = 2
 	mcmcConf.Nu = 3
 	distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 	var mcmc = algo.NewMCMC(mcmcConf, distrib, initializer)
+
 	for _, elt := range data {
 		mcmc.Push(elt)
 	}
+
 	mcmc.Run(false)
 	mcmc.Close()
 	var centers, _ = mcmc.Centroids()
-	log(len(centers))
+	var labels = make([]int, len(centers))
+	for i := range data {
+		var _, l, _ = centers.Assign(data[i], mcmcConf.Space)
+		labels[l] += 1
+	}
+	log(labels)
 }

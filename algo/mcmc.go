@@ -33,21 +33,13 @@ type MCMCConf struct {
 	InitK int
 	// Iteration numbers for mcmc and centers initialisation
 	McmcIter, InitIter int
-	probaK             []float64
+	ProbaK             []float64
 	// Space where Data are include
 	Space core.Space
 	// Random source seed
 	RGen *rand.Rand
 	// memoize
 	lamb, l2b, tau float64
-}
-
-// Probability for next K (-1, 0, +1)
-func (conf *MCMCConf) ProbaK() []float64 {
-	if len(conf.probaK) == 0 {
-		conf.probaK = []float64{1, 0, 9}
-	}
-	return conf.probaK
 }
 
 func (conf *MCMCConf) Tau() float64 {
@@ -150,6 +142,10 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.rgen}
 	m.closing = make(chan bool, 1)
 	m.closed = make(chan bool, 1)
+
+	if len(m.ProbaK) == 0 {
+		m.ProbaK = []float64{1, 0, 9}
+	}
 
 	return m
 }
@@ -285,7 +281,7 @@ func (mcmc *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) b
 
 // Compute next centers number based on ProbaK
 func (mcmc *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK(), mcmc.rgen)]
+	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK, mcmc.rgen)]
 
 	if newK < 1 {
 		return 1

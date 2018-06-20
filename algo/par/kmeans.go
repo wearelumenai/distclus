@@ -13,19 +13,19 @@ type ParKMeansSupport struct {
 }
 
 // message exchanged between kmeans go routines, actually weighted means
-type msg struct {
-	// the mean of a set of elements
+type msgKMeans struct {
+	// the mean for a subset of elements
 	dba  core.Elemt
 	// the number of elements that participate to the mean
 	card int
 }
 
-// aggAssign receives element from channel in, assign them to a cluster and update the mean for this cluster.
+// aggAssign receives element from in channel, assign them to a cluster and update the mean for this cluster.
 // when channel in is closed, send the means and their cardinality to out channel
-func aggAssign(clust algo.Clust, sp core.Space, in <-chan core.Elemt, out chan<- []msg, wg *sync.WaitGroup) {
+func aggAssign(clust algo.Clust, sp core.Space, in <-chan core.Elemt, out chan<- []msgKMeans, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var we = make([]msg, len(clust))
+	var we = make([]msgKMeans, len(clust))
 
 	for elmt := range in {
 		var _, ix, _ = clust.Assign(elmt, sp)
@@ -47,8 +47,8 @@ func aggAssign(clust algo.Clust, sp core.Space, in <-chan core.Elemt, out chan<-
 
 // aggDBA receives partitioned weighted means from channel in and reduce them into a single mean for each cluster
 // when finished send the result to out channel.
-func aggDBA(sp core.Space, in <-chan []msg, out chan<- []msg) {
-	var result []msg
+func aggDBA(sp core.Space, in <-chan []msgKMeans, out chan<- []msgKMeans) {
+	var result []msgKMeans
 	for we := range in {
 		if result == nil {
 			// first message, just take it as current result
@@ -82,8 +82,8 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 	// channels
 	var degree = runtime.NumCPU()
 	var in = make(chan core.Elemt, degree)
-	var pipe = make(chan []msg, degree)
-	var out = make(chan []msg, 1)
+	var pipe = make(chan []msgKMeans, degree)
+	var out = make(chan []msgKMeans, 1)
 	var wg = &sync.WaitGroup{}
 
 	// start workers
@@ -122,7 +122,7 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 	return result
 }
 
-// NewKMeans create a new parallel kmeans algorithm.
+// NewKMeans create a new parallel KMeans algorithm instance.
 func NewKMeans(conf algo.KMeansConf, initializer algo.Initializer) algo.KMeans {
 	var km = algo.NewKMeans(conf, initializer)
 	km.KMeansSupport = ParKMeansSupport{space: conf.Space}

@@ -53,7 +53,6 @@ var (
 func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
 	parse := kingpin.MustParse(app.Parse(os.Args[1:]))
-	println(parse)
 	switch parse {
 	case mcmc.FullCommand():
 		runMcmc()

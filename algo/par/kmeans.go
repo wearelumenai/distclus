@@ -20,8 +20,8 @@ type msgKMeans struct {
 	card int
 }
 
-// aggAssign receives element from in channel, assign them to a cluster and update the mean for this cluster.
-// when channel in is closed, send the means and their cardinality to out channel
+// aggAssign receives a partition of elements, assign them to a cluster and update the mean for this cluster.
+// when partition is exhausted, send the means and their cardinality to out channel
 func aggAssign(clust algo.Clust, sp core.Space, elmts []core.Elemt, out chan<- []msgKMeans, wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -47,43 +47,40 @@ func aggAssign(clust algo.Clust, sp core.Space, elmts []core.Elemt, out chan<- [
 
 // aggDBA receives partitioned weighted means from channel in and reduce them into a single mean for each cluster
 // when finished send the result to out channel.
-func aggDBA(sp core.Space, in <-chan []msgKMeans, out chan<- []msgKMeans) {
-	var result []msgKMeans
+func aggDBA(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
+	var aggregate []msgKMeans
 	for we := range in {
-		if result == nil {
-			// first message, just take it as current result
-			result = we
+		if aggregate == nil {
+			// first message, just take it as current aggregate
+			aggregate = we
 		} else {
-			// combine subsequent messages to result
-			for i := 0; i < len(result); i++ {
+			// combine subsequent messages to aggregate
+			for i := 0; i < len(aggregate); i++ {
 				switch {
-				case result[i].card == 0:
+				case aggregate[i].card == 0:
 					// first time we see this cluster, just take the element
-					result[i] = we[i]
+					aggregate[i] = we[i]
 
 				case we[i].card > 0:
 					// combine subsequent elements for this cluster
-					sp.Combine(result[i].dba, result[i].card, we[i].dba, we[i].card)
-					result[i].card += we[i].card
+					sp.Combine(aggregate[i].dba, aggregate[i].card, we[i].dba, we[i].card)
+					aggregate[i].card += we[i].card
 				}
 			}
 		}
 	}
 
-	// send aggregated result
-	out <- result
-	close(out)
+	return aggregate
 }
 
 // Iterate implements a parallel kmeans iteration.
 // It starts as many worker routines as available CPU to execute aggAssign and fan out all data to them.
-// It starts also one aggregator routine that executes aggDBA to handle workers results.
+// When all workers finish it aggregates partial results and compute global result.
 func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.Clust {
 	// channels
 	var degree = runtime.NumCPU()
 	var offset = (len(km.Data)-1)/degree + 1
-	var pipe = make(chan []msgKMeans, degree)
-	var out = make(chan []msgKMeans, 1)
+	var out = make(chan []msgKMeans, degree)
 	var wg = &sync.WaitGroup{}
 
 	// start workers
@@ -97,24 +94,22 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 		}
 
 		var part = km.Data[start:end]
-		go aggAssign(clust, km.Space, part, pipe, wg)
+		go aggAssign(clust, km.Space, part, out, wg)
 	}
 
-	// start aggregator
-	go aggDBA(km.Space, pipe, out)
 
 	// wait all workers to shutdown
 	wg.Wait()
-	// close message exchange channel to stop the aggregator when messages are exhausted
-	close(pipe)
+	// close the partial results channel before computing its content
+	close(out)
 
 	// read and build the result
-	var we = <-out
+	var aggr = aggDBA(km.Space, out)
 
-	var result = make(algo.Clust, len(we))
+	var result = make(algo.Clust, len(aggr))
 	for i := 0; i < len(clust); i++ {
-		if we[i].card > 0 {
-			result[i] = we[i].dba
+		if aggr[i].card > 0 {
+			result[i] = aggr[i].dba
 		} else {
 			result[i] = clust[i]
 		}

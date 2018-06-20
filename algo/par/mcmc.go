@@ -87,14 +87,18 @@ func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal algo.Clust) float64 {
 	close(out)
 
 	// read and build the result
-	var sum = 0.
-	var card = 0
-	for agg := range out {
-		sum += agg.sum
-		card += agg.card
-	}
+	var aggr = aggLoss(out)
 
-	return sum / float64(card)
+	return aggr.sum / float64(aggr.card)
+}
+
+func aggLoss(out chan msgMCMC) msgMCMC {
+	var aggregate msgMCMC
+	for agg := range out {
+		aggregate.sum += agg.sum
+		aggregate.card += agg.card
+	}
+	return aggregate
 }
 
 // NewMCMC create a new parallel MCMC algorithm instance.

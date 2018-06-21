@@ -64,17 +64,19 @@ func aggElemtLoss(clust algo.Clust, space core.Space, norm float64, elmts []core
 func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal algo.Clust) float64 {
 	// channels
 	var degree = runtime.NumCPU()
-	var offset = (len(m.Data)-1)/degree + 1
+	var length = len(m.Data)
+	var offset = (length-1)/degree + 1
 	var out = make(chan msgMCMC, degree)
 	var wg = &sync.WaitGroup{}
 
 	// start workers
 	wg.Add(degree)
-	for i := 0; i < degree; i++ {var start = i * offset
+	for i := 0; i < degree; i++ {
+		var start = i * offset
 		var end = start + offset
 
-		if end > len(m.Data) {
-			end = len(m.Data)
+		if end > length {
+			end = length
 		}
 
 		var part = m.Data[start:end]
@@ -102,7 +104,7 @@ func aggLoss(out chan msgMCMC) msgMCMC {
 }
 
 // NewMCMC create a new parallel MCMC algorithm instance.
-func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib, initializer algo.Initializer) algo.MCMC  {
+func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib, initializer algo.Initializer) algo.MCMC {
 	var mcmc = algo.NewMCMC(conf, distrib, initializer)
 
 	mcmc.MCMCSupport = ParMCMCSupport{conf}

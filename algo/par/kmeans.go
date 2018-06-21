@@ -79,7 +79,8 @@ func aggDBA(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
 func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.Clust {
 	// channels
 	var degree = runtime.NumCPU()
-	var offset = (len(km.Data)-1)/degree + 1
+	var length = len(km.Data)
+	var offset = (length-1)/degree + 1
 	var out = make(chan []msgKMeans, degree)
 	var wg = &sync.WaitGroup{}
 
@@ -89,14 +90,13 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 		var start = i * offset
 		var end = start + offset
 
-		if end > len(km.Data) {
-			end = len(km.Data)
+		if end > length {
+			end = length
 		}
 
 		var part = km.Data[start:end]
 		go aggAssign(clust, km.Space, part, out, wg)
 	}
-
 
 	// wait all workers to shutdown
 	wg.Wait()

@@ -25,7 +25,7 @@ func b1(log func(args ...interface{})) {
 	mcmcConf.Space = core.RealSpace{}
 	in := "cas.csv"
 	data, mcmcConf.Dim = parseFloatCsv(&in)
-	mcmcConf.FrameSize = len(data)
+	mcmcConf.FrameSize = 15000
 	mcmcConf.RGen = rand.New(rand.NewSource(uint64(seed)))
 	mcmcConf.McmcIter = 200
 	mcmcConf.B = 1
@@ -46,7 +46,7 @@ func b1(log func(args ...interface{})) {
 		}
 	}()
 
-	time.Sleep(25 * time.Second)
+	time.Sleep(15 * time.Second)
 
 	mcmc.Close()
 

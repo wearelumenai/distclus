@@ -145,7 +145,7 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 		m.ProbaK = []float64{1, 0, 9}
 	}
 
-	m.Buffer = newBuffer(data)
+	m.Buffer = newBuffer(data, m.FrameSize)
 
 	return m
 }

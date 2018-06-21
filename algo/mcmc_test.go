@@ -267,13 +267,13 @@ func TestMCMC_Async(t *testing.T) {
 	conf.McmcIter = 1 << 30
 	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 
+	mcmc.Run(true)
+
 	for _, elemt := range data {
 		mcmc.Push(elemt)
 	}
 
-	mcmc.Run(true)
-
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(300 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, ix, _ = mcmc.Predict(obs, true)
 
@@ -373,7 +373,8 @@ func TestMCMC_Conf(t *testing.T) {
 	func() {
 		defer testPanic()
 		var conf = mcmcConf
-		conf.InitK = -3
-		NewMCMC(conf, distrib, KmeansPPInitializer, nil)
+		conf.InitK = 3
+		var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
+		mcmc.Run(false)
 	}()
 }

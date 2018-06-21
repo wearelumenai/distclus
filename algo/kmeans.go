@@ -88,7 +88,7 @@ func NewKMeans(conf KMeansConf, initializer Initializer, data []core.Elemt) KMea
 	if data == nil {
 		data = make([]core.Elemt, 0)
 	}
-	km.Buffer = newBuffer(data)
+	km.Buffer = newBuffer(data, -1)
 
 	return km
 }

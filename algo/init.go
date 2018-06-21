@@ -5,42 +5,47 @@ import (
 	"distclus/core"
 )
 
-type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) Clust
+type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) (Clust, bool)
 
-func check(k int, elemts []core.Elemt) {
+func check(k int, elemts []core.Elemt) bool {
 	if k < 1 {
 		panic("K is lower than 1")
 	}
 	if len(elemts) < k {
-		panic("not enough testElemts to initialize")
+		return false
 	}
+	return true
 }
 
 // GivenInitializer initializes a clustering algorithm with the k first testElemts.
-func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) Clust {
-	check(k, elemts)
+func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) (Clust, bool) {
+	var ok = check(k, elemts)
+	var clust= make(Clust, k)
 
-	var clust = make(Clust, k)
-	for i:= 0; i < k; i++ {
-		clust[i] = space.Copy(elemts[i])
+	if ok {
+		for i := 0; i < k; i++ {
+			clust[i] = space.Copy(elemts[i])
+		}
 	}
 
-	return clust
+	return clust, ok
 }
 
 // KmeansPPInitializer initializes a clustering algorithm with kmeans++
-func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
-	check(k, elemts)
-
+func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (Clust, bool) {
+	var ok = check(k, elemts)
 	var clust = make(Clust, k)
-	var draw = src.Intn(len(elemts))
-	clust[0] = elemts[draw]
 
-	for i := 1; i < k; i++ {
-		clust[i] = KmeansPPIter(clust[:i], elemts, space, src)
+	if ok {
+		var draw= src.Intn(len(elemts))
+		clust[0] = elemts[draw]
+
+		for i := 1; i < k; i++ {
+			clust[i] = KmeansPPIter(clust[:i], elemts, space, src)
+		}
 	}
 
-	return clust
+	return clust, ok
 }
 
 // Run au kmeans++ iteration : draw an element the does not belong to clust
@@ -57,25 +62,27 @@ func KmeansPPIter(clust Clust, elemts []core.Elemt, space core.Space, src *rand.
 }
 
 // RandomInitializer initializes a clustering with random testElemts
-func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) Clust {
-	check(k, elemts)
-
+func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (Clust, bool) {
+	var ok = check(k, elemts)
 	var clust = make(Clust, k)
-	var chosen = make(map[int]int)
-	var i int
 
-	for i < k {
-		var choice = src.Intn(len(elemts))
-		var _, found = chosen[choice]
+	if ok {
+		var chosen= make(map[int]int)
+		var i int
 
-		if !found {
-			clust[i] = space.Copy(elemts[choice])
-			chosen[choice] = i
-			i++
+		for i < k {
+			var choice= src.Intn(len(elemts))
+			var _, found= chosen[choice]
+
+			if !found {
+				clust[i] = space.Copy(elemts[choice])
+				chosen[choice] = i
+				i++
+			}
 		}
 	}
 
-	return clust
+	return clust, ok
 }
 
 // Return index of random weighted choice

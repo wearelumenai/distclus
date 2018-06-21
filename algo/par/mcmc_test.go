@@ -21,7 +21,7 @@ var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 func TestParMCMCSupport_Loss(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -38,12 +38,76 @@ func TestParMCMCSupport_Loss(t *testing.T) {
 	}
 }
 
+func TestMCMC_Run(t *testing.T) {
+	var conf = mcmcConf
+	conf.McmcIter = 100
+	conf.InitK = 1
+	var seed = uint64(1872365454256543)
+	conf.RGen = rand.New(rand.NewSource(seed))
+	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer, nil)
+
+	for _, elemt := range data {
+		mcmc.Push(elemt)
+	}
+
+	mcmc.Run(false)
+	var clust, _ = mcmc.Centroids()
+
+	for i := 0; i < len(clust); i++ {
+		if reflect.DeepEqual(clust[i], data[i]) {
+			t.Error("Expected center change got", clust[i])
+		}
+	}
+
+	mcmc.Close()
+
+	if mcmc.AcceptRatio() == 0 {
+		t.Error("Expected positive accept ratio")
+	}
+}
+
 func TestMCMC_Predict(t *testing.T) {
+	var conf = mcmcConf
+	conf.McmcIter = 0
+	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer, nil)
+
+	for _, elemt := range data {
+		mcmc.Push(elemt)
+	}
+
+	mcmc.Run(false)
+
+	for i, elemt := range data {
+		var c, idx, _ = mcmc.Predict(elemt, false)
+
+		if i == 0 || i == 3 || i == 4 {
+			if idx != 0 || !reflect.DeepEqual(c, data[0]) {
+				t.Error("Expected center 0")
+			}
+		}
+
+		if i == 1 || i == 5 {
+			if idx != 1 || !reflect.DeepEqual(c, data[1]) {
+				t.Error("Expected center 1")
+			}
+		}
+
+		if i == 2 || i == 6 || i == 7 {
+			if idx != 2 || !reflect.DeepEqual(c, data[2]) {
+				t.Error("Expected center 2")
+			}
+		}
+	}
+
+	mcmc.Close()
+}
+
+func TestMCMC_Predict2(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	var seed = uint64(187232548913256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var mcmc = NewMCMC(conf, distrib, algo.KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -91,7 +155,7 @@ func TestMCMC_Async(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
-	var mcmc = NewMCMC(conf, distrib, algo.KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -99,11 +163,10 @@ func TestMCMC_Async(t *testing.T) {
 
 	mcmc.Run(true)
 
-	time.Sleep(100 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, ix, _ = mcmc.Predict(obs, true)
 
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	var clust, _ = mcmc.Centroids()
 
 	if reflect.DeepEqual(clust[ix], c) {

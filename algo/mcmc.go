@@ -73,7 +73,7 @@ func (conf *MCMCConf) Lambda() float64 {
 type MCMC struct {
 	MCMCConf
 	MCMCSupport
-	Data    []core.Elemt
+	Buffer
 	distrib MCMCDistrib
 	// Centers Initializer
 	initializer Initializer
@@ -97,9 +97,7 @@ type SeqMCMCSupport struct {
 
 func (SeqMCMCSupport) Iterate(m MCMC, clust Clust, iter int) Clust {
 	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
-	var km = NewKMeans(conf, clust.Initializer)
-
-	km.Data = m.Data
+	var km = NewKMeans(conf, clust.Initializer, m.Data)
 
 	km.Run(false)
 	km.Close()
@@ -114,7 +112,7 @@ func (SeqMCMCSupport) Loss(m MCMC, proposal Clust) float64 {
 }
 
 // Constructor for MCMC
-func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
+func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data []core.Elemt) MCMC {
 
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
@@ -146,6 +144,8 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer) MCMC {
 	if len(m.ProbaK) == 0 {
 		m.ProbaK = []float64{1, 0, 9}
 	}
+
+	m.Buffer = newBuffer(data)
 
 	return m
 }
@@ -193,14 +193,32 @@ func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 }
 
 func (mcmc *MCMC) Run(async bool) {
-	mcmc.status = Running
-
-	var init = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
-	mcmc.clust = mcmc.Iterate(*mcmc, init, mcmc.InitIter)
 
 	if async {
-		go mcmc.process()
+		mcmc.setAsync()
+
+		go func() {
+			for ok:=false; !ok; {
+				mcmc.clust, ok = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
+				if !ok {
+					time.Sleep(300 * time.Millisecond)
+				}
+			}
+
+			mcmc.status = Running
+			mcmc.process()
+		}()
+
+		time.Sleep(300*time.Millisecond)
 	} else {
+		var ok bool
+		mcmc.clust, ok = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
+
+		if !ok {
+			panic("failed to initialize")
+		}
+
+		mcmc.status = Running
 		mcmc.process()
 	}
 }
@@ -240,6 +258,8 @@ func (mcmc *MCMC) process() {
 				mcmc.acc += 1
 			}
 			mcmc.iter += 1
+
+			mcmc.apply()
 		}
 	}
 
@@ -283,11 +303,14 @@ func (mcmc *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) b
 func (mcmc *MCMC) nextK(k int) int {
 	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK, mcmc.rgen)]
 
-	if newK < 1 {
+	switch {
+	case newK < 1:
 		return 1
+	case newK>len(mcmc.Data):
+		return len(mcmc.Data)
+	default:
+		return newK
 	}
-
-	return newK
 }
 
 // Get a configuration center(retrieve from store if K is exist else create with genCenters

@@ -115,7 +115,7 @@ func TestClust_Initializer(t *testing.T) {
 		[]float64{-1.},
 	}
 	var sp = core.RealSpace{}
-	var c = clust.Initializer(2, testElemts, sp, nil)
+	var c, _ = clust.Initializer(2, testElemts, sp, nil)
 
 	if !reflect.DeepEqual(clust, c) {
 		t.Error("Expected identity")

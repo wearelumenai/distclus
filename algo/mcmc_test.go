@@ -20,7 +20,7 @@ var distrib = NewMultivT(MultivTConf{mcmcConf})
 func TestMCMC_Centroids(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -41,7 +41,7 @@ func TestMCMC_Centroids(t *testing.T) {
 func TestMCMC_getCenters(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -128,7 +128,7 @@ func TestMCMC_Run(t *testing.T) {
 	conf.InitK = 1
 	var seed = uint64(1872365454256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -153,7 +153,7 @@ func TestMCMC_Run(t *testing.T) {
 func TestMCMC_Predict(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -191,7 +191,7 @@ func TestMCMC_Predict2(t *testing.T) {
 	conf.ProbaK = []float64{1, 8, 1}
 	var seed = uint64(187232548913256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -238,7 +238,7 @@ func TestMCMC_Predict2(t *testing.T) {
 func TestMCMC_Close(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 1 << 30
-	var mcmc = NewMCMC(conf, distrib, GivenInitializer)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -265,7 +265,7 @@ func TestMCMC_Async(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
-	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
@@ -297,7 +297,7 @@ func TestMCMC_Async(t *testing.T) {
 func TestMCMC_Workflow(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 1 << 30
-	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer)
+	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 
 	var err error
 
@@ -367,13 +367,13 @@ func TestMCMC_Conf(t *testing.T) {
 		defer testPanic()
 		var conf = mcmcConf
 		conf.McmcIter = -10
-		NewMCMC(conf, distrib, KmeansPPInitializer)
+		NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 	}()
 
 	func() {
 		defer testPanic()
 		var conf = mcmcConf
 		conf.InitK = -3
-		NewMCMC(conf, distrib, KmeansPPInitializer)
+		NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 	}()
 }

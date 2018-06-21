@@ -18,7 +18,7 @@ type KMeansConf struct {
 type KMeans struct {
 	KMeansConf
 	KMeansSupport
-	Data        []core.Elemt
+	Buffer
 	status      ClustStatus
 	initializer Initializer
 	clust       Clust
@@ -34,10 +34,10 @@ type KMeansSupport interface {
 type SeqKMeansSupport struct {
 }
 
-
 func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
 	var result = make(Clust, len(clust))
 	var cards = make([]int, len(clust))
+
 	for i, _ := range km.Data {
 		var _, ix, _ = clust.Assign(km.Data[i], km.Space)
 
@@ -46,11 +46,11 @@ func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
 			cards[ix] = 1
 		} else {
 			km.Space.Combine(result[ix], cards[ix], km.Data[i], 1)
-			cards[ix]+=1
+			cards[ix] += 1
 		}
 	}
 
-	for i:=0; i<len(result) ; i++ {
+	for i := 0; i < len(result); i++ {
 		if result[i] == nil {
 			result[i] = clust[i]
 		}
@@ -59,7 +59,7 @@ func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
 	return result
 }
 
-func NewKMeans(conf KMeansConf, initializer Initializer) KMeans {
+func NewKMeans(conf KMeansConf, initializer Initializer, data []core.Elemt) KMeans {
 
 	if conf.K < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
@@ -85,6 +85,11 @@ func NewKMeans(conf KMeansConf, initializer Initializer) KMeans {
 	km.closing = make(chan bool, 1)
 	km.closed = make(chan bool, 1)
 
+	if data == nil {
+		data = make([]core.Elemt, 0)
+	}
+	km.Buffer = newBuffer(data)
+
 	return km
 }
 
@@ -104,7 +109,7 @@ func (km *KMeans) Push(elemt core.Elemt) (err error) {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		km.Data = append(km.Data, elemt)
+		km.push(elemt)
 	}
 
 	return err
@@ -127,17 +132,37 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 }
 
 func (km *KMeans) Run(async bool) {
-	km.status = Running
-	km.clust = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
 
 	if async {
-		go km.process()
+		km.setAsync()
+
+		go func() {
+			for ok := false; !ok; {
+				km.clust, ok = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
+				if !ok {
+					time.Sleep(300 * time.Millisecond)
+				}
+			}
+
+			km.status = Running
+			km.process()
+		}()
+
+		time.Sleep(300 * time.Millisecond)
 	} else {
+		var ok bool
+		km.clust, ok = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
+
+		if !ok {
+			panic("failed to initialize")
+		}
+
+		km.status = Running
 		km.process()
 	}
 }
 
-func (km *KMeans)process() {
+func (km *KMeans) process() {
 	for iter, loop := 0, true; iter < km.Iter && loop; iter++ {
 		select {
 
@@ -146,6 +171,7 @@ func (km *KMeans)process() {
 
 		default:
 			km.clust = km.Iterate(*km, km.clust)
+			km.apply()
 		}
 	}
 

@@ -109,6 +109,6 @@ func DBA(elemts []core.Elemt, space core.Space) (dba core.Elemt, err error) {
 	return
 }
 
-func (c Clust) Initializer(int, []core.Elemt, core.Space, *rand.Rand) Clust {
-	return c
+func (c Clust) Initializer(int, []core.Elemt, core.Space, *rand.Rand) (Clust, bool) {
+	return c, true
 }

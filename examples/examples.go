@@ -35,7 +35,7 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 		InitIter:    1, Space: space,
 	}
 	var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
-	var mcmc = algo.NewMCMC(mcmcConf, &distrib, algo.KmeansPPInitializer)
+	var mcmc = algo.NewMCMC(mcmcConf, &distrib, algo.KmeansPPInitializer, nil)
 	for _, elt := range batch {
 		mcmc.Push(elt)
 	}
@@ -48,7 +48,7 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 }
 
 func kmClust(space core.RealSpace, batch []core.Elemt) {
-	var km = algo.NewKMeans(algo.KMeansConf{K: 16, Iter: 100, Space: space}, algo.KmeansPPInitializer)
+	var km = algo.NewKMeans(algo.KMeansConf{K: 16, Iter: 100, Space: space}, algo.KmeansPPInitializer, nil)
 	for _, e := range batch {
 		km.Push(e)
 	}

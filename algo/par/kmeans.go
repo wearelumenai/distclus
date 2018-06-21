@@ -94,7 +94,7 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 			end = length
 		}
 
-		var part = km.Data[start:end]
+		var part = (km.Data)[start:end]
 		go aggAssign(clust, km.Space, part, out, wg)
 	}
 
@@ -119,8 +119,8 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 }
 
 // NewKMeans create a new parallel KMeans algorithm instance.
-func NewKMeans(conf algo.KMeansConf, initializer algo.Initializer) algo.KMeans {
-	var km = algo.NewKMeans(conf, initializer)
+func NewKMeans(conf algo.KMeansConf, initializer algo.Initializer, data []core.Elemt) algo.KMeans {
+	var km = algo.NewKMeans(conf, initializer, data)
 	km.KMeansSupport = ParKMeansSupport{space: conf.Space}
 	return km
 }

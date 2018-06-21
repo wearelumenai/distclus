@@ -6,6 +6,7 @@ import (
 	"distclus/core"
 	"distclus/algo"
 	"golang.org/x/exp/rand"
+	"distclus/algo/par"
 )
 
 func BenchmarkRun(b *testing.B) {
@@ -14,7 +15,7 @@ func BenchmarkRun(b *testing.B) {
 	}
 }
 
-func b1(log func (args ...interface{})) {
+func b1(log func(args ...interface{})) {
 	var data []core.Elemt
 	var distrib algo.MCMCDistrib
 	var initializer = algo.RandInitializer
@@ -27,27 +28,36 @@ func b1(log func (args ...interface{})) {
 	mcmcConf.FrameSize = len(data)
 	mcmcConf.RGen = rand.New(rand.NewSource(uint64(seed)))
 	mcmcConf.McmcIter = 200
-	mcmcConf.B = 100
-	mcmcConf.Amp = 10
-	mcmcConf.R = 8e6
+	mcmcConf.B = 1
+	mcmcConf.Amp = 20000
+	mcmcConf.R = .1
 	mcmcConf.InitIter = 0
 	mcmcConf.InitK = 1
 	mcmcConf.Norm = 2
 	mcmcConf.Nu = 3
 	distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
-	var mcmc = algo.NewMCMC(mcmcConf, distrib, initializer)
+	var mcmc = par.NewMCMC(mcmcConf, distrib, initializer, nil)
 
-	for _, elt := range data {
-		mcmc.Push(elt)
-	}
+	mcmc.Run(true)
 
-	mcmc.Run(false)
+	go func() {
+		for _, elt := range data {
+			mcmc.Push(elt)
+		}
+	}()
+
+	time.Sleep(25 * time.Second)
+
 	mcmc.Close()
+
 	var centers, _ = mcmc.Centroids()
 	var labels = make([]int, len(centers))
 	for i := range data {
 		var _, l, _ = centers.Assign(data[i], mcmcConf.Space)
 		labels[l] += 1
 	}
+
+	log(len(mcmc.Data))
 	log(labels)
+	log(mcmc.Loss(mcmc, centers))
 }

@@ -16,9 +16,7 @@ type ParMCMCSupport struct {
 // Iterate MCMC in parallel by calling the parallel kmeans implementation
 func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust algo.Clust, iter int) algo.Clust {
 	var conf = algo.KMeansConf{K: len(clust), Iter: iter, Space: supp.config.Space}
-	var km = NewKMeans(conf, clust.Initializer)
-
-	km.Data = m.Data
+	var km = NewKMeans(conf, clust.Initializer, m.Data)
 
 	km.Run(false)
 	km.Close()
@@ -104,8 +102,8 @@ func aggLoss(out chan msgMCMC) msgMCMC {
 }
 
 // NewMCMC create a new parallel MCMC algorithm instance.
-func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib, initializer algo.Initializer) algo.MCMC {
-	var mcmc = algo.NewMCMC(conf, distrib, initializer)
+func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib, initializer algo.Initializer, data []core.Elemt) algo.MCMC {
+	var mcmc = algo.NewMCMC(conf, distrib, initializer, data)
 
 	mcmc.MCMCSupport = ParMCMCSupport{conf}
 

@@ -93,7 +93,7 @@ func runMcmc() {
 	}
 
 
-	var mcmc = par.NewMCMC(mcmcConf, distrib, initializer)
+	var mcmc = par.NewMCMC(mcmcConf, distrib, initializer, nil)
 
 	log.Println(fmt.Sprintf("Add data to mcmc model : %v obs.", len(data)))
 	for _, elt := range data {

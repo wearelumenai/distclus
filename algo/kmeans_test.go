@@ -22,7 +22,7 @@ var data = []core.Elemt{
 
 func TestKMeans_Centroids(t *testing.T) {
 	var conf = KMeansConf{Iter: 0, K: 4, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
+	var km = NewKMeans(conf, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -42,7 +42,7 @@ func TestKMeans_Centroids(t *testing.T) {
 
 func TestKMeans_Run(t *testing.T) {
 	var conf = KMeansConf{Iter: 1, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
+	var km = NewKMeans(conf, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -62,7 +62,7 @@ func TestKMeans_Run(t *testing.T) {
 
 func TestKMeans_Predict(t *testing.T) {
 	var conf = KMeansConf{Iter: 0, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
+	var km = NewKMeans(conf, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -111,7 +111,7 @@ func TestKMeans_Predict2(t *testing.T) {
 	var seed = uint64(187236548914256543)
 	rgen := rand.New(rand.NewSource(seed))
 	var conf = KMeansConf{Iter: 20, K: 3, Space: core.RealSpace{}, RGen: rgen}
-	var km = NewKMeans(conf, KmeansPPInitializer)
+	var km = NewKMeans(conf, KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -169,7 +169,7 @@ func TestKMeans_Predict2(t *testing.T) {
 
 func TestKMeans_Close(t *testing.T) {
 	var conf = KMeansConf{Iter: 1 << 30, K: 4, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, GivenInitializer)
+	var km = NewKMeans(conf, GivenInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -194,7 +194,7 @@ func TestKMeans_Close(t *testing.T) {
 
 func TestKMeans_Async(t *testing.T) {
 	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, KmeansPPInitializer)
+	var km = NewKMeans(conf, KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -240,7 +240,7 @@ func TestKMeans_Async(t *testing.T) {
 
 func TestKMeans_Workflow(t *testing.T) {
 	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, KmeansPPInitializer)
+	var km = NewKMeans(conf, KmeansPPInitializer, nil)
 
 	var err error
 
@@ -309,13 +309,13 @@ func TestKMeans_Conf(t *testing.T) {
 	func() {
 		defer testPanic()
 		var conf = KMeansConf{Iter: -10, K: 3, Space: core.RealSpace{}}
-		NewKMeans(conf, KmeansPPInitializer)
+		NewKMeans(conf, KmeansPPInitializer, nil)
 	}()
 
 	func() {
 		defer testPanic()
 		var conf = KMeansConf{Iter: 10, K: -3, Space: core.RealSpace{}}
-		NewKMeans(conf, KmeansPPInitializer)
+		NewKMeans(conf, KmeansPPInitializer, nil)
 	}()
 }
 
@@ -325,7 +325,7 @@ func TestKMeans_Empty(t *testing.T) {
 		[]float64{1000, 1000, 1000, 1000, 1000},
 	}
 	var conf = KMeansConf{Iter: 1, K: 2, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, init.Initializer)
+	var km = NewKMeans(conf, init.Initializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -336,6 +336,6 @@ func TestKMeans_Empty(t *testing.T) {
 	var clust, _ = km.Centroids()
 
 	if !reflect.DeepEqual(clust[1], init[1]) {
-		t.Error("Expected mpty cluster")
+		t.Error("Expected empty cluster")
 	}
 }

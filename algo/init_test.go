@@ -27,13 +27,13 @@ func TestWeightedChoice(t *testing.T) {
 
 func TestGivenInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust = GivenInitializer(4, testElemts, core.RealSpace{}, src)
+	var clust, _ = GivenInitializer(4, testElemts, core.RealSpace{}, src)
 
-	if l := len(clust) ; l != 4 {
+	if l := len(clust); l != 4 {
 		t.Error("Expected 4 centers got", l)
 	}
 
-	for i:= 0; i<4; i++ {
+	for i := 0; i < 4; i++ {
 		if !reflect.DeepEqual(clust[i], testElemts[i]) {
 			t.Error("Expected", testElemts[i], "got", clust[i])
 		}
@@ -42,15 +42,15 @@ func TestGivenInitializer(t *testing.T) {
 
 func TestKmeansPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust = KmeansPPInitializer(14, testElemts, core.RealSpace{}, src)
+	var clust, _ = KmeansPPInitializer(14, testElemts, core.RealSpace{}, src)
 
-	if l := len(clust) ; l != 14 {
+	if l := len(clust); l != 14 {
 		t.Error("Expected 4 centers got", l)
 	}
 
-	for i:= 0; i<14; i++ {
-		for j:=0; j<14; j++ {
-			if i!=j && reflect.DeepEqual(clust[i], clust[j]) {
+	for i := 0; i < 14; i++ {
+		for j := 0; j < 14; j++ {
+			if i != j && reflect.DeepEqual(clust[i], clust[j]) {
 				t.Error("Expected distinct centers")
 			}
 		}
@@ -59,15 +59,15 @@ func TestKmeansPPInitializer(t *testing.T) {
 
 func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust = RandInitializer(14, testElemts, core.RealSpace{}, src)
+	var clust, _ = RandInitializer(14, testElemts, core.RealSpace{}, src)
 
-	if l := len(clust) ; l != 14 {
+	if l := len(clust); l != 14 {
 		t.Error("Expected 4 centers got", l)
 	}
 
-	for i:= 0; i<14; i++ {
-		for j:=0; j<14; j++ {
-			if i!=j && reflect.DeepEqual(clust[i], clust[j]) {
+	for i := 0; i < 14; i++ {
+		for j := 0; j < 14; j++ {
+			if i != j && reflect.DeepEqual(clust[i], clust[j]) {
 				t.Error("Expected distinct centers")
 			}
 		}
@@ -82,15 +82,13 @@ func TestCheckInitialization(t *testing.T) {
 		}
 	}
 
+	if check(15, data) {
+		t.Error("Expected error")
+	}
+
 	func() {
 		defer testPanic()
 
 		check(0, data)
-	}()
-
-	func() {
-		defer testPanic()
-
-		check(15, data)
 	}()
 }

@@ -170,7 +170,7 @@ func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		mcmc.Data = append(mcmc.Data, elemt)
+		mcmc.Buffer.push(elemt)
 	}
 
 	return err
@@ -202,6 +202,7 @@ func (mcmc *MCMC) Run(async bool) {
 				mcmc.clust, ok = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
 				if !ok {
 					time.Sleep(300 * time.Millisecond)
+					mcmc.Buffer.apply()
 				}
 			}
 

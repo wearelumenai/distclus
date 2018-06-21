@@ -15,6 +15,10 @@ func BenchmarkRun(b *testing.B) {
 	}
 }
 
+func TestRun(t *testing.T) {
+	b1(t.Log)
+}
+
 func b1(log func(args ...interface{})) {
 	var data []core.Elemt
 	var distrib algo.MCMCDistrib

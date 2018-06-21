@@ -109,7 +109,7 @@ func (km *KMeans) Push(elemt core.Elemt) (err error) {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		km.push(elemt)
+		km.Buffer.push(elemt)
 	}
 
 	return err
@@ -141,6 +141,7 @@ func (km *KMeans) Run(async bool) {
 				km.clust, ok = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
 				if !ok {
 					time.Sleep(300 * time.Millisecond)
+					km.Buffer.apply()
 				}
 			}
 

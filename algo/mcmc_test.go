@@ -273,11 +273,11 @@ func TestMCMC_Async(t *testing.T) {
 		mcmc.Push(elemt)
 	}
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = mcmc.Predict(obs, true)
 
-	time.Sleep(700 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	var cn, ixn, _ = mcmc.Predict(obs, false)
 
 	if reflect.DeepEqual(cn, c) {

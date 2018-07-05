@@ -204,19 +204,19 @@ func TestKMeans_Async(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
-	var c, ix, _ = km.Predict(obs, true)
+	var c, _, _ = km.Predict(obs, true)
 
 	time.Sleep(700 * time.Millisecond)
-	var clust, _ = km.Centroids()
+	var cn, ixn, _ = km.Predict(obs, false)
 
-	if reflect.DeepEqual(clust[ix], c) {
+	if reflect.DeepEqual(cn, c) {
 		t.Error("Expected center change")
 	}
 
 	var _, ix1, _ = km.Predict(data[1], false)
 	var _, ix5, _ = km.Predict(data[5], false)
 
-	if ix != ix5 || ix != ix1 {
+	if ixn != ix5 || ixn != ix1 {
 		t.Error("Expected same center")
 	}
 

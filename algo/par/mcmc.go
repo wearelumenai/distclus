@@ -89,7 +89,7 @@ func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal algo.Clust) float64 {
 	// read and build the result
 	var aggr = aggLoss(out)
 
-	return aggr.sum / float64(aggr.card)
+	return aggr.sum
 }
 
 func aggLoss(out chan msgMCMC) msgMCMC {

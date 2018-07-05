@@ -29,7 +29,7 @@ func b1(log func(args ...interface{})) {
 	mcmcConf.RGen = rand.New(rand.NewSource(uint64(seed)))
 	mcmcConf.McmcIter = 200
 	mcmcConf.B = 1
-	mcmcConf.Amp = 20000
+	mcmcConf.Amp = .12
 	mcmcConf.R = .1
 	mcmcConf.InitIter = 0
 	mcmcConf.InitK = 1

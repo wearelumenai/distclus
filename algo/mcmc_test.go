@@ -100,7 +100,7 @@ func TestMCMC_getCenters(t *testing.T) {
 		t.Error("Expected same centers")
 	}
 
-	var ptr = func (elemt core.Elemt) unsafe.Pointer {
+	var ptr = func(elemt core.Elemt) unsafe.Pointer {
 		var s = elemt.([]float64)
 		var hdr = (*reflect.SliceHeader)(unsafe.Pointer(&s))
 		return unsafe.Pointer(hdr.Data)
@@ -150,6 +150,26 @@ func TestMCMC_Run(t *testing.T) {
 	}
 }
 
+func TestMCMC_MaxK(t *testing.T) {
+	var conf = mcmcConf
+	conf.McmcIter = 10
+	conf.MaxK = 6
+	conf.Amp = 1e6
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
+
+	for _, elemt := range data {
+		mcmc.Push(elemt)
+	}
+
+	mcmc.Run(false)
+
+	var clust, _ = mcmc.Centroids()
+
+	if l := len(clust); l > 6 {
+		t.Error("Exepected ", conf.MaxK, "got", l)
+	}
+}
+
 func TestMCMC_Predict(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
@@ -189,7 +209,7 @@ func TestMCMC_Predict(t *testing.T) {
 func TestMCMC_Predict2(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
-	var seed = uint64(187232548913256543)
+	var seed = uint64(187232542653256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 

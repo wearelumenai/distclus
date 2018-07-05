@@ -31,6 +31,8 @@ type MCMCConf struct {
 	Nu float64
 	// Initial number of centers
 	InitK int
+	// Max number of centers
+	MaxK int
 	// Iteration numbers for mcmc and centers initialisation
 	McmcIter, InitIter int
 	ProbaK             []float64
@@ -118,6 +120,10 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}
 
+	if conf.InitK > conf.MaxK && conf.MaxK != 0 {
+		panic(fmt.Sprintf("Illegal value for Max K / Init K: %v / %v", conf.MaxK, conf.InitK))
+	}
+
 	if conf.McmcIter < 0 {
 		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.McmcIter))
 	}
@@ -143,6 +149,10 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 
 	if len(m.ProbaK) == 0 {
 		m.ProbaK = []float64{1, 0, 9}
+	}
+
+	if m.MaxK == 0 {
+		m.MaxK = 16
 	}
 
 	m.Buffer = newBuffer(data, m.FrameSize)
@@ -307,6 +317,8 @@ func (mcmc *MCMC) nextK(k int) int {
 	switch {
 	case newK < 1:
 		return 1
+	case newK > mcmc.MaxK:
+		return mcmc.MaxK
 	case newK>len(mcmc.Data):
 		return len(mcmc.Data)
 	default:

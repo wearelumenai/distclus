@@ -59,7 +59,6 @@ func TestClust_Loss(t *testing.T) {
 		s += f * f
 	}
 
-	s = s / float64(len(testElemts))
 	var l = clust.Loss(testElemts, sp, 2.)
 
 	if s != l {

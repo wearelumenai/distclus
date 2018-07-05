@@ -105,7 +105,7 @@ func TestMCMC_ParPredict(t *testing.T) {
 func TestMCMC_ParPredict2(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
-	var seed = uint64(187232548913256543)
+	var seed = uint64(187232542653256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var mcmc = NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
 

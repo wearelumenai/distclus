@@ -62,7 +62,7 @@ func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 
 		sum += math.Pow(min, norm)
 	}
-	return sum / float64(len(data))
+	return sum
 }
 
 // Returns the index of the closest element to elemt in elemts.

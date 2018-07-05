@@ -18,7 +18,7 @@ var mcmcConf = algo.MCMCConf{
 
 var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 
-func TestParMCMCSupport_Loss(t *testing.T) {
+func TestParMCMCSupport_ParLoss(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer, nil)
@@ -38,7 +38,7 @@ func TestParMCMCSupport_Loss(t *testing.T) {
 	}
 }
 
-func TestMCMC_Run(t *testing.T) {
+func TestMCMC_ParRun(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 100
 	conf.InitK = 1
@@ -66,7 +66,7 @@ func TestMCMC_Run(t *testing.T) {
 	}
 }
 
-func TestMCMC_Predict(t *testing.T) {
+func TestMCMC_ParPredict(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer, nil)
@@ -102,7 +102,7 @@ func TestMCMC_Predict(t *testing.T) {
 	mcmc.Close()
 }
 
-func TestMCMC_Predict2(t *testing.T) {
+func TestMCMC_ParPredict2(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	var seed = uint64(187232548913256543)
@@ -151,17 +151,19 @@ func TestMCMC_Predict2(t *testing.T) {
 	mcmc.Close()
 }
 
-func TestMCMC_Async(t *testing.T) {
+func TestMCMC_ParAsync(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
-	var mcmc = NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
+	var mcmc = NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
 	for _, elemt := range data {
 		mcmc.Push(elemt)
 	}
 
 	mcmc.Run(true)
+
+	time.Sleep(700 * time.Millisecond)
 
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, ix, _ = mcmc.Predict(obs, true)

@@ -21,7 +21,7 @@ var data = []core.Elemt{
 	[]float64{50, 51.2, 49, 40, 45.2},
 }
 
-func TestKMeans_Run(t *testing.T) {
+func TestKMeans_ParRun(t *testing.T) {
 	var conf = algo.KMeansConf{Iter: 1, K: 3, Space: core.RealSpace{}}
 	var km = NewKMeans(conf, algo.GivenInitializer, nil)
 
@@ -41,7 +41,7 @@ func TestKMeans_Run(t *testing.T) {
 	km.Close()
 }
 
-func TestKMeans_Predict(t *testing.T) {
+func TestKMeans_ParPredict(t *testing.T) {
 	var conf = algo.KMeansConf{Iter: 0, K: 3, Space: core.RealSpace{}}
 	var km = NewKMeans(conf, algo.GivenInitializer, nil)
 
@@ -88,7 +88,7 @@ func almostEqual(e1 []float64, e2 []float64) bool {
 	return true
 }
 
-func TestKMeans_Predict2(t *testing.T) {
+func TestKMeans_ParPredict2(t *testing.T) {
 	var seed = uint64(187236548914256543)
 	rgen := rand.New(rand.NewSource(seed))
 	var conf = algo.KMeansConf{Iter: 20, K: 3, Space: core.RealSpace{}, RGen: rgen}
@@ -149,9 +149,9 @@ func TestKMeans_Predict2(t *testing.T) {
 	km.Close()
 }
 
-func TestKMeans_Async(t *testing.T) {
+func TestKMeans_ParAsync(t *testing.T) {
 	var conf = algo.KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, algo.KmeansPPInitializer, nil)
+	var km = NewKMeans(conf, algo.GivenInitializer, nil)
 
 	for _, elemt := range data {
 		km.Push(elemt)
@@ -159,11 +159,11 @@ func TestKMeans_Async(t *testing.T) {
 
 	km.Run(true)
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, ix, _ = km.Predict(obs, true)
 
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	var clust, _ = km.Centroids()
 
 	if reflect.DeepEqual(clust[ix], c) {

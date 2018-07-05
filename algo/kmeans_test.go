@@ -194,7 +194,7 @@ func TestKMeans_Close(t *testing.T) {
 
 func TestKMeans_Async(t *testing.T) {
 	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
-	var km = NewKMeans(conf, KmeansPPInitializer, nil)
+	var km = NewKMeans(conf, GivenInitializer, nil)
 
 	km.Run(true)
 
@@ -202,11 +202,11 @@ func TestKMeans_Async(t *testing.T) {
 		km.Push(elemt)
 	}
 
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, ix, _ = km.Predict(obs, true)
 
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 	var clust, _ = km.Centroids()
 
 	if reflect.DeepEqual(clust[ix], c) {

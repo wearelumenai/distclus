@@ -265,7 +265,7 @@ func TestMCMC_Async(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
-	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
+	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
 	mcmc.Run(true)
 
@@ -273,11 +273,11 @@ func TestMCMC_Async(t *testing.T) {
 		mcmc.Push(elemt)
 	}
 
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, ix, _ = mcmc.Predict(obs, true)
 
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(700 * time.Millisecond)
 	var clust, _ = mcmc.Centroids()
 
 	if reflect.DeepEqual(clust[ix], c) {

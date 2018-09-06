@@ -2,6 +2,7 @@ package par
 
 import (
 	"distclus/core"
+	"distclus/real"
 	"testing"
 	"reflect"
 	"time"
@@ -22,7 +23,7 @@ var data = []core.Elemt{
 }
 
 func TestKMeans_ParRun(t *testing.T) {
-	var conf = algo.KMeansConf{Iter: 1, K: 3, Space: core.RealSpace{}}
+	var conf = algo.KMeansConf{Iter: 1, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, algo.GivenInitializer, nil)
 
 	for _, elemt := range data {
@@ -42,7 +43,7 @@ func TestKMeans_ParRun(t *testing.T) {
 }
 
 func TestKMeans_ParPredict(t *testing.T) {
-	var conf = algo.KMeansConf{Iter: 0, K: 3, Space: core.RealSpace{}}
+	var conf = algo.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, algo.GivenInitializer, nil)
 
 	for _, elemt := range data {
@@ -91,7 +92,7 @@ func almostEqual(e1 []float64, e2 []float64) bool {
 func TestKMeans_ParPredict2(t *testing.T) {
 	var seed = uint64(187236548914256543)
 	rgen := rand.New(rand.NewSource(seed))
-	var conf = algo.KMeansConf{Iter: 20, K: 3, Space: core.RealSpace{}, RGen: rgen}
+	var conf = algo.KMeansConf{Iter: 20, K: 3, Space: real.RealSpace{}, RGen: rgen}
 	var km = NewKMeans(conf, algo.KmeansPPInitializer, nil)
 
 	for _, elemt := range data {
@@ -110,7 +111,7 @@ func TestKMeans_ParPredict2(t *testing.T) {
 			t.Error("Expected center", clust[i], "got", c)
 		}
 
-		if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; i==0 && !almostEqual(r, c.([]float64)) {
+		if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; i == 0 && !almostEqual(r, c.([]float64)) {
 			t.Error("Expected", r, "got", c)
 		}
 
@@ -150,7 +151,7 @@ func TestKMeans_ParPredict2(t *testing.T) {
 }
 
 func TestKMeans_ParAsync(t *testing.T) {
-	var conf = algo.KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
+	var conf = algo.KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, algo.GivenInitializer, nil)
 
 	for _, elemt := range data {

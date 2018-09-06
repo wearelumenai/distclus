@@ -8,10 +8,9 @@ import (
 	"gonum.org/v1/plot/plotutil"
 	"gonum.org/v1/plot/vg"
 	"distclus/core"
-	"distclus/algo"
 )
 
-func PlotClust(clust algo.Clust, batch []core.Elemt, space core.Space, title, xLab, yLab, png string) {
+func PlotClust(clust core.Clust, batch []core.Elemt, space core.Space, title, xLab, yLab, png string) {
 	var clusts = clust.AssignAll(batch, space)
 	k := len(clust)
 	p, err := plot.New()

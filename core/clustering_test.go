@@ -1,22 +1,33 @@
-package algo
+package core_test
 
 import (
-	"distclus/core"
 	"testing"
 	"reflect"
+	"distclus/real"
+	"distclus/core"
 )
 
-var testElemts = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
+var testPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
 	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
 	[]float64{-5.}, []float64{-8.}, []float64{9.}}
 
+var testVectors = []core.Elemt{
+	[]float64{7.2, 6, 8, 11, 10},
+	[]float64{-8, -10.5, -7, -8.5, -9},
+	[]float64{42, 41.2, 42, 40.2, 45},
+	[]float64{9, 8, 7, 7.5, 10},
+	[]float64{7.2, 6, 8, 11, 10},
+	[]float64{-9, -10, -8, -8, -7.5},
+	[]float64{42, 41.2, 42.2, 40.2, 45},
+	[]float64{50, 51.2, 49, 40, 45.2},
+}
 func TestClust_Assign(t *testing.T) {
-	var clust = Clust{
+	var clust = core.Clust{
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = core.RealSpace{}
-	var c, ix, d = clust.Assign(testElemts[0], sp)
+	var sp = real.RealSpace{}
+	var c, ix, d = clust.Assign(testPoints[0], sp)
 
 	if c.([]float64)[0] != clust[0].([]float64)[0] || ix != 0 || d != 2. {
 		t.Error("Expected cluster 0 at distance 2 got", ix, d)
@@ -24,12 +35,12 @@ func TestClust_Assign(t *testing.T) {
 }
 
 func TestClust_AssignAll(t *testing.T) {
-	var clust = Clust{
+	var clust = core.Clust{
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = core.RealSpace{}
-	var result = clust.AssignAll(testElemts, sp)
+	var sp = real.RealSpace{}
+	var result = clust.AssignAll(testPoints, sp)
 
 	for i, c := range result {
 		for _, e := range c {
@@ -44,14 +55,14 @@ func TestClust_AssignAll(t *testing.T) {
 }
 
 func TestClust_Loss(t *testing.T) {
-	var clust = Clust{
+	var clust = core.Clust{
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = core.RealSpace{}
+	var sp = real.RealSpace{}
 
 	var s = 0.
-	for _, e := range testElemts {
+	for _, e := range testPoints {
 		f := e.([]float64)[0]
 		if f < 0 {
 			f += 1
@@ -59,7 +70,7 @@ func TestClust_Loss(t *testing.T) {
 		s += f * f
 	}
 
-	var l = clust.Loss(testElemts, sp, 2.)
+	var l = clust.Loss(testPoints, sp, 2.)
 
 	if s != l {
 		t.Error("Expected", s, "got", l)
@@ -67,9 +78,9 @@ func TestClust_Loss(t *testing.T) {
 }
 
 func TestDBA(t *testing.T) {
-	var sp = core.RealSpace{}
+	var sp = real.RealSpace{}
 
-	var _, err = DBA([]core.Elemt{}, sp)
+	var _, err = core.DBA([]core.Elemt{}, sp)
 
 	if err == nil {
 		t.Error("Expected empty error")
@@ -77,13 +88,13 @@ func TestDBA(t *testing.T) {
 
 	var elemts = []core.Elemt{[]float64{2.}, []float64{4.}}
 
-	var dba, _ = DBA(elemts, sp)
+	var dba, _ = core.DBA(elemts, sp)
 	if e := dba.([]float64)[0]; e != 3. {
 		t.Error("Expected 3 got", e)
 	}
 
-	elemts = testElemts
-	dba, _ = DBA(elemts, sp)
+	elemts = testPoints
+	dba, _ = core.DBA(elemts, sp)
 	var s = 0.
 	for i := 0; i < len(elemts); i++ {
 		s += (elemts[i]).([]float64)[0]
@@ -101,7 +112,7 @@ func TestDBA(t *testing.T) {
 		elemts2[i] = []float64{e, 2 * e}
 	}
 
-	var dba2, _ = DBA(elemts2, sp)
+	var dba2, _ = core.DBA(elemts2, sp)
 	var ee = dba2.([]float64)
 	if ee[0] != m || ee[1] != 2*m {
 		t.Error("Expected [m m] got", ee)
@@ -109,12 +120,12 @@ func TestDBA(t *testing.T) {
 }
 
 func TestClust_Initializer(t *testing.T) {
-	var clust = Clust{
+	var clust = core.Clust{
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = core.RealSpace{}
-	var c, _ = clust.Initializer(2, testElemts, sp, nil)
+	var sp = real.RealSpace{}
+	var c, _ = clust.Initializer(2, testPoints, sp, nil)
 
 	if !reflect.DeepEqual(clust, c) {
 		t.Error("Expected identity")
@@ -131,6 +142,6 @@ func TestClust_Empty(t *testing.T) {
 	func() {
 		defer testPanic()
 
-		Clust{}.AssignAll(data, core.RealSpace{})
+		core.Clust{}.AssignAll(testVectors, real.RealSpace{})
 	}()
 }

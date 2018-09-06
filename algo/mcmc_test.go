@@ -2,6 +2,7 @@ package algo
 
 import (
 	"distclus/core"
+	"distclus/real"
 	"testing"
 	"reflect"
 	"time"
@@ -12,7 +13,7 @@ import (
 var mcmcConf = MCMCConf{
 	Dim:      5, FrameSize: 8, B: 100, Amp: 1,
 	Norm:     2, Nu: 3, InitK: 3, McmcIter: 20,
-	InitIter: 0, Space: core.RealSpace{},
+	InitIter: 0, Space: real.RealSpace{},
 }
 
 var distrib = NewMultivT(MultivTConf{mcmcConf})
@@ -22,7 +23,7 @@ func TestMCMC_Centroids(t *testing.T) {
 	conf.McmcIter = 0
 	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
@@ -30,8 +31,8 @@ func TestMCMC_Centroids(t *testing.T) {
 	var clust, _ = mcmc.Centroids()
 
 	for i := 0; i < conf.InitK; i++ {
-		if !reflect.DeepEqual(clust[i], data[i]) {
-			t.Error("Expected", data[i], "got", clust[i])
+		if !reflect.DeepEqual(clust[i], testVectors[i]) {
+			t.Error("Expected", testVectors[i], "got", clust[i])
 		}
 	}
 
@@ -43,7 +44,7 @@ func TestMCMC_getCenters(t *testing.T) {
 	conf.McmcIter = 0
 	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
@@ -130,7 +131,7 @@ func TestMCMC_Run(t *testing.T) {
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
@@ -138,7 +139,7 @@ func TestMCMC_Run(t *testing.T) {
 	var clust, _ = mcmc.Centroids()
 
 	for i := 0; i < len(clust); i++ {
-		if reflect.DeepEqual(clust[i], data[i]) {
+		if reflect.DeepEqual(clust[i], testVectors[i]) {
 			t.Error("Expected center change got", clust[i])
 		}
 	}
@@ -157,7 +158,7 @@ func TestMCMC_MaxK(t *testing.T) {
 	conf.Amp = 1e6
 	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
@@ -175,29 +176,29 @@ func TestMCMC_Predict(t *testing.T) {
 	conf.McmcIter = 0
 	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
 	mcmc.Run(false)
 
-	for i, elemt := range data {
+	for i, elemt := range testVectors {
 		var c, idx, _ = mcmc.Predict(elemt, false)
 
 		if i == 0 || i == 3 || i == 4 {
-			if idx != 0 || !reflect.DeepEqual(c, data[0]) {
+			if idx != 0 || !reflect.DeepEqual(c, testVectors[0]) {
 				t.Error("Expected center 0")
 			}
 		}
 
 		if i == 1 || i == 5 {
-			if idx != 1 || !reflect.DeepEqual(c, data[1]) {
+			if idx != 1 || !reflect.DeepEqual(c, testVectors[1]) {
 				t.Error("Expected center 1")
 			}
 		}
 
 		if i == 2 || i == 6 || i == 7 {
-			if idx != 2 || !reflect.DeepEqual(c, data[2]) {
+			if idx != 2 || !reflect.DeepEqual(c, testVectors[2]) {
 				t.Error("Expected center 2")
 			}
 		}
@@ -213,7 +214,7 @@ func TestMCMC_Predict2(t *testing.T) {
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var mcmc = NewMCMC(conf, distrib, KmeansPPInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
@@ -222,7 +223,7 @@ func TestMCMC_Predict2(t *testing.T) {
 
 	var iclust = make([]int, 3)
 	for i := 0; i < 3; i++ {
-		var c, ix, _ = mcmc.Predict(data[i], false)
+		var c, ix, _ = mcmc.Predict(testVectors[i], false)
 		iclust[i] = ix
 
 		if !reflect.DeepEqual(c, clust[ix]) {
@@ -230,8 +231,8 @@ func TestMCMC_Predict2(t *testing.T) {
 		}
 	}
 
-	for i := 3; i < len(data); i++ {
-		var c, idx, _ = mcmc.Predict(data[i], false)
+	for i := 3; i < len(testVectors); i++ {
+		var c, idx, _ = mcmc.Predict(testVectors[i], false)
 
 		if i == 3 || i == 4 {
 			if idx != iclust[0] || !reflect.DeepEqual(c, clust[idx]) {
@@ -260,24 +261,24 @@ func TestMCMC_Close(t *testing.T) {
 	conf.McmcIter = 1 << 30
 	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
-	if mcmc.status != Created {
-		t.Error("Expected status", Created, "got", mcmc.status)
+	if mcmc.status != core.Created {
+		t.Error("Expected status", core.Created, "got", mcmc.status)
 	}
 
 	mcmc.Run(true)
 
-	if mcmc.status != Running {
-		t.Error("Expected status", Running, "got", mcmc.status)
+	if mcmc.status != core.Running {
+		t.Error("Expected status", core.Running, "got", mcmc.status)
 	}
 
 	mcmc.Close()
 
-	if mcmc.status != Closed {
-		t.Error("Expected status", Closed, "got", mcmc.status)
+	if mcmc.status != core.Closed {
+		t.Error("Expected status", core.Closed, "got", mcmc.status)
 	}
 }
 
@@ -289,7 +290,7 @@ func TestMCMC_Async(t *testing.T) {
 
 	mcmc.Run(true)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		mcmc.Push(elemt)
 	}
 
@@ -304,8 +305,8 @@ func TestMCMC_Async(t *testing.T) {
 		t.Error("Expected center change")
 	}
 
-	var _, ix1, _ = mcmc.Predict(data[1], false)
-	var _, ix5, _ = mcmc.Predict(data[5], false)
+	var _, ix1, _ = mcmc.Predict(testVectors[1], false)
+	var _, ix5, _ = mcmc.Predict(testVectors[5], false)
 
 	if ixn != ix5 || ixn != ix1 {
 		t.Error("Expected same center")
@@ -321,9 +322,9 @@ func TestMCMC_Workflow(t *testing.T) {
 
 	var err error
 
-	err = mcmc.Push(data[0])
-	err = mcmc.Push(data[1])
-	err = mcmc.Push(data[2])
+	err = mcmc.Push(testVectors[0])
+	err = mcmc.Push(testVectors[1])
+	err = mcmc.Push(testVectors[2])
 
 	if err != nil {
 		t.Error("Expected no workflow error")
@@ -335,7 +336,7 @@ func TestMCMC_Workflow(t *testing.T) {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = mcmc.Predict(data[3], false)
+	_, _, err = mcmc.Predict(testVectors[3], false)
 
 	if err == nil {
 		t.Error("Expected workflow error")
@@ -343,13 +344,13 @@ func TestMCMC_Workflow(t *testing.T) {
 
 	mcmc.Run(true)
 
-	err = mcmc.Push(data[3])
+	err = mcmc.Push(testVectors[3])
 
 	if err != nil {
 		t.Error("Expected no workflow error")
 	}
 
-	_, _, err = mcmc.Predict(data[4], true)
+	_, _, err = mcmc.Predict(testVectors[4], true)
 
 	if err != nil {
 		t.Error("Expected no workflow error")
@@ -357,19 +358,19 @@ func TestMCMC_Workflow(t *testing.T) {
 
 	mcmc.Close()
 
-	err = mcmc.Push(data[5])
+	err = mcmc.Push(testVectors[5])
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = mcmc.Predict(data[5], true)
+	_, _, err = mcmc.Predict(testVectors[5], true)
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = mcmc.Predict(data[5], false)
+	_, _, err = mcmc.Predict(testVectors[5], false)
 
 	if err != nil {
 		t.Error("Expected no workflow error")

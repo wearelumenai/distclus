@@ -9,6 +9,7 @@ import (
 	"io"
 	"distclus/core"
 	"distclus/algo"
+	"distclus/real"
 	"golang.org/x/exp/rand"
 	"log"
 	"distclus/algo/par"
@@ -83,7 +84,7 @@ func runMcmc() {
 
 	switch *dtype {
 	case "real":
-		mcmcConf.Space = core.RealSpace{}
+		mcmcConf.Space = real.RealSpace{}
 		data, mcmcConf.Dim = parseFloatCsv(fdata)
 		// because the configuration is copied it must not be modified after object initialization
 		if mcmcConf.FrameSize < 1 {
@@ -142,7 +143,7 @@ func printLabels(res []int, out *string) {
 	}
 }
 
-func printCenters(res algo.Clust, out *string) {
+func printCenters(res core.Clust, out *string) {
 	var o io.Writer
 	if len(*out) != 0 {
 		var f, err = os.Create(*out)

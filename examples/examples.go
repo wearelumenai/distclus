@@ -8,6 +8,7 @@ import (
 	"distclus/core"
 	"distclus/algo"
 	"distclus/tools"
+	"distclus/real"
 )
 
 func s1Parser(path string) []core.Elemt {
@@ -28,7 +29,7 @@ func s1Parser(path string) []core.Elemt {
 	return res
 }
 
-func mcmcClust(space core.RealSpace, batch []core.Elemt) {
+func mcmcClust(space real.RealSpace, batch []core.Elemt) {
 	var mcmcConf = algo.MCMCConf{
 		Dim:         2, FrameSize: 8, B: 100, Amp: 1,
 		Norm:        2, Nu: 1, InitK: 3, McmcIter: 100,
@@ -47,7 +48,7 @@ func mcmcClust(space core.RealSpace, batch []core.Elemt) {
 	tools.PlotClust(centers, batch, space, "s1MCMC", "X", "Y", "s1MCMC")
 }
 
-func kmClust(space core.RealSpace, batch []core.Elemt) {
+func kmClust(space real.RealSpace, batch []core.Elemt) {
 	var km = algo.NewKMeans(algo.KMeansConf{K: 16, Iter: 100, Space: space}, algo.KmeansPPInitializer, nil)
 	for _, e := range batch {
 		km.Push(e)
@@ -60,7 +61,7 @@ func kmClust(space core.RealSpace, batch []core.Elemt) {
 
 func main() {
 	var batch = s1Parser("examples/data/s1.txt")
-	var space = core.RealSpace{}
+	var space = real.RealSpace{}
 	kmClust(space, batch)
 	mcmcClust(space, batch)
 }

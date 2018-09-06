@@ -14,7 +14,7 @@ type ParMCMCSupport struct {
 }
 
 // Iterate MCMC in parallel by calling the parallel kmeans implementation
-func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust algo.Clust, iter int) algo.Clust {
+func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust core.Clust, iter int) core.Clust {
 	var conf = algo.KMeansConf{K: len(clust), Iter: iter, Space: supp.config.Space}
 	var km = NewKMeans(conf, clust.Initializer, m.Data)
 
@@ -35,7 +35,7 @@ type msgMCMC struct {
 
 // aggElemntLoss receives elements from in channel, compute their participation to the global loss
 // when in is closed, send the partial loss and the corresponding cardinality to out channel
-func aggElemtLoss(clust algo.Clust, space core.Space, norm float64, elmts []core.Elemt, out chan<- msgMCMC, wg *sync.WaitGroup) {
+func aggElemtLoss(clust core.Clust, space core.Space, norm float64, elmts []core.Elemt, out chan<- msgMCMC, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var msg msgMCMC
@@ -59,7 +59,7 @@ func aggElemtLoss(clust algo.Clust, space core.Space, norm float64, elmts []core
 // Loss compute the loss in parallel.
 // It starts as many worker routines as available CPU to execute aggElmtLoss and fan out all data to them.
 // When all workers finish it aggregate partial losses and compute global loss.
-func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal algo.Clust) float64 {
+func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal core.Clust) float64 {
 	// channels
 	var degree = runtime.NumCPU()
 	var length = len(m.Data)

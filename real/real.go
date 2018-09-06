@@ -1,14 +1,15 @@
-package core
+package real
 
 import (
 	"math"
+	"distclus/core"
 )
 
 // Space for reals ([]float64)
 type RealSpace struct{}
 
 // Compute euclidean distance between two nodes
-func (space RealSpace) Dist(elemt1, elemt2 Elemt) float64 {
+func (space RealSpace) Dist(elemt1, elemt2 core.Elemt) float64 {
 	var e1 = elemt1.([]float64)
 	var e2 = elemt2.([]float64)
 	var sum = 0.
@@ -20,7 +21,7 @@ func (space RealSpace) Dist(elemt1, elemt2 Elemt) float64 {
 }
 
 // Compute combination between two nodes
-func (space RealSpace) Combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 int) {
+func (space RealSpace) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
 	var e1 = elemt1.([]float64)
 	var e2 = elemt2.([]float64)
 	dim := len(e1)
@@ -33,7 +34,7 @@ func (space RealSpace) Combine(elemt1 Elemt, weight1 int, elemt2 Elemt, weight2 
 }
 
 // Create a copy of a vector
-func (space RealSpace) Copy(elemt Elemt) Elemt {
+func (space RealSpace) Copy(elemt core.Elemt) core.Elemt {
 	var rv = elemt.([]float64)
 	var crv = make([]float64, len(rv))
 	copy(crv, rv)

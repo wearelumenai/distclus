@@ -5,8 +5,24 @@ import (
 	"time"
 	"golang.org/x/exp/rand"
 	"distclus/core"
+	"distclus/real"
 	"reflect"
 )
+
+var testPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
+	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
+	[]float64{-5.}, []float64{-8.}, []float64{9.}}
+
+var testVectors = []core.Elemt{
+	[]float64{7.2, 6, 8, 11, 10},
+	[]float64{-8, -10.5, -7, -8.5, -9},
+	[]float64{42, 41.2, 42, 40.2, 45},
+	[]float64{9, 8, 7, 7.5, 10},
+	[]float64{7.2, 6, 8, 11, 10},
+	[]float64{-9, -10, -8, -8, -7.5},
+	[]float64{42, 41.2, 42.2, 40.2, 45},
+	[]float64{50, 51.2, 49, 40, 45.2},
+}
 
 func TestWeightedChoice(t *testing.T) {
 	if testing.Short() {
@@ -27,22 +43,22 @@ func TestWeightedChoice(t *testing.T) {
 
 func TestGivenInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = GivenInitializer(4, testElemts, core.RealSpace{}, src)
+	var clust, _ = GivenInitializer(4, testPoints, real.RealSpace{}, src)
 
 	if l := len(clust); l != 4 {
 		t.Error("Expected 4 centers got", l)
 	}
 
 	for i := 0; i < 4; i++ {
-		if !reflect.DeepEqual(clust[i], testElemts[i]) {
-			t.Error("Expected", testElemts[i], "got", clust[i])
+		if !reflect.DeepEqual(clust[i], testPoints[i]) {
+			t.Error("Expected", testPoints[i], "got", clust[i])
 		}
 	}
 }
 
 func TestKmeansPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = KmeansPPInitializer(14, testElemts, core.RealSpace{}, src)
+	var clust, _ = KmeansPPInitializer(14, testPoints, real.RealSpace{}, src)
 
 	if l := len(clust); l != 14 {
 		t.Error("Expected 4 centers got", l)
@@ -59,7 +75,7 @@ func TestKmeansPPInitializer(t *testing.T) {
 
 func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = RandInitializer(14, testElemts, core.RealSpace{}, src)
+	var clust, _ = RandInitializer(14, testPoints, real.RealSpace{}, src)
 
 	if l := len(clust); l != 14 {
 		t.Error("Expected 4 centers got", l)
@@ -82,13 +98,13 @@ func TestCheckInitialization(t *testing.T) {
 		}
 	}
 
-	if check(15, data) {
+	if check(15, testVectors) {
 		t.Error("Expected error")
 	}
 
 	func() {
 		defer testPanic()
 
-		check(0, data)
+		check(0, testVectors)
 	}()
 }

@@ -5,6 +5,7 @@ import (
 	"time"
 	"distclus/core"
 	"distclus/algo"
+	"distclus/real"
 	"golang.org/x/exp/rand"
 	"distclus/algo/par"
 )
@@ -22,7 +23,7 @@ func b1(log func(args ...interface{})) {
 	var seed = int(time.Now().UTC().Unix())
 	var mcmcConf = algo.MCMCConf{
 	}
-	mcmcConf.Space = core.RealSpace{}
+	mcmcConf.Space = real.RealSpace{}
 	in := "cas.csv"
 	data, mcmcConf.Dim = parseFloatCsv(&in)
 	mcmcConf.FrameSize = 15000

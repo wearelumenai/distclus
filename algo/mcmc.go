@@ -80,9 +80,9 @@ type MCMC struct {
 	// Centers Initializer
 	initializer Initializer
 	uniform     distuv.Uniform
-	store       map[int]Clust
-	clust       Clust
-	status      ClustStatus
+	store       map[int]core.Clust
+	clust       core.Clust
+	status      core.ClustStatus
 	rgen        *rand.Rand
 	closing     chan bool
 	closed      chan bool
@@ -90,14 +90,14 @@ type MCMC struct {
 }
 
 type MCMCSupport interface {
-	Iterate(MCMC, Clust, int) Clust
-	Loss(MCMC, Clust) float64
+	Iterate(MCMC, core.Clust, int) core.Clust
+	Loss(MCMC, core.Clust) float64
 }
 
 type SeqMCMCSupport struct {
 }
 
-func (SeqMCMCSupport) Iterate(m MCMC, clust Clust, iter int) Clust {
+func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
 	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
 	var km = NewKMeans(conf, clust.Initializer, m.Data)
 
@@ -109,7 +109,7 @@ func (SeqMCMCSupport) Iterate(m MCMC, clust Clust, iter int) Clust {
 	return result
 }
 
-func (SeqMCMCSupport) Loss(m MCMC, proposal Clust) float64 {
+func (SeqMCMCSupport) Loss(m MCMC, proposal core.Clust) float64 {
 	return proposal.Loss(m.Data, m.Space, m.Norm)
 }
 
@@ -131,8 +131,8 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 	var m MCMC
 	m.MCMCConf = conf
 	m.MCMCSupport = SeqMCMCSupport{}
-	m.store = make(map[int]Clust)
-	m.status = Created
+	m.store = make(map[int]core.Clust)
+	m.status = core.Created
 	m.initializer = initializer
 	m.distrib = distrib
 
@@ -164,9 +164,9 @@ func (mcmc *MCMC) AcceptRatio() float64 {
 	return float64(mcmc.acc) / float64(mcmc.iter)
 }
 
-func (mcmc *MCMC) Centroids() (c Clust, err error) {
+func (mcmc *MCMC) Centroids() (c core.Clust, err error) {
 	switch mcmc.status {
-	case Created:
+	case core.Created:
 		err = fmt.Errorf("clustering not started")
 	default:
 		c = mcmc.clust
@@ -177,7 +177,7 @@ func (mcmc *MCMC) Centroids() (c Clust, err error) {
 
 func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
 	switch mcmc.status {
-	case Closed:
+	case core.Closed:
 		err = errors.New("clustering ended")
 	default:
 		mcmc.Buffer.push(elemt)
@@ -216,7 +216,7 @@ func (mcmc *MCMC) Run(async bool) {
 				}
 			}
 
-			mcmc.status = Running
+			mcmc.status = core.Running
 			mcmc.process()
 		}()
 
@@ -229,7 +229,7 @@ func (mcmc *MCMC) Run(async bool) {
 			panic("failed to initialize")
 		}
 
-		mcmc.status = Running
+		mcmc.status = core.Running
 		mcmc.process()
 	}
 }
@@ -274,13 +274,13 @@ func (mcmc *MCMC) process() {
 		}
 	}
 
-	mcmc.status = Closed
+	mcmc.status = core.Closed
 	mcmc.closed <- true
 }
 
 // Alter a proposal using MCMC distribution
-func (mcmc *MCMC) alter(clust Clust) Clust {
-	var result = make(Clust, len(clust))
+func (mcmc *MCMC) alter(clust core.Clust) core.Clust {
+	var result = make(core.Clust, len(clust))
 
 	for i := range clust {
 		result[i] = mcmc.distrib.Sample(clust[i])
@@ -290,7 +290,7 @@ func (mcmc *MCMC) alter(clust Clust) Clust {
 }
 
 // Compute probability between two proposals using MCMC distribution
-func (mcmc *MCMC) proba(x, mu Clust) (p float64) {
+func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
 	p = 0.
 	for i := range x {
 		p += mcmc.distrib.Pdf(mu[i], x[i])
@@ -327,7 +327,7 @@ func (mcmc *MCMC) nextK(k int) int {
 }
 
 // Get a configuration center(retrieve from store if K is exist else create with genCenters
-func (mcmc *MCMC) getCenters(k int, prev Clust) Clust {
+func (mcmc *MCMC) getCenters(k int, prev core.Clust) core.Clust {
 	var centers, ok = mcmc.store[k]
 
 	if !ok {
@@ -339,17 +339,17 @@ func (mcmc *MCMC) getCenters(k int, prev Clust) Clust {
 }
 
 // Set a configuration in store
-func (mcmc *MCMC) setCenters(clust Clust) {
+func (mcmc *MCMC) setCenters(clust core.Clust) {
 	mcmc.store[len(clust)] = clust
 }
 
 // Generate a configuration of K centers based on previous configuration
-func (mcmc *MCMC) genCenters(k int, prev Clust) (clust Clust) {
+func (mcmc *MCMC) genCenters(k int, prev core.Clust) (clust core.Clust) {
 	var prevK = len(prev)
 
 	switch {
 	case prevK < k:
-		clust = make(Clust, k)
+		clust = make(core.Clust, k)
 		for i := 0; i < prevK; i++ {
 			clust[i] = mcmc.Space.Copy(prev[i])
 		}
@@ -357,7 +357,7 @@ func (mcmc *MCMC) genCenters(k int, prev Clust) (clust Clust) {
 
 	case prevK > k:
 		var del = mcmc.rgen.Intn(prevK)
-		clust = make(Clust, k)
+		clust = make(core.Clust, k)
 		for i := 0; i < k; i++ {
 			if i < del {
 				clust[i] = mcmc.Space.Copy(prev[i])

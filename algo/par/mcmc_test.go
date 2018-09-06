@@ -2,7 +2,7 @@ package par
 
 import (
 	"testing"
-	"distclus/core"
+	"distclus/real"
 	"distclus/algo"
 	"reflect"
 	"golang.org/x/exp/rand"
@@ -13,7 +13,7 @@ import (
 var mcmcConf = algo.MCMCConf{
 	Dim:      5, FrameSize: 8, B: 100, Amp: 1,
 	Norm:     2, Nu: 3, InitK: 3, McmcIter: 20,
-	InitIter: 0, Space: core.RealSpace{},
+	InitIter: 0, Space: real.RealSpace{},
 }
 
 var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})

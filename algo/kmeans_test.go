@@ -2,6 +2,7 @@ package algo
 
 import (
 	"distclus/core"
+	"distclus/real"
 	"testing"
 	"reflect"
 	"time"
@@ -9,22 +10,11 @@ import (
 	"math"
 )
 
-var data = []core.Elemt{
-	[]float64{7.2, 6, 8, 11, 10},
-	[]float64{-8, -10.5, -7, -8.5, -9},
-	[]float64{42, 41.2, 42, 40.2, 45},
-	[]float64{9, 8, 7, 7.5, 10},
-	[]float64{7.2, 6, 8, 11, 10},
-	[]float64{-9, -10, -8, -8, -7.5},
-	[]float64{42, 41.2, 42.2, 40.2, 45},
-	[]float64{50, 51.2, 49, 40, 45.2},
-}
-
 func TestKMeans_Centroids(t *testing.T) {
-	var conf = KMeansConf{Iter: 0, K: 4, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 0, K: 4, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 
@@ -32,8 +22,8 @@ func TestKMeans_Centroids(t *testing.T) {
 	var clust, _ = km.Centroids()
 
 	for i := 0; i < conf.K; i++ {
-		if !reflect.DeepEqual(clust[i], data[i]) {
-			t.Error("Expected", data[i], "got", clust[i])
+		if !reflect.DeepEqual(clust[i], testVectors[i]) {
+			t.Error("Expected", testVectors[i], "got", clust[i])
 		}
 	}
 
@@ -41,10 +31,10 @@ func TestKMeans_Centroids(t *testing.T) {
 }
 
 func TestKMeans_Run(t *testing.T) {
-	var conf = KMeansConf{Iter: 1, K: 3, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 1, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 
@@ -52,7 +42,7 @@ func TestKMeans_Run(t *testing.T) {
 	var clust, _ = km.Centroids()
 
 	for i := 0; i < conf.K; i++ {
-		if reflect.DeepEqual(clust[i], data[i]) {
+		if reflect.DeepEqual(clust[i], testVectors[i]) {
 			t.Error("Expected average got", clust[i])
 		}
 	}
@@ -61,32 +51,32 @@ func TestKMeans_Run(t *testing.T) {
 }
 
 func TestKMeans_Predict(t *testing.T) {
-	var conf = KMeansConf{Iter: 0, K: 3, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 
 	km.Run(false)
 
-	for i, elemt := range data {
+	for i, elemt := range testVectors {
 		var c, idx, _ = km.Predict(elemt, false)
 
 		if i == 0 || i == 3 || i == 4 {
-			if idx != 0 || !reflect.DeepEqual(c, data[0]) {
+			if idx != 0 || !reflect.DeepEqual(c, testVectors[0]) {
 				t.Error("Expected center 0")
 			}
 		}
 
 		if i == 1 || i == 5 {
-			if idx != 1 || !reflect.DeepEqual(c, data[1]) {
+			if idx != 1 || !reflect.DeepEqual(c, testVectors[1]) {
 				t.Error("Expected center 1")
 			}
 		}
 
 		if i == 2 || i == 6 || i == 7 {
-			if idx != 2 || !reflect.DeepEqual(c, data[2]) {
+			if idx != 2 || !reflect.DeepEqual(c, testVectors[2]) {
 				t.Error("Expected center 2")
 			}
 		}
@@ -110,10 +100,10 @@ func almostEqual(e1 []float64, e2 []float64) bool {
 func TestKMeans_Predict2(t *testing.T) {
 	var seed = uint64(187236548914256543)
 	rgen := rand.New(rand.NewSource(seed))
-	var conf = KMeansConf{Iter: 20, K: 3, Space: core.RealSpace{}, RGen: rgen}
+	var conf = KMeansConf{Iter: 20, K: 3, Space: real.RealSpace{}, RGen: rgen}
 	var km = NewKMeans(conf, KmeansPPInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 
@@ -122,7 +112,7 @@ func TestKMeans_Predict2(t *testing.T) {
 
 	var iclust = make([]int, 3)
 	for i := 0; i < 3; i++ {
-		var c, ix, _ = km.Predict(data[i], false)
+		var c, ix, _ = km.Predict(testVectors[i], false)
 		iclust[i] = ix
 
 		if !reflect.DeepEqual(c, clust[ix]) {
@@ -142,8 +132,8 @@ func TestKMeans_Predict2(t *testing.T) {
 		}
 	}
 
-	for i := 3; i < len(data); i++ {
-		var c, idx, _ = km.Predict(data[i], false)
+	for i := 3; i < len(testVectors); i++ {
+		var c, idx, _ = km.Predict(testVectors[i], false)
 
 		if i == 3 || i == 4 {
 			if idx != iclust[0] || !reflect.DeepEqual(c, clust[idx]) {
@@ -168,37 +158,37 @@ func TestKMeans_Predict2(t *testing.T) {
 }
 
 func TestKMeans_Close(t *testing.T) {
-	var conf = KMeansConf{Iter: 1 << 30, K: 4, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 1 << 30, K: 4, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, GivenInitializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 
-	if km.status != Created {
-		t.Error("Expected status", Created, "got", km.status)
+	if km.status != core.Created {
+		t.Error("Expected status", core.Created, "got", km.status)
 	}
 
 	km.Run(true)
 
-	if km.status != Running {
-		t.Error("Expected status", Running, "got", km.status)
+	if km.status != core.Running {
+		t.Error("Expected status", core.Running, "got", km.status)
 	}
 
 	km.Close()
 
-	if km.status != Closed {
-		t.Error("Expected status", Closed, "got", km.status)
+	if km.status != core.Closed {
+		t.Error("Expected status", core.Closed, "got", km.status)
 	}
 }
 
 func TestKMeans_Async(t *testing.T) {
-	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, GivenInitializer, nil)
 
 	km.Run(true)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 
@@ -213,24 +203,24 @@ func TestKMeans_Async(t *testing.T) {
 		t.Error("Expected center change")
 	}
 
-	var _, ix1, _ = km.Predict(data[1], false)
-	var _, ix5, _ = km.Predict(data[5], false)
+	var _, ix1, _ = km.Predict(testVectors[1], false)
+	var _, ix5, _ = km.Predict(testVectors[5], false)
 
 	if ixn != ix5 || ixn != ix1 {
 		t.Error("Expected same center")
 	}
 
-	var c0, _, _ = km.Predict(data[0], false)
+	var c0, _, _ = km.Predict(testVectors[0], false)
 	if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; !almostEqual(r, c0.([]float64)) {
 		t.Error("Expected", r, "got", c0)
 	}
 
-	var c1, _, _ = km.Predict(data[1], false)
+	var c1, _, _ = km.Predict(testVectors[1], false)
 	if r := []float64{-26. / 3, -30.5 / 3, -23.3 / 3, -24.5 / 3, -24. / 3}; !almostEqual(r, c1.([]float64)) {
 		t.Error("Expected", r, "got", c1)
 	}
 
-	var c2, _, _ = km.Predict(data[2], false)
+	var c2, _, _ = km.Predict(testVectors[2], false)
 	if r := []float64{134. / 3, 133.6 / 3, 133.2 / 3, 120.4 / 3, 135.2 / 3}; !almostEqual(r, c2.([]float64)) {
 		t.Error("Expected", r, "got", c2)
 	}
@@ -239,14 +229,14 @@ func TestKMeans_Async(t *testing.T) {
 }
 
 func TestKMeans_Workflow(t *testing.T) {
-	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, KmeansPPInitializer, nil)
 
 	var err error
 
-	err = km.Push(data[0])
-	err = km.Push(data[1])
-	err = km.Push(data[2])
+	err = km.Push(testVectors[0])
+	err = km.Push(testVectors[1])
+	err = km.Push(testVectors[2])
 
 	if err != nil {
 		t.Error("Expected no workflow error")
@@ -258,7 +248,7 @@ func TestKMeans_Workflow(t *testing.T) {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = km.Predict(data[3], false)
+	_, _, err = km.Predict(testVectors[3], false)
 
 	if err == nil {
 		t.Error("Expected workflow error")
@@ -266,13 +256,13 @@ func TestKMeans_Workflow(t *testing.T) {
 
 	km.Run(true)
 
-	err = km.Push(data[3])
+	err = km.Push(testVectors[3])
 
 	if err != nil {
 		t.Error("Expected no workflow error")
 	}
 
-	_, _, err = km.Predict(data[4], true)
+	_, _, err = km.Predict(testVectors[4], true)
 
 	if err != nil {
 		t.Error("Expected no workflow error")
@@ -280,19 +270,19 @@ func TestKMeans_Workflow(t *testing.T) {
 
 	km.Close()
 
-	err = km.Push(data[5])
+	err = km.Push(testVectors[5])
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = km.Predict(data[5], true)
+	_, _, err = km.Predict(testVectors[5], true)
 
 	if err == nil {
 		t.Error("Expected workflow error")
 	}
 
-	_, _, err = km.Predict(data[5], false)
+	_, _, err = km.Predict(testVectors[5], false)
 
 	if err != nil {
 		t.Error("Expected no workflow error")
@@ -308,27 +298,27 @@ func TestKMeans_Conf(t *testing.T) {
 
 	func() {
 		defer testPanic()
-		var conf = KMeansConf{Iter: -10, K: 3, Space: core.RealSpace{}}
+		var conf = KMeansConf{Iter: -10, K: 3, Space: real.RealSpace{}}
 		var km = NewKMeans(conf, KmeansPPInitializer, nil)
 		km.Run(false)
 	}()
 
 	func() {
 		defer testPanic()
-		var conf = KMeansConf{Iter: 10, K: -3, Space: core.RealSpace{}}
+		var conf = KMeansConf{Iter: 10, K: -3, Space: real.RealSpace{}}
 		NewKMeans(conf, KmeansPPInitializer, nil)
 	}()
 }
 
 func TestKMeans_Empty(t *testing.T) {
-	var init = Clust{
+	var init = core.Clust{
 		[]float64{0, 0, 0, 0, 0},
 		[]float64{1000, 1000, 1000, 1000, 1000},
 	}
-	var conf = KMeansConf{Iter: 1, K: 2, Space: core.RealSpace{}}
+	var conf = KMeansConf{Iter: 1, K: 2, Space: real.RealSpace{}}
 	var km = NewKMeans(conf, init.Initializer, nil)
 
-	for _, elemt := range data {
+	for _, elemt := range testVectors {
 		km.Push(elemt)
 	}
 

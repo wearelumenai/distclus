@@ -19,23 +19,23 @@ type KMeans struct {
 	KMeansConf
 	KMeansSupport
 	Buffer
-	status      ClustStatus
+	status      core.ClustStatus
 	initializer Initializer
-	clust       Clust
+	clust       core.Clust
 	rgen        *rand.Rand
 	closing     chan bool
 	closed      chan bool
 }
 
 type KMeansSupport interface {
-	Iterate(km KMeans, proposal Clust) Clust
+	Iterate(km KMeans, proposal core.Clust) core.Clust
 }
 
 type SeqKMeansSupport struct {
 }
 
-func (SeqKMeansSupport) Iterate(km KMeans, clust Clust) Clust {
-	var result = make(Clust, len(clust))
+func (SeqKMeansSupport) Iterate(km KMeans, clust core.Clust) core.Clust {
+	var result = make(core.Clust, len(clust))
 	var cards = make([]int, len(clust))
 
 	for i, _ := range km.Data {
@@ -73,7 +73,7 @@ func NewKMeans(conf KMeansConf, initializer Initializer, data []core.Elemt) KMea
 	km.KMeansConf = conf
 	km.KMeansSupport = SeqKMeansSupport{}
 	km.initializer = initializer
-	km.status = Created
+	km.status = core.Created
 
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
@@ -93,9 +93,9 @@ func NewKMeans(conf KMeansConf, initializer Initializer, data []core.Elemt) KMea
 	return km
 }
 
-func (km *KMeans) Centroids() (c Clust, err error) {
+func (km *KMeans) Centroids() (c core.Clust, err error) {
 	switch km.status {
-	case Created:
+	case core.Created:
 		err = fmt.Errorf("clustering not started")
 	default:
 		c = km.clust
@@ -106,7 +106,7 @@ func (km *KMeans) Centroids() (c Clust, err error) {
 
 func (km *KMeans) Push(elemt core.Elemt) (err error) {
 	switch km.status {
-	case Closed:
+	case core.Closed:
 		err = errors.New("clustering ended")
 	default:
 		km.Buffer.push(elemt)
@@ -145,7 +145,7 @@ func (km *KMeans) Run(async bool) {
 				}
 			}
 
-			km.status = Running
+			km.status = core.Running
 			km.process()
 		}()
 
@@ -158,7 +158,7 @@ func (km *KMeans) Run(async bool) {
 			panic("failed to initialize")
 		}
 
-		km.status = Running
+		km.status = core.Running
 		km.process()
 	}
 }
@@ -176,7 +176,7 @@ func (km *KMeans) process() {
 		}
 	}
 
-	km.status = Closed
+	km.status = core.Closed
 	km.closed <- true
 }
 

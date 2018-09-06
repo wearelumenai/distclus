@@ -1,8 +1,7 @@
-package algo
+package core
 
 import (
 	"golang.org/x/exp/rand"
-	"distclus/core"
 	"errors"
 	"math"
 )
@@ -18,11 +17,11 @@ const (
 // Online Clust algorithm interface.
 type OnlineClust interface {
 	// Add an element to Clust Data set.
-	Push(elemt core.Elemt) error
+	Push(elemt Elemt) error
 	// Return model current centroids configuration.
 	Centroids() (Clust, error)
 	// Make a prediction on a element and return the associated center and its index.
-	Predict(elemt core.Elemt, push bool) (core.Elemt, int, error)
+	Predict(elemt Elemt, push bool) (Elemt, int, error)
 	// Run Clust algorithm.
 	Run(async bool)
 	// Close algorithm Clust process.
@@ -30,11 +29,11 @@ type OnlineClust interface {
 }
 
 // Indexed clustering result
-type Clust []core.Elemt
+type Clust []Elemt
 
 // AssignAll testElemts on elemts at each centers
-func (c Clust) AssignAll(elemts []core.Elemt, space core.Space) [][]core.Elemt {
-	var clusters = make([][]core.Elemt, len(c))
+func (c Clust) AssignAll(elemts []Elemt, space Space) [][]Elemt {
+	var clusters = make([][]Elemt, len(c))
 	for _, elemt := range elemts {
 		var idx, _ = assign(elemt, c, space)
 		clusters[idx] = append(clusters[idx], elemt)
@@ -43,13 +42,13 @@ func (c Clust) AssignAll(elemts []core.Elemt, space core.Space) [][]core.Elemt {
 }
 
 // AssignAll a element to a center and return the center and its index
-func (c Clust) Assign(elemt core.Elemt, space core.Space) (core.Elemt, int, float64) {
+func (c Clust) Assign(elemt Elemt, space Space) (Elemt, int, float64) {
 	var idx, dist = assign(elemt, c, space)
 	return c[idx], idx, dist
 }
 
 // Compute loss of centers configuration with given Data
-func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
+func (c Clust) Loss(data []Elemt, space Space, norm float64) float64 {
 	var sum = 0.
 	for _, elemt := range data {
 		var min = space.Dist(elemt, c[0])
@@ -66,7 +65,7 @@ func (c Clust) Loss(data []core.Elemt, space core.Space, norm float64) float64 {
 }
 
 // Returns the index of the closest element to elemt in elemts.
-func assign(elemt core.Elemt, clust Clust, space core.Space) (int, float64) {
+func assign(elemt Elemt, clust Clust, space Space) (int, float64) {
 
 	if len(clust) < 1 {
 		panic("empty clust")
@@ -89,9 +88,9 @@ func assign(elemt core.Elemt, clust Clust, space core.Space) (int, float64) {
 	return index, lowest
 }
 
-// Return the DBA of nodes based on the core.Space combination method.
+// Return the DBA of nodes based on the Space combination method.
 // If nodes are empty function panic.
-func DBA(elemts []core.Elemt, space core.Space) (dba core.Elemt, err error) {
+func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 
 	if l := len(elemts); l < 1 {
 		err = errors.New("elemts are empty")
@@ -109,6 +108,6 @@ func DBA(elemts []core.Elemt, space core.Space) (dba core.Elemt, err error) {
 	return
 }
 
-func (c Clust) Initializer(int, []core.Elemt, core.Space, *rand.Rand) (Clust, bool) {
+func (c Clust) Initializer(int, []Elemt, Space, *rand.Rand) (Clust, bool) {
 	return c, true
 }

@@ -5,7 +5,7 @@ import (
 	"distclus/core"
 )
 
-type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) (Clust, bool)
+type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool)
 
 func check(k int, elemts []core.Elemt) bool {
 	if k < 1 {
@@ -17,10 +17,10 @@ func check(k int, elemts []core.Elemt) bool {
 	return true
 }
 
-// GivenInitializer initializes a clustering algorithm with the k first testElemts.
-func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) (Clust, bool) {
+// GivenInitializer initializes a clustering algorithm with the k first testPoints.
+func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) (core.Clust, bool) {
 	var ok = check(k, elemts)
-	var clust= make(Clust, k)
+	var clust= make(core.Clust, k)
 
 	if ok {
 		for i := 0; i < k; i++ {
@@ -32,9 +32,9 @@ func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Ran
 }
 
 // KmeansPPInitializer initializes a clustering algorithm with kmeans++
-func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (Clust, bool) {
+func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool) {
 	var ok = check(k, elemts)
-	var clust = make(Clust, k)
+	var clust = make(core.Clust, k)
 
 	if ok {
 		var draw= src.Intn(len(elemts))
@@ -49,7 +49,7 @@ func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand
 }
 
 // Run au kmeans++ iteration : draw an element the does not belong to clust
-func KmeansPPIter(clust Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) core.Elemt {
+func KmeansPPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) core.Elemt {
 	var dists = make([]float64, len(elemts))
 
 	for i, elt := range elemts {
@@ -61,10 +61,10 @@ func KmeansPPIter(clust Clust, elemts []core.Elemt, space core.Space, src *rand.
 	return space.Copy(elemts[draw])
 }
 
-// RandomInitializer initializes a clustering with random testElemts
-func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (Clust, bool) {
+// RandomInitializer initializes a clustering with random testPoints
+func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool) {
 	var ok = check(k, elemts)
-	var clust = make(Clust, k)
+	var clust = make(core.Clust, k)
 
 	if ok {
 		var chosen= make(map[int]int)

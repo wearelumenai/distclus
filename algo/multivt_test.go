@@ -3,6 +3,7 @@ package algo
 import (
 	"testing"
 	"distclus/core"
+	"distclus/real"
 	"math"
 	"golang.org/x/exp/rand"
 )
@@ -11,7 +12,7 @@ func TestMultivT_Pdf(t *testing.T) {
 	var conf = MCMCConf{
 		Dim:      3, FrameSize: 8, B: 100, Amp: 1,
 		Norm:     2, Nu: 3, InitK: 3, McmcIter: 20,
-		InitIter: 1, Space: core.RealSpace{},
+		InitIter: 1, Space: real.RealSpace{},
 	}
 
 	var x = []core.Elemt{
@@ -50,7 +51,7 @@ func TestMultivT_Sample(t *testing.T) {
 	var conf = MCMCConf{
 		Dim:      3, FrameSize: 8, B: 100, Amp: 1,
 		Norm:     2, Nu: 3, InitK: 3, McmcIter: 20,
-		InitIter: 1, Space: core.RealSpace{},
+		InitIter: 1, Space: real.RealSpace{},
 		RGen:     rand.New(rand.NewSource(6305689164243)),
 	}
 

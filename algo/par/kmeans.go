@@ -22,7 +22,7 @@ type msgKMeans struct {
 
 // aggAssign receives a partition of elements, assign them to a cluster and update the mean for this cluster.
 // when partition is exhausted, send the means and their cardinality to out channel
-func aggAssign(clust algo.Clust, sp core.Space, elmts []core.Elemt, out chan<- []msgKMeans, wg *sync.WaitGroup) {
+func aggAssign(clust core.Clust, sp core.Space, elmts []core.Elemt, out chan<- []msgKMeans, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var we = make([]msgKMeans, len(clust))
@@ -76,7 +76,7 @@ func aggDBA(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
 // Iterate implements a parallel kmeans iteration.
 // It starts as many worker routines as available CPU to execute aggAssign and fan out all data to them.
 // When all workers finish it aggregates partial results and compute global result.
-func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.Clust {
+func (support ParKMeansSupport) Iterate(km algo.KMeans, clust core.Clust) core.Clust {
 	// channels
 	var degree = runtime.NumCPU()
 	var length = len(km.Data)
@@ -106,7 +106,7 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust algo.Clust) algo.C
 	// read and build the result
 	var aggr = aggDBA(km.Space, out)
 
-	var result = make(algo.Clust, len(aggr))
+	var result = make(core.Clust, len(aggr))
 	for i := 0; i < len(clust); i++ {
 		if aggr[i].card > 0 {
 			result[i] = aggr[i].dba

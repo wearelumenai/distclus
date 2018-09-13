@@ -10,6 +10,30 @@ import (
 	"errors"
 )
 
+type MCMCSupport interface {
+	Iterate(MCMC, core.Clust, int) core.Clust
+	Loss(MCMC, core.Clust) float64
+}
+
+type SeqMCMCSupport struct {
+}
+
+func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
+	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
+	var km = NewKMeans(conf, clust.Initializer, m.Data)
+
+	km.Run(false)
+	km.Close()
+
+	var result, _ = km.Centroids()
+
+	return result
+}
+
+func (SeqMCMCSupport) Loss(m MCMC, proposal core.Clust) float64 {
+	return proposal.Loss(m.Data, m.Space, m.Norm)
+}
+
 // MCMC distribution interface
 type MCMCDistrib interface {
 	// Sample from a distribution with mu expectancy
@@ -89,30 +113,6 @@ type MCMC struct {
 	iter, acc   int
 }
 
-type MCMCSupport interface {
-	Iterate(MCMC, core.Clust, int) core.Clust
-	Loss(MCMC, core.Clust) float64
-}
-
-type SeqMCMCSupport struct {
-}
-
-func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
-	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
-	var km = NewKMeans(conf, clust.Initializer, m.Data)
-
-	km.Run(false)
-	km.Close()
-
-	var result, _ = km.Centroids()
-
-	return result
-}
-
-func (SeqMCMCSupport) Loss(m MCMC, proposal core.Clust) float64 {
-	return proposal.Loss(m.Data, m.Space, m.Norm)
-}
-
 // Constructor for MCMC
 func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data []core.Elemt) MCMC {
 
@@ -158,10 +158,6 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 	m.Buffer = newBuffer(data, m.FrameSize)
 
 	return m
-}
-
-func (mcmc *MCMC) AcceptRatio() float64 {
-	return float64(mcmc.acc) / float64(mcmc.iter)
 }
 
 func (mcmc *MCMC) Centroids() (c core.Clust, err error) {
@@ -237,6 +233,10 @@ func (mcmc *MCMC) Run(async bool) {
 func (mcmc *MCMC) Close() {
 	mcmc.closing <- true
 	<-mcmc.closed
+}
+
+func (mcmc *MCMC) AcceptRatio() float64 {
+	return float64(mcmc.acc) / float64(mcmc.iter)
 }
 
 func (mcmc *MCMC) process() {

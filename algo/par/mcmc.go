@@ -8,23 +8,6 @@ import (
 	"sync"
 )
 
-// Implement the MCMCSupport interface for parallel processing
-type ParMCMCSupport struct {
-	config algo.MCMCConf
-}
-
-// Iterate MCMC in parallel by calling the parallel kmeans implementation
-func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust core.Clust, iter int) core.Clust {
-	var conf = algo.KMeansConf{K: len(clust), Iter: iter, Space: supp.config.Space}
-	var km = NewKMeans(conf, clust.Initializer, m.Data)
-
-	km.Run(false)
-	km.Close()
-
-	var result, _ = km.Centroids()
-	return result
-}
-
 // message exchanged between kmeans go routines, actually weighted means
 type msgMCMC struct {
 	// the loss sum for a subset of elements
@@ -54,6 +37,32 @@ func aggElemtLoss(clust core.Clust, space core.Space, norm float64, elmts []core
 	}
 
 	out <- msg
+}
+
+func aggLoss(out chan msgMCMC) msgMCMC {
+	var aggregate msgMCMC
+	for agg := range out {
+		aggregate.sum += agg.sum
+		aggregate.card += agg.card
+	}
+	return aggregate
+}
+
+// Implement the MCMCSupport interface for parallel processing
+type ParMCMCSupport struct {
+	config algo.MCMCConf
+}
+
+// Iterate MCMC in parallel by calling the parallel kmeans implementation
+func (supp ParMCMCSupport) Iterate(m algo.MCMC, clust core.Clust, iter int) core.Clust {
+	var conf = algo.KMeansConf{K: len(clust), Iter: iter, Space: supp.config.Space}
+	var km = NewKMeans(conf, clust.Initializer, m.Data)
+
+	km.Run(false)
+	km.Close()
+
+	var result, _ = km.Centroids()
+	return result
 }
 
 // Loss compute the loss in parallel.
@@ -90,15 +99,6 @@ func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal core.Clust) float64 {
 	var aggr = aggLoss(out)
 
 	return aggr.sum
-}
-
-func aggLoss(out chan msgMCMC) msgMCMC {
-	var aggregate msgMCMC
-	for agg := range out {
-		aggregate.sum += agg.sum
-		aggregate.card += agg.card
-	}
-	return aggregate
 }
 
 // NewMCMC create a new parallel MCMC algorithm instance.

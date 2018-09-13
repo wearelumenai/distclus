@@ -8,25 +8,6 @@ import (
 	"errors"
 )
 
-type KMeansConf struct {
-	K     int
-	Iter  int
-	Space core.Space
-	RGen  *rand.Rand
-}
-
-type KMeans struct {
-	KMeansConf
-	KMeansSupport
-	Buffer
-	status      core.ClustStatus
-	initializer Initializer
-	clust       core.Clust
-	rgen        *rand.Rand
-	closing     chan bool
-	closed      chan bool
-}
-
 type KMeansSupport interface {
 	Iterate(km KMeans, proposal core.Clust) core.Clust
 }
@@ -57,6 +38,25 @@ func (SeqKMeansSupport) Iterate(km KMeans, clust core.Clust) core.Clust {
 	}
 
 	return result
+}
+
+type KMeansConf struct {
+	K     int
+	Iter  int
+	Space core.Space
+	RGen  *rand.Rand
+}
+
+type KMeans struct {
+	KMeansConf
+	KMeansSupport
+	Buffer
+	status      core.ClustStatus
+	initializer Initializer
+	clust       core.Clust
+	rgen        *rand.Rand
+	closing     chan bool
+	closed      chan bool
 }
 
 func NewKMeans(conf KMeansConf, initializer Initializer, data []core.Elemt) KMeans {

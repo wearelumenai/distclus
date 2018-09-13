@@ -7,11 +7,6 @@ import (
 	"runtime"
 )
 
-// Implement the KMeansSupport interface for parallel processing
-type ParKMeansSupport struct {
-	space core.Space
-}
-
 // message exchanged between kmeans go routines, actually weighted means
 type msgKMeans struct {
 	// the mean for a subset of elements
@@ -71,6 +66,11 @@ func aggDBA(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
 	}
 
 	return aggregate
+}
+
+// Implement the KMeansSupport interface for parallel processing
+type ParKMeansSupport struct {
+	space core.Space
 }
 
 // Iterate implements a parallel kmeans iteration.

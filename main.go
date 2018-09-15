@@ -165,8 +165,8 @@ func printCenters(res core.Clust, out *string) {
 	}
 }
 
-func parseInitializer(init string) algo.Initializer {
-	var initializer algo.Initializer
+func parseInitializer(init string) core.Initializer {
+	var initializer core.Initializer
 
 	switch init {
 	case "random":

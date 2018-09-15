@@ -5,8 +5,6 @@ import (
 	"distclus/core"
 )
 
-type Initializer = func(k int, nodes []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool)
-
 func check(k int, elemts []core.Elemt) bool {
 	if k < 1 {
 		panic("K is lower than 1")

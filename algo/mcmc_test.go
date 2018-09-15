@@ -270,6 +270,7 @@ func TestMCMC_Close(t *testing.T) {
 	}
 
 	mcmc.Run(true)
+	time.Sleep(300*time.Millisecond)
 
 	if mcmc.status != core.Running {
 		t.Error("Expected status", core.Running, "got", mcmc.status)
@@ -343,6 +344,7 @@ func TestMCMC_Workflow(t *testing.T) {
 	}
 
 	mcmc.Run(true)
+	time.Sleep(300*time.Millisecond)
 
 	err = mcmc.Push(testVectors[3])
 

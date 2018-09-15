@@ -102,7 +102,7 @@ func (supp ParMCMCSupport) Loss(m algo.MCMC, proposal core.Clust) float64 {
 }
 
 // NewMCMC create a new parallel MCMC algorithm instance.
-func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib, initializer algo.Initializer, data []core.Elemt) algo.MCMC {
+func NewMCMC(conf algo.MCMCConf, distrib algo.MCMCDistrib, initializer core.Initializer, data []core.Elemt) algo.MCMC {
 	var mcmc = algo.NewMCMC(conf, distrib, initializer, data)
 
 	mcmc.MCMCSupport = ParMCMCSupport{conf}

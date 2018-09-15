@@ -119,7 +119,7 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust core.Clust) core.C
 }
 
 // NewKMeans create a new parallel KMeans algorithm instance.
-func NewKMeans(conf algo.KMeansConf, initializer algo.Initializer, data []core.Elemt) algo.KMeans {
+func NewKMeans(conf algo.KMeansConf, initializer core.Initializer, data []core.Elemt) algo.KMeans {
 	var km = algo.NewKMeans(conf, initializer, data)
 	km.KMeansSupport = ParKMeansSupport{space: conf.Space}
 	return km

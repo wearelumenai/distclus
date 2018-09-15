@@ -10,38 +10,6 @@ import (
 	"errors"
 )
 
-type MCMCSupport interface {
-	Iterate(MCMC, core.Clust, int) core.Clust
-	Loss(MCMC, core.Clust) float64
-}
-
-type SeqMCMCSupport struct {
-}
-
-func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
-	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
-	var km = NewKMeans(conf, clust.Initializer, m.Data)
-
-	km.Run(false)
-	km.Close()
-
-	var result, _ = km.Centroids()
-
-	return result
-}
-
-func (SeqMCMCSupport) Loss(m MCMC, proposal core.Clust) float64 {
-	return proposal.Loss(m.Data, m.Space, m.Norm)
-}
-
-// MCMC distribution interface
-type MCMCDistrib interface {
-	// Sample from a distribution with mu expectancy
-	Sample(mu core.Elemt) core.Elemt
-	// Density from a distribution with mu expectancy and x point
-	Pdf(x, mu core.Elemt) float64
-}
-
 type MCMCConf struct {
 	// Data dimension
 	Dim int
@@ -96,26 +64,7 @@ func (conf *MCMCConf) Lambda() float64 {
 	return conf.lamb
 }
 
-type MCMC struct {
-	MCMCConf
-	MCMCSupport
-	Buffer
-	distrib MCMCDistrib
-	// Centers Initializer
-	initializer Initializer
-	uniform     distuv.Uniform
-	store       map[int]core.Clust
-	clust       core.Clust
-	status      core.ClustStatus
-	rgen        *rand.Rand
-	closing     chan bool
-	closed      chan bool
-	iter, acc   int
-}
-
-// Constructor for MCMC
-func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data []core.Elemt) MCMC {
-
+func (conf *MCMCConf) verify() {
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}
@@ -127,6 +76,50 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 	if conf.McmcIter < 0 {
 		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.McmcIter))
 	}
+}
+
+func (conf *MCMCConf) getRGen() *rand.Rand {
+	if conf.RGen == nil {
+		var seed = uint64(time.Now().UTC().Unix())
+		return rand.New(rand.NewSource(seed))
+	} else {
+		return conf.RGen
+	}
+}
+
+// MCMC distribution interface
+type MCMCDistrib interface {
+	// Sample from a distribution with mu expectancy
+	Sample(mu core.Elemt) core.Elemt
+	// Density from a distribution with mu expectancy and x point
+	Pdf(x, mu core.Elemt) float64
+}
+
+type MCMCSupport interface {
+	Iterate(MCMC, core.Clust, int) core.Clust
+	Loss(MCMC, core.Clust) float64
+}
+
+type MCMC struct {
+	MCMCConf
+	MCMCSupport
+	Buffer
+	distrib MCMCDistrib
+	initializer core.Initializer
+	uniform     distuv.Uniform
+	store       map[int]core.Clust
+	clust       core.Clust
+	status      core.ClustStatus
+	rgen        *rand.Rand
+	closing     chan bool
+	closed      chan bool
+	iter, acc   int
+}
+
+// Constructor for MCMC
+func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) MCMC {
+
+	conf.verify()
 
 	var m MCMC
 	m.MCMCConf = conf
@@ -135,17 +128,11 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 	m.status = core.Created
 	m.initializer = initializer
 	m.distrib = distrib
-
-	if conf.RGen == nil {
-		var seed = uint64(time.Now().UTC().Unix())
-		m.rgen = rand.New(rand.NewSource(seed))
-	} else {
-		m.rgen = conf.RGen
-	}
-
+	m.rgen = conf.getRGen()
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.rgen}
 	m.closing = make(chan bool, 1)
 	m.closed = make(chan bool, 1)
+	m.Buffer = newBuffer(data, m.FrameSize)
 
 	if len(m.ProbaK) == 0 {
 		m.ProbaK = []float64{1, 0, 9}
@@ -154,8 +141,6 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer Initializer, data [
 	if m.MaxK == 0 {
 		m.MaxK = 16
 	}
-
-	m.Buffer = newBuffer(data, m.FrameSize)
 
 	return m
 }
@@ -212,11 +197,9 @@ func (mcmc *MCMC) Run(async bool) {
 				}
 			}
 
-			mcmc.status = core.Running
 			mcmc.process()
 		}()
 
-		time.Sleep(300*time.Millisecond)
 	} else {
 		var ok bool
 		mcmc.clust, ok = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
@@ -225,7 +208,6 @@ func (mcmc *MCMC) Run(async bool) {
 			panic("failed to initialize")
 		}
 
-		mcmc.status = core.Running
 		mcmc.process()
 	}
 }
@@ -240,6 +222,7 @@ func (mcmc *MCMC) AcceptRatio() float64 {
 }
 
 func (mcmc *MCMC) process() {
+	mcmc.status = core.Running
 	var curK = mcmc.InitK
 	var curLoss = mcmc.Loss(*mcmc, mcmc.clust)
 	var curPdf = mcmc.proba(mcmc.clust, mcmc.clust)
@@ -371,4 +354,23 @@ func (mcmc *MCMC) genCenters(k int, prev core.Clust) (clust core.Clust) {
 	}
 
 	return
+}
+
+type SeqMCMCSupport struct {
+}
+
+func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
+	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
+	var km = NewKMeans(conf, clust.Initializer, m.Data)
+
+	km.Run(false)
+	km.Close()
+
+	var result, _ = km.Centroids()
+
+	return result
+}
+
+func (SeqMCMCSupport) Loss(m MCMC, proposal core.Clust) float64 {
+	return proposal.Loss(m.Data, m.Space, m.Norm)
 }

@@ -8,6 +8,8 @@ import (
 
 type ClustStatus int
 
+type Initializer = func(k int, elemts []Elemt, space Space, src *rand.Rand) (Clust, bool)
+
 const (
 	Created ClustStatus = iota
 	Running

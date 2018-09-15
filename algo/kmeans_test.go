@@ -170,6 +170,7 @@ func TestKMeans_Close(t *testing.T) {
 	}
 
 	km.Run(true)
+	time.Sleep(300*time.Millisecond)
 
 	if km.status != core.Running {
 		t.Error("Expected status", core.Running, "got", km.status)
@@ -255,6 +256,7 @@ func TestKMeans_Workflow(t *testing.T) {
 	}
 
 	km.Run(true)
+	time.Sleep(300*time.Millisecond)
 
 	err = km.Push(testVectors[3])
 
@@ -323,6 +325,7 @@ func TestKMeans_Empty(t *testing.T) {
 	}
 
 	km.Run(true)
+	time.Sleep(300*time.Millisecond)
 
 	var clust, _ = km.Centroids()
 

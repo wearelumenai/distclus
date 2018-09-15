@@ -165,6 +165,10 @@ func (SeqKMeansSupport) Iterate(km KMeans, clust core.Clust) core.Clust {
 
 	var result, _ = clust.AssignDBA(km.Data, km.Space)
 
+	return buildResult(clust, result)
+}
+
+func buildResult(clust core.Clust, result core.Clust) core.Clust {
 	for i := 0; i < len(result); i++ {
 		if result[i] == nil {
 			result[i] = clust[i]

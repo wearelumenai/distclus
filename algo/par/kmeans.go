@@ -60,7 +60,7 @@ func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
 // message exchanged between kmeans go routines, actually weighted means
 type msgKMeans struct {
 	// the mean for a subset of elements
-	dbas []core.Elemt
+	dbas core.Clust
 	// the number of elements that participate to the mean
 	cards []int
 }

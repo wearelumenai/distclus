@@ -23,12 +23,12 @@ type ParKMeansSupport struct {
 // It starts as many worker routines as available CPU to execute assignMapReduce and fan out all data to them.
 // When all workers finish it aggregates partial results and compute global result.
 func (support ParKMeansSupport) Iterate(km algo.KMeans, clust core.Clust) core.Clust {
-	var out = startWorkers(km, clust)
+	var out = startKMeansWorkers(km, clust)
 	var aggr = dbaReduce(km.Space, out)
 	return buildResult(clust, aggr)
 }
 
-func startWorkers(km algo.KMeans, clust core.Clust) (chan []msgKMeans) {
+func startKMeansWorkers(km algo.KMeans, clust core.Clust) (chan []msgKMeans) {
 	var degree = runtime.NumCPU()
 	var offset = (len(km.Data)-1)/degree + 1
 	var out = make(chan []msgKMeans, degree)

@@ -21,6 +21,7 @@ var testVectors = []core.Elemt{
 	[]float64{42, 41.2, 42.2, 40.2, 45},
 	[]float64{50, 51.2, 49, 40, 45.2},
 }
+
 func TestClust_Assign(t *testing.T) {
 	var clust = core.Clust{
 		[]float64{0.},
@@ -31,6 +32,34 @@ func TestClust_Assign(t *testing.T) {
 
 	if c.([]float64)[0] != clust[0].([]float64)[0] || ix != 0 || d != 2. {
 		t.Error("Expected cluster 0 at distance 2 got", ix, d)
+	}
+}
+
+func TestClust_AssignDBA(t *testing.T) {
+	var clust = core.Clust{
+		[]float64{0.},
+		[]float64{-1.},
+	}
+	var sp = real.RealSpace{}
+	var result, cards = clust.AssignDBA(testPoints, sp)
+
+	for i, e := range result {
+		switch(i) {
+		case 0:
+			if e.([]float64)[0] < 0 {
+				t.Error("Expected non negative elements")
+			}
+			if cards[i] != 9 {
+				t.Error("Expected 9 got", cards[i])
+			}
+		case 1:
+			if e.([]float64)[0] >= 0 {
+				t.Error("Expected negative elements")
+			}
+			if cards[i] != 5 {
+				t.Error("Expected 5 got", cards[i])
+			}
+		}
 	}
 }
 

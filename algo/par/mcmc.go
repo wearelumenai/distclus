@@ -3,7 +3,6 @@ package par
 import (
 	"distclus/algo"
 	"distclus/core"
-	"math"
 	"runtime"
 	"sync"
 )
@@ -71,31 +70,14 @@ type msgMCMC struct {
 
 // lossMapReduce receives elements from in channel, compute their participation to the global loss
 // when in is closed, send the partial loss and the corresponding cardinality to out channel
-func lossMapReduce(clust core.Clust, elmts []core.Elemt, space core.Space, norm float64, out chan<- msgMCMC, wg *sync.WaitGroup) {
+func lossMapReduce(clust core.Clust, elemts []core.Elemt, space core.Space, norm float64, out chan<- msgMCMC, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	var reduced msgMCMC
-	for _, elemt := range elmts {
-		reduced = lossReduce(reduced, elemt, clust, space, norm)
-	}
+	reduced.sum = clust.Loss(elemts, space, norm)
+	reduced.card = len(elemts)
 
 	out <- reduced
-}
-
-func lossReduce(reduced msgMCMC, elemt core.Elemt, clust core.Clust, space core.Space, norm float64) msgMCMC {
-	var min = space.Dist(elemt, clust[0])
-	for j := 1; j < len(clust); j++ {
-		// find the cluster and the minimal distance
-		var d = space.Dist(elemt, clust[j])
-		if min > d {
-			min = d
-		}
-	}
-
-	reduced.sum += math.Pow(min, norm)
-	reduced.card += 1
-
-	return reduced
 }
 
 func lossAggregate(out chan msgMCMC) msgMCMC {

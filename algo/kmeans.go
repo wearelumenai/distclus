@@ -162,20 +162,8 @@ type SeqKMeansSupport struct {
 }
 
 func (SeqKMeansSupport) Iterate(km KMeans, clust core.Clust) core.Clust {
-	var result = make(core.Clust, len(clust))
-	var cards = make([]int, len(clust))
 
-	for i, _ := range km.Data {
-		var _, ix, _ = clust.Assign(km.Data[i], km.Space)
-
-		if cards[ix] == 0 {
-			result[ix] = km.Space.Copy(km.Data[i])
-			cards[ix] = 1
-		} else {
-			km.Space.Combine(result[ix], cards[ix], km.Data[i], 1)
-			cards[ix] += 1
-		}
-	}
+	var result, _ = clust.AssignDBA(km.Data, km.Space)
 
 	for i := 0; i < len(result); i++ {
 		if result[i] == nil {

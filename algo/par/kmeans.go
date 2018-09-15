@@ -28,10 +28,10 @@ func (support ParKMeansSupport) Iterate(km algo.KMeans, clust core.Clust) core.C
 	return buildResult(clust, aggr)
 }
 
-func startKMeansWorkers(km algo.KMeans, clust core.Clust) (chan []msgKMeans) {
+func startKMeansWorkers(km algo.KMeans, clust core.Clust) (chan msgKMeans) {
 	var degree = runtime.NumCPU()
 	var offset = (len(km.Data)-1)/degree + 1
-	var out = make(chan []msgKMeans, degree)
+	var out = make(chan msgKMeans, degree)
 	var wg = &sync.WaitGroup{}
 
 	wg.Add(degree)
@@ -60,81 +60,63 @@ func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
 // message exchanged between kmeans go routines, actually weighted means
 type msgKMeans struct {
 	// the mean for a subset of elements
-	dba core.Elemt
+	dbas []core.Elemt
 	// the number of elements that participate to the mean
-	card int
+	cards []int
 }
 
 // assignMapReduce receives a partition of elements, assign them to a cluster and update the mean for this cluster.
 // when partition is exhausted, send the means and their cardinality to out channel
-func assignMapReduce(clust core.Clust, elmts []core.Elemt, sp core.Space, out chan<- []msgKMeans, wg *sync.WaitGroup) {
+func assignMapReduce(clust core.Clust, elemts []core.Elemt, space core.Space, out chan<- msgKMeans, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var reduced = make([]msgKMeans, len(clust))
+	var reduced msgKMeans
+	reduced.dbas, reduced.cards = clust.AssignDBA(elemts, space)
 
-	for _, elmt := range elmts {
-		reduced = assignReduce(reduced, clust, elmt, sp)
-	}
-
-	// send computed aggregates
 	out <- reduced
-}
-
-func assignReduce(reduced []msgKMeans, clust core.Clust, elemt core.Elemt, sp core.Space) []msgKMeans{
-	var _, ix, _ = clust.Assign(elemt, sp)
-
-	if reduced[ix].card == 0 {
-		// first time reduced see this cluster, just copy the element
-		reduced[ix].dba = sp.Copy(elemt)
-		reduced[ix].card = 1
-	} else {
-		// combine for dba
-		sp.Combine(reduced[ix].dba, reduced[ix].card, elemt, 1)
-		reduced[ix].card += 1
-	}
-
-	return reduced
 }
 
 // assignAggregate receives partitioned weighted means from channel in and reduce them into a single mean for each cluster
 // when finished send the result to out channel.
-func assignAggregate(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
-	var aggregate []msgKMeans
+func assignAggregate(space core.Space, in <-chan msgKMeans) msgKMeans {
+	var aggregate msgKMeans
 	for other := range in {
-		if aggregate == nil {
+		if aggregate.dbas == nil {
 			// first message, just take it as current aggregate
-			aggregate = other
+			aggregate.dbas = other.dbas
+			aggregate.cards = other.cards
 		} else {
-			aggregate = assignCombine(aggregate, other, sp)
+			aggregate = assignCombine(aggregate, other, space)
 		}
 	}
 
 	return aggregate
 }
 
-func assignCombine(aggregate []msgKMeans, other []msgKMeans, sp core.Space) []msgKMeans {
+func assignCombine(aggregate msgKMeans, other msgKMeans, space core.Space) msgKMeans {
 	// combine subsequent messages to aggregate
-	for i := 0; i < len(aggregate); i++ {
+	for i := 0; i < len(aggregate.dbas); i++ {
 		switch {
-		case aggregate[i].card == 0:
+		case aggregate.cards[i] == 0:
 			// first time other see this cluster, just take the element
-			aggregate[i] = other[i]
+			aggregate.dbas[i] = other.dbas[i]
+			aggregate.cards[i] = other.cards[i]
 
-		case other[i].card > 0:
+		case other.cards[i] > 0:
 			// combine subsequent elements for this cluster
-			sp.Combine(aggregate[i].dba, aggregate[i].card, other[i].dba, other[i].card)
-			aggregate[i].card += other[i].card
+			space.Combine(aggregate.dbas[i], aggregate.cards[i], other.dbas[i], other.cards[i])
+			aggregate.cards[i] += other.cards[i]
 		}
 	}
 
 	return aggregate
 }
 
-func buildResult(clust core.Clust, aggr []msgKMeans) core.Clust {
-	var result = make(core.Clust, len(aggr))
+func buildResult(clust core.Clust, aggr msgKMeans) core.Clust {
+	var result = make(core.Clust, len(aggr.dbas))
 	for i := 0; i < len(clust); i++ {
-		if aggr[i].card > 0 {
-			result[i] = aggr[i].dba
+		if aggr.cards[i] > 0 {
+			result[i] = aggr.dbas[i]
 		} else {
 			result[i] = clust[i]
 		}

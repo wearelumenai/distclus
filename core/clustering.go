@@ -33,7 +33,27 @@ type OnlineClust interface {
 // Indexed clustering result
 type Clust []Elemt
 
-// AssignAll testElemts on elemts at each centers
+// AssignCount count elemts in each centers
+func (c Clust) AssignDBA(elemts []Elemt, space Space) (Clust, []int) {
+	var result = make(Clust, len(c))
+	var cards = make([]int, len(c))
+
+	for i, _ := range elemts {
+		var _, ix, _ = c.Assign(elemts[i], space)
+
+		if cards[ix] == 0 {
+			result[ix] = space.Copy(elemts[i])
+			cards[ix] = 1
+		} else {
+			space.Combine(result[ix], cards[ix], elemts[i], 1)
+			cards[ix] += 1
+		}
+	}
+
+	return result, cards
+}
+
+// AssignAll assign elemts to each centers
 func (c Clust) AssignAll(elemts []Elemt, space Space) [][]Elemt {
 	var clusters = make([][]Elemt, len(c))
 	for _, elemt := range elemts {

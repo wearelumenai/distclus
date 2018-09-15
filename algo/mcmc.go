@@ -201,7 +201,7 @@ func (mcmc *MCMC) initAndRun(async bool) {
 		}
 	}
 	mcmc.status = core.Running
-	mcmc.process()
+	mcmc.runAlgorithm()
 }
 
 func (mcmc *MCMC) handleFailedInitialisation(async bool) {
@@ -221,10 +221,12 @@ func (mcmc *MCMC) AcceptRatio() float64 {
 	return float64(mcmc.acc) / float64(mcmc.iter)
 }
 
-func (mcmc *MCMC) process() {
-	var curK = mcmc.InitK
-	var curLoss = mcmc.Loss(*mcmc, mcmc.clust)
-	var curPdf = mcmc.proba(mcmc.clust, mcmc.clust)
+func (mcmc *MCMC) runAlgorithm() {
+	var current = proposal {
+		k: mcmc.InitK,
+		loss: mcmc.Loss(*mcmc, mcmc.clust),
+		pdf: mcmc.proba(mcmc.clust, mcmc.clust),
+	}
 
 	for i, loop := 0, true; i < mcmc.McmcIter && loop; i++ {
 		select {
@@ -232,7 +234,7 @@ func (mcmc *MCMC) process() {
 			loop = false
 
 		default:
-			mcmc.doIterate(curK, curLoss, curPdf)
+			current = mcmc.doIter(current)
 			mcmc.apply()
 		}
 	}
@@ -241,26 +243,37 @@ func (mcmc *MCMC) process() {
 	mcmc.closed <- true
 }
 
-func (mcmc *MCMC) doIterate(curK int, curLoss float64, curPdf float64) {
-	var propK = mcmc.nextK(curK)
-	var propCenters = mcmc.getCenters(propK, mcmc.clust)
+func (mcmc *MCMC) doIter(current proposal) proposal {
 
-	propCenters = mcmc.Iterate(*mcmc, propCenters, 1)
+	var prop = mcmc.propose(current)
 
-	var prop = mcmc.alter(propCenters)
-
-	var propLoss = mcmc.Loss(*mcmc, prop)
-	var propPdf = mcmc.proba(prop, propCenters)
-
-	if mcmc.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
-		curK = propK
-		mcmc.clust = prop
-		curLoss = propLoss
-		curPdf = propPdf
+	if mcmc.accept(current, prop) {
+		current = prop
+		mcmc.clust = prop.centers
 		mcmc.setCenters(mcmc.clust)
 		mcmc.acc += 1
 	}
+
 	mcmc.iter += 1
+	return current
+}
+
+type proposal struct {
+	k int
+	centers core.Clust
+	loss float64
+	pdf float64
+}
+
+func (mcmc *MCMC) propose(current proposal) proposal {
+	var prop proposal
+	prop.k = mcmc.nextK(current.k)
+	var centers = mcmc.getCenters(prop.k, mcmc.clust)
+	centers = mcmc.Iterate(*mcmc, centers, 1)
+	prop.centers = mcmc.alter(centers)
+	prop.loss = mcmc.Loss(*mcmc, prop.centers)
+	prop.pdf = mcmc.proba(prop.centers, centers)
+	return prop
 }
 
 // Alter a proposal using MCMC distribution
@@ -283,18 +296,6 @@ func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
 	return p
 }
 
-// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
-func (mcmc *MCMC) accept(pLoss, cLoss float64, pPdf, cPdf float64, pK, cK int) bool {
-	// adjust lambda to avoid very large gibbs measure
-
-	var rProp = cPdf - pPdf
-	var rInit = mcmc.L2B() * float64(mcmc.Dim*(cK-pK))
-	var rGibbs = -mcmc.Lambda() * (pLoss - cLoss)
-
-	var rho = math.Exp(rGibbs + rInit + rProp)
-	return mcmc.uniform.Rand() < rho
-}
-
 // Compute next centers number based on ProbaK
 func (mcmc *MCMC) nextK(k int) int {
 	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK, mcmc.rgen)]
@@ -312,11 +313,11 @@ func (mcmc *MCMC) nextK(k int) int {
 }
 
 // Get a configuration center(retrieve from store if K is exist else create with genCenters
-func (mcmc *MCMC) getCenters(k int, prev core.Clust) core.Clust {
+func (mcmc *MCMC) getCenters(k int, clust core.Clust) core.Clust {
 	var centers, ok = mcmc.store[k]
 
 	if !ok {
-		centers = mcmc.genCenters(k, prev)
+		centers = mcmc.genCenters(k, clust)
 		mcmc.store[k] = centers
 	}
 
@@ -367,6 +368,18 @@ func (mcmc *MCMC) delCenter(prevK int, prev core.Clust) core.Clust {
 		}
 	}
 	return clust
+}
+
+// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
+func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
+	// adjust lambda to avoid very large gibbs measure
+
+	var rProp = current.pdf - prop.pdf
+	var rInit = mcmc.L2B() * float64(mcmc.Dim*(current.k-prop.k))
+	var rGibbs = mcmc.Lambda() * (current.loss - prop.loss)
+
+	var rho = math.Exp(rGibbs + rInit + rProp)
+	return mcmc.uniform.Rand() < rho
 }
 
 type SeqMCMCSupport struct {

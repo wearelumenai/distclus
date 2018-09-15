@@ -125,7 +125,7 @@ func (km *KMeans) initAndRun(async bool) {
 		}
 	}
 	km.status = core.Running
-	km.process()
+	km.runAlgorithm()
 }
 
 func (km *KMeans) handleFailedInitialisation(async bool) {
@@ -136,7 +136,7 @@ func (km *KMeans) handleFailedInitialisation(async bool) {
 	km.Buffer.apply()
 }
 
-func (km *KMeans) process() {
+func (km *KMeans) runAlgorithm() {
 	for iter, loop := 0, true; iter < km.Iter && loop; iter++ {
 		select {
 

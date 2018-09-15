@@ -212,15 +212,6 @@ func (mcmc *MCMC) handleFailedInitialisation(async bool) {
 	mcmc.Buffer.apply()
 }
 
-func (mcmc *MCMC) Close() {
-	mcmc.closing <- true
-	<-mcmc.closed
-}
-
-func (mcmc *MCMC) AcceptRatio() float64 {
-	return float64(mcmc.acc) / float64(mcmc.iter)
-}
-
 func (mcmc *MCMC) runAlgorithm() {
 	var current = proposal {
 		k: mcmc.InitK,
@@ -276,24 +267,16 @@ func (mcmc *MCMC) propose(current proposal) proposal {
 	return prop
 }
 
-// Alter a proposal using MCMC distribution
-func (mcmc *MCMC) alter(clust core.Clust) core.Clust {
-	var result = make(core.Clust, len(clust))
+// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
+func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
+	// adjust lambda to avoid very large gibbs measure
 
-	for i := range clust {
-		result[i] = mcmc.distrib.Sample(clust[i])
-	}
+	var rProp = current.pdf - prop.pdf
+	var rInit = mcmc.L2B() * float64(mcmc.Dim*(current.k-prop.k))
+	var rGibbs = mcmc.Lambda() * (current.loss - prop.loss)
 
-	return result
-}
-
-// Compute probability between two proposals using MCMC distribution
-func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
-	p = 0.
-	for i := range x {
-		p += mcmc.distrib.Pdf(mu[i], x[i])
-	}
-	return p
+	var rho = math.Exp(rGibbs + rInit + rProp)
+	return mcmc.uniform.Rand() < rho
 }
 
 // Compute next centers number based on ProbaK
@@ -327,6 +310,26 @@ func (mcmc *MCMC) getCenters(k int, clust core.Clust) core.Clust {
 // Set a configuration in store
 func (mcmc *MCMC) setCenters(clust core.Clust) {
 	mcmc.store[len(clust)] = clust
+}
+
+// Alter a proposal using MCMC distribution
+func (mcmc *MCMC) alter(clust core.Clust) core.Clust {
+	var result = make(core.Clust, len(clust))
+
+	for i := range clust {
+		result[i] = mcmc.distrib.Sample(clust[i])
+	}
+
+	return result
+}
+
+// Compute probability between two proposals using MCMC distribution
+func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
+	p = 0.
+	for i := range x {
+		p += mcmc.distrib.Pdf(mu[i], x[i])
+	}
+	return p
 }
 
 // Generate a configuration of K centers based on previous configuration
@@ -370,16 +373,13 @@ func (mcmc *MCMC) delCenter(prevK int, prev core.Clust) core.Clust {
 	return clust
 }
 
-// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
-func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
-	// adjust lambda to avoid very large gibbs measure
+func (mcmc *MCMC) Close() {
+	mcmc.closing <- true
+	<-mcmc.closed
+}
 
-	var rProp = current.pdf - prop.pdf
-	var rInit = mcmc.L2B() * float64(mcmc.Dim*(current.k-prop.k))
-	var rGibbs = mcmc.Lambda() * (current.loss - prop.loss)
-
-	var rho = math.Exp(rGibbs + rInit + rProp)
-	return mcmc.uniform.Rand() < rho
+func (mcmc *MCMC) AcceptRatio() float64 {
+	return float64(mcmc.acc) / float64(mcmc.iter)
 }
 
 type SeqMCMCSupport struct {

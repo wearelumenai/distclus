@@ -74,15 +74,15 @@ type msgMCMC struct {
 func lossMapReduce(clust core.Clust, elmts []core.Elemt, space core.Space, norm float64, out chan<- msgMCMC, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var msg msgMCMC
+	var reduced msgMCMC
 	for _, elemt := range elmts {
-		msg = lossCombine(msg, elemt, clust, space, norm)
+		reduced = lossReduce(reduced, elemt, clust, space, norm)
 	}
 
-	out <- msg
+	out <- reduced
 }
 
-func lossCombine(msg msgMCMC, elemt core.Elemt, clust core.Clust, space core.Space, norm float64) msgMCMC {
+func lossReduce(reduced msgMCMC, elemt core.Elemt, clust core.Clust, space core.Space, norm float64) msgMCMC {
 	var min = space.Dist(elemt, clust[0])
 	for j := 1; j < len(clust); j++ {
 		// find the cluster and the minimal distance
@@ -92,10 +92,10 @@ func lossCombine(msg msgMCMC, elemt core.Elemt, clust core.Clust, space core.Spa
 		}
 	}
 
-	msg.sum += math.Pow(min, norm)
-	msg.card += 1
+	reduced.sum += math.Pow(min, norm)
+	reduced.card += 1
 
-	return msg
+	return reduced
 }
 
 func lossAggregate(out chan msgMCMC) msgMCMC {

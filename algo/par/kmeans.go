@@ -24,7 +24,7 @@ type ParKMeansSupport struct {
 // When all workers finish it aggregates partial results and compute global result.
 func (support ParKMeansSupport) Iterate(km algo.KMeans, clust core.Clust) core.Clust {
 	var out = startKMeansWorkers(km, clust)
-	var aggr = dbaReduce(km.Space, out)
+	var aggr = assignAggregate(km.Space, out)
 	return buildResult(clust, aggr)
 }
 
@@ -57,18 +57,6 @@ func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
 	return elemts[start:end]
 }
 
-func buildResult(clust core.Clust, aggr []msgKMeans) core.Clust {
-	var result = make(core.Clust, len(aggr))
-	for i := 0; i < len(clust); i++ {
-		if aggr[i].card > 0 {
-			result[i] = aggr[i].dba
-		} else {
-			result[i] = clust[i]
-		}
-	}
-	return result
-}
-
 // message exchanged between kmeans go routines, actually weighted means
 type msgKMeans struct {
 	// the mean for a subset of elements
@@ -85,14 +73,14 @@ func assignMapReduce(clust core.Clust, elmts []core.Elemt, sp core.Space, out ch
 	var reduced = make([]msgKMeans, len(clust))
 
 	for _, elmt := range elmts {
-		reduced = assignCombine(reduced, clust, elmt, sp)
+		reduced = assignReduce(reduced, clust, elmt, sp)
 	}
 
 	// send computed aggregates
 	out <- reduced
 }
 
-func assignCombine(reduced []msgKMeans, clust core.Clust, elemt core.Elemt, sp core.Space) []msgKMeans{
+func assignReduce(reduced []msgKMeans, clust core.Clust, elemt core.Elemt, sp core.Space) []msgKMeans{
 	var _, ix, _ = clust.Assign(elemt, sp)
 
 	if reduced[ix].card == 0 {
@@ -108,23 +96,23 @@ func assignCombine(reduced []msgKMeans, clust core.Clust, elemt core.Elemt, sp c
 	return reduced
 }
 
-// dbaReduce receives partitioned weighted means from channel in and reduce them into a single mean for each cluster
+// assignAggregate receives partitioned weighted means from channel in and reduce them into a single mean for each cluster
 // when finished send the result to out channel.
-func dbaReduce(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
+func assignAggregate(sp core.Space, in <-chan []msgKMeans) []msgKMeans {
 	var aggregate []msgKMeans
 	for other := range in {
 		if aggregate == nil {
 			// first message, just take it as current aggregate
 			aggregate = other
 		} else {
-			aggregate = dbaCombine(aggregate, other, sp)
+			aggregate = assignCombine(aggregate, other, sp)
 		}
 	}
 
 	return aggregate
 }
 
-func dbaCombine(aggregate []msgKMeans, other []msgKMeans, sp core.Space) []msgKMeans {
+func assignCombine(aggregate []msgKMeans, other []msgKMeans, sp core.Space) []msgKMeans {
 	// combine subsequent messages to aggregate
 	for i := 0; i < len(aggregate); i++ {
 		switch {
@@ -140,5 +128,17 @@ func dbaCombine(aggregate []msgKMeans, other []msgKMeans, sp core.Space) []msgKM
 	}
 
 	return aggregate
+}
+
+func buildResult(clust core.Clust, aggr []msgKMeans) core.Clust {
+	var result = make(core.Clust, len(aggr))
+	for i := 0; i < len(clust); i++ {
+		if aggr[i].card > 0 {
+			result[i] = aggr[i].dba
+		} else {
+			result[i] = clust[i]
+		}
+	}
+	return result
 }
 

@@ -184,32 +184,32 @@ func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 }
 
 func (mcmc *MCMC) Run(async bool) {
-
 	if async {
 		mcmc.setAsync()
-
-		go func() {
-			for ok:=false; !ok; {
-				mcmc.clust, ok = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
-				if !ok {
-					time.Sleep(300 * time.Millisecond)
-					mcmc.Buffer.apply()
-				}
-			}
-
-			mcmc.process()
-		}()
-
+		go mcmc.initAndRun(async)
 	} else {
-		var ok bool
-		mcmc.clust, ok = mcmc.initializer(mcmc.InitK, mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
-
-		if !ok {
-			panic("failed to initialize")
-		}
-
-		mcmc.process()
+		mcmc.initAndRun(async)
 	}
+}
+
+func (mcmc *MCMC) initAndRun(async bool) {
+	for ok := false; !ok; {
+		mcmc.clust, ok = mcmc.initializer(mcmc.InitK,
+			mcmc.Data, mcmc.MCMCConf.Space, mcmc.rgen)
+		if !ok {
+			mcmc.handleFailedInitialisation(async)
+		}
+	}
+	mcmc.status = core.Running
+	mcmc.process()
+}
+
+func (mcmc *MCMC) handleFailedInitialisation(async bool) {
+	if !async {
+		panic("failed to initialize")
+	}
+	time.Sleep(300 * time.Millisecond)
+	mcmc.Buffer.apply()
 }
 
 func (mcmc *MCMC) Close() {
@@ -222,7 +222,6 @@ func (mcmc *MCMC) AcceptRatio() float64 {
 }
 
 func (mcmc *MCMC) process() {
-	mcmc.status = core.Running
 	var curK = mcmc.InitK
 	var curLoss = mcmc.Loss(*mcmc, mcmc.clust)
 	var curPdf = mcmc.proba(mcmc.clust, mcmc.clust)
@@ -233,32 +232,35 @@ func (mcmc *MCMC) process() {
 			loop = false
 
 		default:
-			var propK = mcmc.nextK(curK)
-			var propCenters = mcmc.getCenters(propK, mcmc.clust)
-
-			propCenters = mcmc.Iterate(*mcmc, propCenters, 1)
-
-			var prop = mcmc.alter(propCenters)
-
-			var propLoss = mcmc.Loss(*mcmc, prop)
-			var propPdf = mcmc.proba(prop, propCenters)
-
-			if mcmc.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
-				curK = propK
-				mcmc.clust = prop
-				curLoss = propLoss
-				curPdf = propPdf
-				mcmc.setCenters(mcmc.clust)
-				mcmc.acc += 1
-			}
-			mcmc.iter += 1
-
+			mcmc.doIterate(curK, curLoss, curPdf)
 			mcmc.apply()
 		}
 	}
 
 	mcmc.status = core.Closed
 	mcmc.closed <- true
+}
+
+func (mcmc *MCMC) doIterate(curK int, curLoss float64, curPdf float64) {
+	var propK = mcmc.nextK(curK)
+	var propCenters = mcmc.getCenters(propK, mcmc.clust)
+
+	propCenters = mcmc.Iterate(*mcmc, propCenters, 1)
+
+	var prop = mcmc.alter(propCenters)
+
+	var propLoss = mcmc.Loss(*mcmc, prop)
+	var propPdf = mcmc.proba(prop, propCenters)
+
+	if mcmc.accept(propLoss, curLoss, propPdf, curPdf, propK, curK) {
+		curK = propK
+		mcmc.clust = prop
+		curLoss = propLoss
+		curPdf = propPdf
+		mcmc.setCenters(mcmc.clust)
+		mcmc.acc += 1
+	}
+	mcmc.iter += 1
 }
 
 // Alter a proposal using MCMC distribution
@@ -327,33 +329,44 @@ func (mcmc *MCMC) setCenters(clust core.Clust) {
 }
 
 // Generate a configuration of K centers based on previous configuration
-func (mcmc *MCMC) genCenters(k int, prev core.Clust) (clust core.Clust) {
+func (mcmc *MCMC) genCenters(k int, prev core.Clust) core.Clust {
 	var prevK = len(prev)
+	var clust core.Clust
 
 	switch {
 	case prevK < k:
-		clust = make(core.Clust, k)
-		for i := 0; i < prevK; i++ {
-			clust[i] = mcmc.Space.Copy(prev[i])
-		}
-		clust[k-1] = KmeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
+		clust = mcmc.addCenter(prevK, prev)
 
 	case prevK > k:
-		var del = mcmc.rgen.Intn(prevK)
-		clust = make(core.Clust, k)
-		for i := 0; i < k; i++ {
-			if i < del {
-				clust[i] = mcmc.Space.Copy(prev[i])
-			} else {
-				clust[i] = mcmc.Space.Copy(prev[i+1])
-			}
-		}
+		clust = mcmc.delCenter(prevK, prev)
 
 	case prevK == k:
 		clust = prev
 	}
 
-	return
+	return clust
+}
+
+func (mcmc *MCMC) addCenter(prevK int, prev core.Clust) core.Clust {
+	var clust = make(core.Clust, prevK+1)
+	for i := 0; i < prevK; i++ {
+		clust[i] = mcmc.Space.Copy(prev[i])
+	}
+	clust[prevK] = KmeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
+	return clust
+}
+
+func (mcmc *MCMC) delCenter(prevK int, prev core.Clust) core.Clust {
+	var del = mcmc.rgen.Intn(prevK)
+	var clust = make(core.Clust, prevK-1)
+	for i := 0; i < prevK-1; i++ {
+		if i < del {
+			clust[i] = mcmc.Space.Copy(prev[i])
+		} else {
+			clust[i] = mcmc.Space.Copy(prev[i+1])
+		}
+	}
+	return clust
 }
 
 type SeqMCMCSupport struct {

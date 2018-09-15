@@ -110,32 +110,33 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 func (km *KMeans) Run(async bool) {
 	if async {
 		km.setAsync()
-
-		go func() {
-			for ok := false; !ok; {
-				km.clust, ok = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
-				if !ok {
-					time.Sleep(300 * time.Millisecond)
-					km.Buffer.apply()
-				}
-			}
-
-			km.process()
-		}()
+		go km.initAndRun(async)
 	} else {
-		var ok bool
-		km.clust, ok = km.initializer(km.KMeansConf.K, km.Data, km.KMeansConf.Space, km.rgen)
-
-		if !ok {
-			panic("failed to initialize")
-		}
-
-		km.process()
+		km.initAndRun(async)
 	}
 }
 
-func (km *KMeans) process() {
+func (km *KMeans) initAndRun(async bool) {
+	for ok := false; !ok; {
+		km.clust, ok = km.initializer(km.KMeansConf.K,
+			km.Data, km.KMeansConf.Space, km.rgen)
+		if !ok {
+			km.handleFailedInitialisation(async)
+		}
+	}
 	km.status = core.Running
+	km.process()
+}
+
+func (km *KMeans) handleFailedInitialisation(async bool) {
+	if !async {
+		panic("failed to initialize")
+	}
+	time.Sleep(300 * time.Millisecond)
+	km.Buffer.apply()
+}
+
+func (km *KMeans) process() {
 	for iter, loop := 0, true; iter < km.Iter && loop; iter++ {
 		select {
 

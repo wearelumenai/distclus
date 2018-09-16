@@ -8,115 +8,106 @@ import (
 
 type ClustStatus int
 
-type Initializer = func(k int, elemts []Elemt, space Space, src *rand.Rand) (Clust, bool)
-
 const (
 	Created ClustStatus = iota
 	Running
 	Closed
 )
 
-// Online Clust algorithm interface.
+// Online Clustering algorithm.
+// When a prediction is made, the element can be pushed to the model.
+// A prediction consists in a centroid and a label.
+// The following constraints must be met (otherwise an error is returned) :
+// an element can't be pushed if the algorithm is closed,
+// a prediction can't be done before the algorithm is run,
+// no centroid can be returned before the algorithm is run.
 type OnlineClust interface {
-	// Add an element to Clust Data set.
-	Push(elemt Elemt) error
-	// Return model current centroids configuration.
 	Centroids() (Clust, error)
-	// Make a prediction on a element and return the associated center and its index.
+	Push(elemt Elemt) error
 	Predict(elemt Elemt, push bool) (Elemt, int, error)
-	// Run Clust algorithm.
 	Run(async bool)
-	// Close algorithm Clust process.
 	Close()
 }
 
-// Indexed clustering result
+// Cluster centroids indexed by labels.
 type Clust []Elemt
 
-// AssignCount count elemts in each centers
-func (c Clust) AssignDBA(elemts []Elemt, space Space) (Clust, []int) {
-	var result = make(Clust, len(c))
-	var cards = make([]int, len(c))
+// Initializes k centroids from the given elements.
+type Initializer = func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, success bool)
+
+// Returns centroids and cardinalities in each clusters.
+func (c Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
+	centroids = make(Clust, len(c))
+	cards = make([]int, len(c))
 
 	for i, _ := range elemts {
 		var _, ix, _ = c.Assign(elemts[i], space)
 
 		if cards[ix] == 0 {
-			result[ix] = space.Copy(elemts[i])
+			centroids[ix] = space.Copy(elemts[i])
 			cards[ix] = 1
 		} else {
-			space.Combine(result[ix], cards[ix], elemts[i], 1)
+			space.Combine(centroids[ix], cards[ix], elemts[i], 1)
 			cards[ix] += 1
 		}
 	}
 
-	return result, cards
+	return
 }
 
-// AssignAll assign elemts to each centers
-func (c Clust) AssignAll(elemts []Elemt, space Space) [][]Elemt {
-	var clusters = make([][]Elemt, len(c))
+// Assigns elemts to each centroids
+func (c Clust) AssignAll(elemts []Elemt, space Space) (clusters [][]Elemt) {
+	clusters = make([][]Elemt, len(c))
+
 	for _, elemt := range elemts {
-		var idx, _ = assign(elemt, c, space)
+		var idx, _ = c.nearest(elemt, space)
 		clusters[idx] = append(clusters[idx], elemt)
 	}
-	return clusters
+
+	return
 }
 
-// AssignAll a element to a center and return the center and its index
-func (c Clust) Assign(elemt Elemt, space Space) (Elemt, int, float64) {
-	var idx, dist = assign(elemt, c, space)
-	return c[idx], idx, dist
+// Returns the element nearest centroid, its label and the distance to the centroid
+func (c Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dist float64) {
+	label, dist = c.nearest(elemt, space)
+	centroid = c[label]
+	return
 }
 
-// Compute loss of centers configuration with given Data
-func (c Clust) Loss(data []Elemt, space Space, norm float64) float64 {
+// Compute loss from distances between elements and their nearest centroid
+func (c Clust) Loss(elemts []Elemt, space Space, norm float64) float64 {
 	var sum = 0.
-	for _, elemt := range data {
-		var min = space.Dist(elemt, c[0])
-		for i := 1; i < len(c); i++ {
-			var d = space.Dist(elemt, c[i])
-			if min > d {
-				min = d
-			}
-		}
 
+	for i, _ := range elemts {
+		var _, min = c.nearest(elemts[i], space)
 		sum += math.Pow(min, norm)
 	}
+
 	return sum
 }
 
-// Returns the index of the closest element to elemt in elemts.
-func assign(elemt Elemt, clust Clust, space Space) (int, float64) {
+// Returns the label of element nearest centroid and the distance
+func (c Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
+	min = space.Dist(elemt, c[0])
+	label = 0
 
-	if len(clust) < 1 {
-		panic("empty clust")
-	}
-
-	distances := make([]float64, len(clust))
-	for i, node := range clust {
-		distances[i] = space.Dist(elemt, node)
-	}
-
-	var lowest = distances[0]
-	var index int
-	for i := 1; i < len(distances); i++ {
-		if distances[i] < lowest {
-			lowest = distances[i]
-			index = i
+	for i := 1; i < len(c); i++ {
+		var d = space.Dist(elemt, c[i])
+		if min > d {
+			min = d
+			label = i
 		}
 	}
 
-	return index, lowest
+	return label, min
 }
 
-// Return the DBA of nodes based on the Space combination method.
-// If nodes are empty function panic.
+// Returns the averaged element
 func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 
-	if l := len(elemts); l < 1 {
-		err = errors.New("elemts are empty")
-		return
+	if len(elemts) == 0 {
+		err = errors.New("DBA needs at least one elements")
+		return 
 	}
 
 	dba = space.Copy(elemts[0])
@@ -130,6 +121,7 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 	return
 }
 
+// An initializer that always returns the centroids
 func (c Clust) Initializer(int, []Elemt, Space, *rand.Rand) (Clust, bool) {
 	return c, true
 }

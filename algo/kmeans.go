@@ -23,7 +23,6 @@ func (conf *KMeansConf) verify() {
 	if conf.Iter < 0 {
 		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.Iter))
 	}
-
 }
 
 func (conf *KMeansConf) getRGen() *rand.Rand {
@@ -34,7 +33,6 @@ func (conf *KMeansConf) getRGen() *rand.Rand {
 		return conf.RGen
 	}
 }
-
 
 type KMeansSupport interface {
 	Iterate(km KMeans, proposal core.Clust) core.Clust

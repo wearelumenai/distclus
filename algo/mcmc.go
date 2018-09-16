@@ -11,28 +11,17 @@ import (
 )
 
 type MCMCConf struct {
-	// Data dimension
 	Dim int
-	// Number of element to retain in the partition
 	FrameSize int
-	// Mcmc parameters
 	B, Amp, R float64
-	// Loss normalisation coefficient
 	Norm float64
-	// Degrees of freedom
 	Nu float64
-	// Initial number of centers
 	InitK int
-	// Max number of centers
 	MaxK int
-	// Iteration numbers for mcmc and centers initialisation
 	McmcIter, InitIter int
 	ProbaK             []float64
-	// Space where Data are include
 	Space core.Space
-	// Random source seed
 	RGen *rand.Rand
-	// memoize
 	lamb, l2b, tau float64
 }
 
@@ -87,11 +76,8 @@ func (conf *MCMCConf) getRGen() *rand.Rand {
 	}
 }
 
-// MCMC distribution interface
 type MCMCDistrib interface {
-	// Sample from a distribution with mu expectancy
 	Sample(mu core.Elemt) core.Elemt
-	// Density from a distribution with mu expectancy and x point
 	Pdf(x, mu core.Elemt) float64
 }
 
@@ -116,7 +102,6 @@ type MCMC struct {
 	iter, acc   int
 }
 
-// Constructor for MCMC
 func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) MCMC {
 
 	conf.verify()
@@ -267,10 +252,7 @@ func (mcmc *MCMC) propose(current proposal) proposal {
 	return prop
 }
 
-// Compute acceptance of a proposal(p* parameters) against a current proposal(c* parameters) using loss, pdf and K
 func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
-	// adjust lambda to avoid very large gibbs measure
-
 	var rProp = current.pdf - prop.pdf
 	var rInit = mcmc.L2B() * float64(mcmc.Dim*(current.k-prop.k))
 	var rGibbs = mcmc.Lambda() * (current.loss - prop.loss)
@@ -279,7 +261,6 @@ func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
 	return mcmc.uniform.Rand() < rho
 }
 
-// Compute next centers number based on ProbaK
 func (mcmc *MCMC) nextK(k int) int {
 	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK, mcmc.rgen)]
 
@@ -295,7 +276,6 @@ func (mcmc *MCMC) nextK(k int) int {
 	}
 }
 
-// Get a configuration center(retrieve from store if K is exist else create with genCenters
 func (mcmc *MCMC) getCenters(k int, clust core.Clust) core.Clust {
 	var centers, ok = mcmc.store[k]
 
@@ -307,12 +287,10 @@ func (mcmc *MCMC) getCenters(k int, clust core.Clust) core.Clust {
 	return centers
 }
 
-// Set a configuration in store
 func (mcmc *MCMC) setCenters(clust core.Clust) {
 	mcmc.store[len(clust)] = clust
 }
 
-// Alter a proposal using MCMC distribution
 func (mcmc *MCMC) alter(clust core.Clust) core.Clust {
 	var result = make(core.Clust, len(clust))
 
@@ -323,7 +301,6 @@ func (mcmc *MCMC) alter(clust core.Clust) core.Clust {
 	return result
 }
 
-// Compute probability between two proposals using MCMC distribution
 func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
 	p = 0.
 	for i := range x {
@@ -332,7 +309,6 @@ func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
 	return p
 }
 
-// Generate a configuration of K centers based on previous configuration
 func (mcmc *MCMC) genCenters(k int, prev core.Clust) core.Clust {
 	var prevK = len(prev)
 	var clust core.Clust

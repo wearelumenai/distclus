@@ -5,13 +5,16 @@ import (
 	"distclus/core"
 )
 
+// Checks if clustering initialization is possible.
 func check(k int, elemts []core.Elemt) bool {
 	if k < 1 {
 		panic("K is lower than 1")
 	}
+
 	if len(elemts) < k {
 		return false
 	}
+
 	return true
 }
 
@@ -83,9 +86,11 @@ func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Ran
 	return clust, ok
 }
 
-// Return index of random weighted choice
-func WeightedChoice(weights []float64, rand *rand.Rand) (idx int) {
+// Return random index given corresponding weights
+func WeightedChoice(weights []float64, rand *rand.Rand) int {
 	var sum float64
+	var idx = 0
+
 	for _, x := range weights{
 		sum += x
 	}

@@ -34,10 +34,6 @@ func (conf *KMeansConf) getRGen() *rand.Rand {
 	}
 }
 
-type KMeansSupport interface {
-	Iterate(km KMeans, proposal core.Clust) core.Clust
-}
-
 type KMeans struct {
 	KMeansConf
 	KMeansSupport
@@ -50,8 +46,11 @@ type KMeans struct {
 	closed      chan bool
 }
 
-func NewKMeans(conf KMeansConf, initializer core.Initializer, data []core.Elemt) KMeans {
+type KMeansSupport interface {
+	Iterate(km KMeans, proposal core.Clust) core.Clust
+}
 
+func NewKMeans(conf KMeansConf, initializer core.Initializer, data []core.Elemt) KMeans {
 	conf.verify()
 
 	var km KMeans

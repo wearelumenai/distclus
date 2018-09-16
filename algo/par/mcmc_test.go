@@ -3,7 +3,6 @@ package par_test
 import (
 	"testing"
 	"distclus/real"
-	"distclus/core"
 	"distclus/algo"
 	"distclus/algo/par"
 	"distclus/algo/zetest"
@@ -31,27 +30,21 @@ func TestMCMC_ParRun(t *testing.T) {
 }
 
 func TestMCMC_ParPredict_Given(t *testing.T) {
-	var builder = func(init core.Initializer) core.OnlineClust {
-		var conf = mcmcConf
-		conf.McmcIter = 0
-		var mcmc = par.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
-		return &mcmc
-	}
+	var conf = mcmcConf
+	conf.McmcIter = 0
+	var mcmc = par.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Predict_Given(t, builder)
+	zetest.DoTest_Predict_Given(t, &mcmc)
 }
 
 func TestMCMC_ParPredict_KMeansPP(t *testing.T) {
-	var builder = func(init core.Initializer) core.OnlineClust {
-		var conf = mcmcConf
-		conf.ProbaK = []float64{1, 8, 1}
-		var seed = uint64(187232542653256543)
-		conf.RGen = rand.New(rand.NewSource(seed))
-		var mcmc = par.NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
-		return &mcmc
-	}
+	var conf = mcmcConf
+	conf.ProbaK = []float64{1, 8, 1}
+	var seed = uint64(187232542653256543)
+	conf.RGen = rand.New(rand.NewSource(seed))
+	var mcmc = par.NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
 
-	zetest.DoTest_Predict_KMeansPP(t, builder)
+	zetest.DoTest_Predict_KmeansPP(t, &mcmc)
 }
 
 func TestMCMC_ParRun_Async(t *testing.T) {

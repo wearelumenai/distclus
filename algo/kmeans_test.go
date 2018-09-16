@@ -9,11 +9,11 @@ import (
 	"distclus/algo/zetest"
 )
 
-func TestKMeans_Centroids(t *testing.T) {
+func TestKMeans_Initialization(t *testing.T) {
 	var conf = algo.KMeansConf{Iter: 0, K: 4, Space: real.RealSpace{}}
 	var km = algo.NewKMeans(conf, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Centroids(t, &km)
+	zetest.DoTest_Initialization(t, &km)
 }
 
 func TestKMeans_Run_Sync(t *testing.T) {
@@ -24,26 +24,20 @@ func TestKMeans_Run_Sync(t *testing.T) {
 }
 
 func TestKMeans_Predict_Given(t *testing.T) {
-	var builder = func(init core.Initializer) core.OnlineClust {
-		var conf = algo.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
-		var km = algo.NewKMeans(conf, init, nil)
-		return &km
-	}
+	var conf = algo.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
+	var km = algo.NewKMeans(conf, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Predict_Given(t, builder)
+	zetest.DoTest_Predict_Given(t, &km)
 }
 
-func TestKMeans_Predict_KMeansPP(t *testing.T) {
-	var builder = func(init core.Initializer) core.OnlineClust {
+func TestKMeans_Predict_KmeansPP(t *testing.T) {
 		var seed = uint64(187236548914256543)
 		rgen := rand.New(rand.NewSource(seed))
 		var conf = algo.KMeansConf{Iter: 20, K: 3, Space: real.RealSpace{}, RGen: rgen}
-		var km = algo.NewKMeans(conf, init, nil)
-		return &km
-	}
+		var km = algo.NewKMeans(conf, algo.KmeansPPInitializer, nil)
 
-	var km = zetest.DoTest_Predict_KMeansPP(t, builder)
-	zetest.DoTest_Predict_Centroids(t, km.(*algo.KMeans))
+	zetest.DoTest_Predict_KmeansPP(t, &km)
+	zetest.DoTest_Predict_Centroids(t, &km)
 }
 
 func TestKMeans_Run_Async(t *testing.T) {

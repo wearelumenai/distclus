@@ -1,7 +1,6 @@
 package algo_test
 
 import (
-	"distclus/core"
 	"distclus/real"
 	"testing"
 	"golang.org/x/exp/rand"
@@ -17,12 +16,12 @@ var mcmcConf = algo.MCMCConf{
 
 var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 
-func TestMCMC_Centroids(t *testing.T) {
+func TestMCMC_Initialization(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var mcmc = algo.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Centroids(t, &mcmc)
+	zetest.DoTest_Initialization(t, &mcmc)
 }
 
 func TestMCMC_Run_Sync(t *testing.T) {
@@ -37,27 +36,21 @@ func TestMCMC_Run_Sync(t *testing.T) {
 }
 
 func TestMCMC_Predict_Given(t *testing.T) {
-	var builder = func(init core.Initializer) core.OnlineClust {
-		var conf = mcmcConf
-		conf.McmcIter = 0
-		var mcmc = algo.NewMCMC(conf, distrib, init, nil)
-		return &mcmc
-	}
+	var conf = mcmcConf
+	conf.McmcIter = 0
+	var mcmc = algo.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Predict_Given(t, builder)
+	zetest.DoTest_Predict_Given(t, &mcmc)
 }
 
-func TestMCMC_Predict_KMeansPP(t *testing.T) {
-	var builder = func(init core.Initializer) core.OnlineClust {
-		var conf = mcmcConf
-		conf.ProbaK = []float64{1, 8, 1}
-		var seed = uint64(187232542653256543)
-		conf.RGen = rand.New(rand.NewSource(seed))
-		var mcmc = algo.NewMCMC(conf, distrib, init, nil)
-		return &mcmc
-	}
+func TestMCMC_Predict_KmeansPP(t *testing.T) {
+	var conf = mcmcConf
+	conf.ProbaK = []float64{1, 8, 1}
+	var seed = uint64(187232542653256543)
+	conf.RGen = rand.New(rand.NewSource(seed))
+	var mcmc = algo.NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
 
-	zetest.DoTest_Predict_KMeansPP(t, builder)
+	zetest.DoTest_Predict_KmeansPP(t, &mcmc)
 }
 
 func TestMCMC_Run_Async(t *testing.T) {

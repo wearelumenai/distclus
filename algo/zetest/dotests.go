@@ -24,7 +24,8 @@ var TestVectors = []core.Elemt{
 	[]float64{50, 51.2, 49, 40, 45.2},
 }
 
-func DoTest_Centroids(t *testing.T, algo core.OnlineClust) {
+// Algotithme must be configured with GivenInitializer and 0 iteration
+func DoTest_Initialization(t *testing.T, algo core.OnlineClust) {
 	for _, elemt := range TestVectors {
 		algo.Push(elemt)
 	}
@@ -68,8 +69,7 @@ func DoTest_Run_Sync(t *testing.T, algo core.OnlineClust) {
 	algo.Close()
 }
 
-func DoTest_Predict_Given(t *testing.T, builder func(core.Initializer) core.OnlineClust) core.OnlineClust {
-	var algo = builder(algo.GivenInitializer)
+func DoTest_Predict_Given(t *testing.T, algo core.OnlineClust) {
 	for _, elemt := range TestVectors {
 		algo.Push(elemt)
 	}
@@ -99,11 +99,9 @@ func DoTest_Predict_Given(t *testing.T, builder func(core.Initializer) core.Onli
 	}
 
 	algo.Close()
-	return algo
 }
 
-func DoTest_Predict_KMeansPP(t *testing.T, builder func(core.Initializer) core.OnlineClust) core.OnlineClust {
-	var algo = builder(algo.KmeansPPInitializer)
+func DoTest_Predict_KmeansPP(t *testing.T, algo core.OnlineClust) {
 	for _, elemt := range TestVectors {
 		algo.Push(elemt)
 	}
@@ -143,7 +141,6 @@ func DoTest_Predict_KMeansPP(t *testing.T, builder func(core.Initializer) core.O
 	}
 
 	algo.Close()
-	return algo
 }
 
 func DoTest_Predict_Centroids(t *testing.T, km *algo.KMeans) {

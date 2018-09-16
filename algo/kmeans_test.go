@@ -72,22 +72,18 @@ func TestKMeans_Empty(t *testing.T) {
 	zetest.DoTest_Empty(t, builder)
 }
 
-func TestKMeans_Conf(t *testing.T) {
-	var testPanic = func() {
-		if x := recover(); x == nil {
-			t.Error("Expected error")
-		}
-	}
-
+func TestKMeans_ConfError_Iter(t *testing.T) {
 	func() {
-		defer testPanic()
+		defer zetest.TestPanic(t)
 		var conf = algo.KMeansConf{Iter: -10, K: 3, Space: real.RealSpace{}}
 		var km = algo.NewKMeans(conf, algo.KmeansPPInitializer, nil)
 		km.Run(false)
 	}()
+}
 
+func TestKMeans_ConfError_K(t *testing.T) {
 	func() {
-		defer testPanic()
+		defer zetest.TestPanic(t)
 		var conf = algo.KMeansConf{Iter: 10, K: -3, Space: real.RealSpace{}}
 		algo.NewKMeans(conf, algo.KmeansPPInitializer, nil)
 	}()

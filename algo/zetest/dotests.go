@@ -32,13 +32,23 @@ func DoTest_Centroids(t *testing.T, algo core.OnlineClust) {
 	algo.Run(false)
 	var clust, _ = algo.Centroids()
 
-	for i := 0; i < len(clust); i++ {
-		if !reflect.DeepEqual(clust[i], TestVectors[i]) {
-			t.Error("Expected", TestVectors[i], "got", clust[i])
-		}
-	}
+	assertCentroids(t, TestVectors[:len(clust)], clust)
 
 	algo.Close()
+}
+
+func assertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
+
+	if len(actual) != len(expected) {
+		t.Error("Expected ", len(expected), "centroids got", len(actual))
+		return
+	}
+
+	for i := 0; i < len(actual); i++ {
+		if !reflect.DeepEqual(actual[i], expected[i]) {
+			t.Error("Expected", expected[i], "got", actual[i])
+		}
+	}
 }
 
 func DoTest_Run_Sync(t *testing.T, algo core.OnlineClust) {
@@ -299,3 +309,8 @@ func AlmostEqual(e1 []float64, e2 []float64) bool {
 	return true
 }
 
+func TestPanic(t *testing.T) {
+	if x := recover(); x == nil {
+		t.Error("Expected error")
+	}
+}

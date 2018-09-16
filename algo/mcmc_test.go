@@ -97,22 +97,19 @@ func TestMCMC_MaxK(t *testing.T) {
 	}
 }
 
-func TestMCMC_Conf(t *testing.T) {
-	var testPanic = func() {
-		if x := recover(); x == nil {
-			t.Error("Expected error")
-		}
-	}
+func TestMCMC_ConfError_Iter(t *testing.T) {
 
 	func() {
-		defer testPanic()
+		defer zetest.TestPanic(t)
 		var conf = mcmcConf
 		conf.McmcIter = -10
 		algo.NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
 	}()
+}
 
+func TestMCMC_ConfError_K(t *testing.T) {
 	func() {
-		defer testPanic()
+		defer zetest.TestPanic(t)
 		var conf = mcmcConf
 		conf.InitK = 3
 		var mcmc = algo.NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)

@@ -56,12 +56,12 @@ func (c Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards []
 }
 
 // Assigns elemts to each centroids
-func (c Clust) AssignAll(elemts []Elemt, space Space) (clusters [][]Elemt) {
-	clusters = make([][]Elemt, len(c))
+func (c Clust) AssignAll(elemts []Elemt, space Space) (clusters [][]int) {
+	clusters = make([][]int, len(c))
 
-	for _, elemt := range elemts {
-		var idx, _ = c.nearest(elemt, space)
-		clusters[idx] = append(clusters[idx], elemt)
+	for i, _ := range elemts {
+		var idx, _ = c.nearest(elemts[i], space)
+		clusters[idx] = append(clusters[idx], i)
 	}
 
 	return

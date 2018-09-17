@@ -332,7 +332,7 @@ func (mcmc *MCMC) addCenter(prevK int, prev core.Clust) core.Clust {
 	for i := 0; i < prevK; i++ {
 		clust[i] = mcmc.Space.Copy(prev[i])
 	}
-	clust[prevK] = KmeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
+	clust[prevK] = KMeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
 	return clust
 }
 

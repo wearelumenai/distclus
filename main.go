@@ -170,7 +170,7 @@ func parseInitializer(init string) core.Initializer {
 
 	switch init {
 	case "random":
-		initializer = algo.KmeansPPInitializer
+		initializer = algo.KMeansPPInitializer
 	case "kmeans++":
 		initializer = algo.RandInitializer
 	}

@@ -32,8 +32,8 @@ func GivenInitializer (k int, elemts []core.Elemt, space core.Space, _ *rand.Ran
 	return clust, ok
 }
 
-// KmeansPPInitializer initializes a clustering algorithm with kmeans++
-func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool) {
+// KMeansPPInitializer initializes a clustering algorithm with kmeans++
+func KMeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool) {
 	var ok = check(k, elemts)
 	var clust = make(core.Clust, k)
 
@@ -42,7 +42,7 @@ func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand
 		clust[0] = elemts[draw]
 
 		for i := 1; i < k; i++ {
-			clust[i] = KmeansPPIter(clust[:i], elemts, space, src)
+			clust[i] = KMeansPPIter(clust[:i], elemts, space, src)
 		}
 	}
 
@@ -50,7 +50,7 @@ func KmeansPPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand
 }
 
 // Run au kmeans++ iteration : draw an element the does not belong to clust
-func KmeansPPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) core.Elemt {
+func KMeansPPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) core.Elemt {
 	var dists = make([]float64, len(elemts))
 
 	for i, elt := range elemts {

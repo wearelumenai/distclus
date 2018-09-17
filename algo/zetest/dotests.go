@@ -1,17 +1,14 @@
 package zetest
 
 import (
-	"distclus/core"
 	"distclus/algo"
+	"distclus/core"
+	"distclus/real"
+	"math"
+	"reflect"
 	"testing"
 	"time"
-	"reflect"
-	"math"
 )
-
-var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
-	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
-	[]float64{-5.}, []float64{-8.}, []float64{9.}}
 
 var TestVectors = []core.Elemt{
 	[]float64{7.2, 6, 8, 11, 10},
@@ -24,289 +21,229 @@ var TestVectors = []core.Elemt{
 	[]float64{50, 51.2, 49, 40, 45.2},
 }
 
-// Algotithme must be configured with GivenInitializer and 0 iteration
-func DoTest_Initialization(t *testing.T, algo core.OnlineClust) {
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
-	}
+// Algorithm must be configured with GivenInitializer with 3 centers and 0 iteration
+func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
+	var actual = PushAndRunSync(algo)
+	var expected = TestVectors[:3]
+	AssertCentroids(t, expected, actual)
+	algo.Close()
+}
 
-	algo.Run(false)
-	var clust, _ = algo.Centroids()
+// Algorithm must be configured with GivenInitializer with 3 centers
+func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
+	var clust = PushAndRunSync(algo)
+	var actual = clust.AssignAll(TestVectors, real.RealSpace{})
 
-	assertCentroids(t, TestVectors[:len(clust)], clust)
+	var expected = [][]int{{0, 3, 4}, {1, 5}, {2, 6, 7}}
+	AssertAssignation(t, expected, actual)
 
 	algo.Close()
 }
 
-func assertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
+// Algorithm must be configured with KMeansPP with 3 centers
+func DoTestRunSyncKMeansPP(t *testing.T, algo core.OnlineClust) {
+	var clust = PushAndRunSync(algo)
+	var actual = clust.AssignAll(TestVectors,real.RealSpace{})
 
-	if len(actual) != len(expected) {
-		t.Error("Expected ", len(expected), "centroids got", len(actual))
-		return
-	}
+	var expected = make([][]int, 3)
+	_, i0, _ := algo.Predict(TestVectors[0], false)
+	_, i1, _ := algo.Predict(TestVectors[1], false)
+	_, i2, _ := algo.Predict(TestVectors[2], false)
+	expected[i0] = []int{0, 3, 4}
+	expected[i1] = []int{1, 5}
+	expected[i2] = []int{2, 6, 7}
 
-	for i := 0; i < len(actual); i++ {
-		if !reflect.DeepEqual(actual[i], expected[i]) {
-			t.Error("Expected", expected[i], "got", actual[i])
-		}
-	}
-}
-
-func DoTest_Run_Sync(t *testing.T, algo core.OnlineClust) {
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
-	}
-
-	algo.Run(false)
-	var clust, _ = algo.Centroids()
-
-	for i := 0; i < len(clust); i++ {
-		if reflect.DeepEqual(clust[i], TestVectors[i]) {
-			t.Error("Expected average got", clust[i])
-		}
-	}
+	AssertAssignation(t, expected, actual)
 
 	algo.Close()
 }
 
-func DoTest_Predict_Given(t *testing.T, algo core.OnlineClust) {
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
+// Algorithm must be configured with 3 centers
+func DoTestRunSyncCentroids(t *testing.T, km *algo.KMeans) {
+	c0, _, _ := km.Predict(TestVectors[0], false)
+	c1, _, _ := km.Predict(TestVectors[1], false)
+	c2, _, _ := km.Predict(TestVectors[2], false)
+	var actual = core.Clust{c0, c1, c2}
+	var expected = core.Clust{
+		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
+		[]float64{-17. / 2, -20.5 / 2, -15. / 2, -16.5 / 2, -16.5 / 2},
+		[]float64{134. / 3, 133.6 / 3, 133.2 / 3, 120.4 / 3, 135.2 / 3},
 	}
 
-	algo.Run(false)
-
-	for i, elemt := range TestVectors {
-		var c, idx, _ = algo.Predict(elemt, false)
-
-		if i == 0 || i == 3 || i == 4 {
-			if idx != 0 || !reflect.DeepEqual(c, TestVectors[0]) {
-				t.Error("Expected center 0")
-			}
-		}
-
-		if i == 1 || i == 5 {
-			if idx != 1 || !reflect.DeepEqual(c, TestVectors[1]) {
-				t.Error("Expected center 1")
-			}
-		}
-
-		if i == 2 || i == 6 || i == 7 {
-			if idx != 2 || !reflect.DeepEqual(c, TestVectors[2]) {
-				t.Error("Expected center 2")
-			}
-		}
-	}
-
-	algo.Close()
+	AssertCentroids(t, expected, actual)
 }
 
-func DoTest_Predict_KmeansPP(t *testing.T, algo core.OnlineClust) {
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
-	}
-
-	algo.Run(false)
-	var clust, _ = algo.Centroids()
-	var iclust = make([]int, 3)
-	for i := 0; i < 3; i++ {
-		var c, ix, _ = algo.Predict(TestVectors[i], false)
-		iclust[i] = ix
-
-		if !reflect.DeepEqual(c, clust[ix]) {
-			t.Error("Expected center", clust[i], "got", c)
-		}
-	}
-
-	for i := 3; i < len(TestVectors); i++ {
-		var c, idx, _ = algo.Predict(TestVectors[i], false)
-
-		if i == 3 || i == 4 {
-			if idx != iclust[0] || !reflect.DeepEqual(c, clust[idx]) {
-				t.Error("Expected center 0")
-			}
-		}
-
-		if i == 5 {
-			if idx != iclust[1] || !reflect.DeepEqual(c, clust[idx]) {
-				t.Error("Expected center 1")
-			}
-		}
-
-		if i == 6 || i == 7 {
-			if idx != iclust[2] || !reflect.DeepEqual(c, clust[idx]) {
-				t.Error("Expected center 2")
-			}
-		}
-	}
-
-	algo.Close()
-}
-
-func DoTest_Predict_Centroids(t *testing.T, km *algo.KMeans) {
-	var clust, _ = km.Centroids()
-
-	var iclust = make([]int, 3)
-	for i := 0; i < 3; i++ {
-		var c, ix, _ = km.Predict(TestVectors[i], false)
-		iclust[i] = ix
-
-		if !reflect.DeepEqual(c, clust[ix]) {
-			t.Error("Expected center", clust[i], "got", c)
-		}
-
-		if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; i == 0 && !AlmostEqual(r, c.([]float64)) {
-			t.Error("Expected", r, "got", c)
-		}
-
-		if r := []float64{-17. / 2, -20.5 / 2, -15. / 2, -16.5 / 2, -16.5 / 2}; i == 1 && !AlmostEqual(r, c.([]float64)) {
-			t.Error("Expected", r, "got", c)
-		}
-
-		if r := []float64{134. / 3, 133.6 / 3, 133.2 / 3, 120.4 / 3, 135.2 / 3}; i == 2 && !AlmostEqual(r, c.([]float64)) {
-			t.Error("Expected", r, "got", c)
-		}
-	}
-}
-
-func DoTest_Run_Async(t *testing.T, algo core.OnlineClust) {
-	algo.Run(true)
-
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
-	}
+// Algorithm must be configured with 3 centers
+func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
+	RunAsyncAndPush(algo)
 
 	time.Sleep(700 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs, true)
 
 	time.Sleep(1000 * time.Millisecond)
-	var cn, ixn, _ = algo.Predict(obs, false)
-
-	if reflect.DeepEqual(cn, c) {
-		t.Error("Expected center change")
-	}
-
-	var _, ix1, _ = algo.Predict(TestVectors[1], false)
-	var _, ix5, _ = algo.Predict(TestVectors[5], false)
-
-	if ixn != ix5 || ixn != ix1 {
-		t.Error("Expected same center")
-	}
-
 	algo.Close()
+
+	var cn, _, _ = algo.Predict(obs, false)
+	AssertNotEqual(t, c, cn)
+
+	var c0, _, _ = algo.Predict(TestVectors[1], false)
+	AssertEqual(t, c0, cn)
 }
 
-func DoTest_Run_Async_Centroids(t *testing.T, km *algo.KMeans) {
-	var c0, _, _ = km.Predict(TestVectors[0], false)
-	if r := []float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3}; !AlmostEqual(r, c0.([]float64)) {
-		t.Error("Expected", r, "got", c0)
+func DoTestRunAsyncCentroids(t *testing.T, km *algo.KMeans) {
+	c0, _, _ := km.Predict(TestVectors[0], false)
+	c1, _, _ := km.Predict(TestVectors[1], false)
+	c2, _, _ := km.Predict(TestVectors[2], false)
+	var actual = core.Clust{c0, c1, c2}
+	var expected = core.Clust{
+		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
+		[]float64{-26. / 3, -30.5 / 3, -23.3 / 3, -24.5 / 3, -24. / 3},
+		[]float64{134. / 3, 133.6 / 3, 133.2 / 3, 120.4 / 3, 135.2 / 3},
 	}
 
-	var c1, _, _ = km.Predict(TestVectors[1], false)
-	if r := []float64{-26. / 3, -30.5 / 3, -23.3 / 3, -24.5 / 3, -24. / 3}; !AlmostEqual(r, c1.([]float64)) {
-		t.Error("Expected", r, "got", c1)
-	}
-
-	var c2, _, _ = km.Predict(TestVectors[2], false)
-	if r := []float64{134. / 3, 133.6 / 3, 133.2 / 3, 120.4 / 3, 135.2 / 3}; !AlmostEqual(r, c2.([]float64)) {
-		t.Error("Expected", r, "got", c2)
-	}
+	AssertCentroids(t, expected, actual)
 }
 
-func DoTest_Workflow(t *testing.T, algo core.OnlineClust) {
-	var err error
-
-	err = algo.Push(TestVectors[0])
-	err = algo.Push(TestVectors[1])
-	err = algo.Push(TestVectors[2])
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
-
-	_, err = algo.Centroids()
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = algo.Predict(TestVectors[3], false)
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
+func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
+	DoTestBeforeRun(algo, t)
 
 	algo.Run(true)
-	time.Sleep(300*time.Millisecond)
-
-	err = algo.Push(TestVectors[3])
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
-
-	_, _, err = algo.Predict(TestVectors[4], true)
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
+	time.Sleep(300 * time.Millisecond)
+	DoTestAfterRun(algo, t)
 
 	algo.Close()
-
-	err = algo.Push(TestVectors[5])
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = algo.Predict(TestVectors[5], true)
-
-	if err == nil {
-		t.Error("Expected workflow error")
-	}
-
-	_, _, err = algo.Predict(TestVectors[5], false)
-
-	if err != nil {
-		t.Error("Expected no workflow error")
-	}
+	DoTestAfterClose(algo, t)
 }
 
-func DoTest_Empty(t *testing.T, builder func(core.Initializer) core.OnlineClust) {
+func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
+	var err error
+	err = algo.Push(TestVectors[5])
+	AssertError(t, err)
+
+	_, _, err = algo.Predict(TestVectors[5], true)
+	AssertError(t, err)
+
+	_, _, err = algo.Predict(TestVectors[5], false)
+	AssertNoError(t, err)
+}
+
+func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
+	var err error
+	err = algo.Push(TestVectors[3])
+	AssertNoError(t, err)
+
+	_, _, err = algo.Predict(TestVectors[4], true)
+	AssertNoError(t, err)
+}
+
+func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
+	var err error
+	algo.Push(TestVectors[0])
+	algo.Push(TestVectors[1])
+	err = algo.Push(TestVectors[2])
+	AssertNoError(t, err)
+
+	_, err = algo.Centroids()
+	AssertError(t, err)
+
+	_, _, err = algo.Predict(TestVectors[3], false)
+	AssertError(t, err)
+}
+
+func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) {
 	var init = core.Clust{
 		[]float64{0, 0, 0, 0, 0},
 		[]float64{1000, 1000, 1000, 1000, 1000},
 	}
-	var algo = builder(init.Initializer)
+	var algorithm = builder(init.Initializer)
 
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
-	}
+	PushAndRunAsync(algorithm)
+	time.Sleep(300 * time.Millisecond)
 
-	algo.Run(true)
-	time.Sleep(300*time.Millisecond)
-
-	var clust, _ = algo.Centroids()
+	var clust, _ = algorithm.Centroids()
 
 	if !reflect.DeepEqual(clust[1], init[1]) {
 		t.Error("Expected empty cluster")
 	}
 }
 
-func AlmostEqual(e1 []float64, e2 []float64) bool {
-	if len(e1) != len(e2) {
-		return false
+func PushAndRunAsync(algorithm core.OnlineClust) {
+	for _, elemt := range TestVectors {
+		algorithm.Push(elemt)
 	}
-	for i := 0; i < len(e1); i++ {
-		if math.Abs(e1[i]-e2[i]) > 1e-6 {
-			return false
-		}
-	}
-	return true
+	algorithm.Run(true)
 }
 
-func TestPanic(t *testing.T) {
+func RunAsyncAndPush(algo core.OnlineClust) {
+	algo.Run(true)
+	for _, elemt := range TestVectors {
+		algo.Push(elemt)
+	}
+}
+
+func PushAndRunSync(algo core.OnlineClust) core.Clust {
+	for _, elemt := range TestVectors {
+		algo.Push(elemt)
+	}
+	algo.Run(false)
+	var clust, _ = algo.Centroids()
+	return clust
+}
+
+func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
+	if len(actual) != len(expected) {
+		t.Error("Expected ", len(expected), "centroids got", len(actual))
+		return
+	}
+
+	for i := 0; i < len(actual); i++ {
+		AssertAlmostEqual(t, expected[i].([]float64), actual[i].([]float64))
+	}
+}
+
+func AssertAssignation(t *testing.T, expected [][]int, actual [][]int) {
+	if !reflect.DeepEqual(actual, expected) {
+		t.Error("Expected", expected, "got", actual)
+	}
+}
+
+func AssertEqual(t *testing.T, expected core.Elemt, actual core.Elemt) {
+	if !reflect.DeepEqual(expected, actual) {
+		t.Error("Expected same elements")
+	}
+}
+func AssertNotEqual(t *testing.T, unexpected core.Elemt, actual core.Elemt) {
+	if reflect.DeepEqual(unexpected, actual) {
+		t.Error("Expected different elements")
+	}
+}
+
+func AssertAlmostEqual(t *testing.T, expected []float64, actual []float64) {
+	if len(expected) != len(actual) {
+		t.Error("Expected", len(expected), "got", len(actual))
+	}
+
+	for i := 0; i < len(expected); i++ {
+		if math.Abs(expected[i]-actual[i]) > 1e-6 {
+			t.Error("Expected", expected[i], "got", actual[i])
+		}
+	}
+}
+
+func AssertNoError(t *testing.T, err error) {
+	if err != nil {
+		t.Error("Expected no workflow error")
+	}
+}
+
+func AssertError(t *testing.T, err error) {
+	if err == nil {
+		t.Error("Expected no workflow error")
+	}
+}
+
+func AssertPanic(t *testing.T) {
 	if x := recover(); x == nil {
 		t.Error("Expected error")
 	}

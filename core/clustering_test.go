@@ -1,26 +1,16 @@
 package core_test
 
 import (
-	"testing"
-	"reflect"
-	"distclus/real"
+	"distclus/algo/zetest"
 	"distclus/core"
+	"distclus/real"
+	"reflect"
+	"testing"
 )
 
 var testPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
 	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
 	[]float64{-5.}, []float64{-8.}, []float64{9.}}
-
-var testVectors = []core.Elemt{
-	[]float64{7.2, 6, 8, 11, 10},
-	[]float64{-8, -10.5, -7, -8.5, -9},
-	[]float64{42, 41.2, 42, 40.2, 45},
-	[]float64{9, 8, 7, 7.5, 10},
-	[]float64{7.2, 6, 8, 11, 10},
-	[]float64{-9, -10, -8, -8, -7.5},
-	[]float64{42, 41.2, 42.2, 40.2, 45},
-	[]float64{50, 51.2, 49, 40, 45.2},
-}
 
 func TestClust_Assign(t *testing.T) {
 	var clust = core.Clust{
@@ -44,7 +34,7 @@ func TestClust_AssignDBA(t *testing.T) {
 	var result, cards = clust.AssignDBA(testPoints, sp)
 
 	for i, e := range result {
-		switch(i) {
+		switch (i) {
 		case 0:
 			if e.([]float64)[0] < 0 {
 				t.Error("Expected non negative elements")
@@ -73,10 +63,10 @@ func TestClust_AssignAll(t *testing.T) {
 
 	for i, c := range result {
 		for _, e := range c {
-			if i == 0 && e.([]float64)[0] < 0 {
+			if i == 0 && testPoints[e].([]float64)[0] < 0 {
 				t.Error("Expected non negative elements")
 			}
-			if i == 1 && e.([]float64)[0] >= 0 {
+			if i == 1 && testPoints[e].([]float64)[0] >= 0 {
 				t.Error("Expected negative elements")
 			}
 		}
@@ -90,19 +80,25 @@ func TestClust_Loss(t *testing.T) {
 	}
 	var sp = real.RealSpace{}
 
-	var s = 0.
+	var expected = 0.
 	for _, e := range testPoints {
-		f := e.([]float64)[0]
-		if f < 0 {
-			f += 1
-		}
-		s += f * f
+		var d = Distance2Mean(e)
+		expected += d * d
 	}
 
-	var l = clust.Loss(testPoints, sp, 2.)
+	var actual = clust.Loss(testPoints, sp, 2.)
 
-	if s != l {
-		t.Error("Expected", s, "got", l)
+	if expected != actual {
+		t.Error("Expected", expected, "got", actual)
+	}
+}
+
+func Distance2Mean(elemt core.Elemt) float64 {
+	var f = elemt.([]float64)[0]
+	if f < 0 {
+		return f + 1
+	} else {
+		return f
 	}
 }
 
@@ -115,36 +111,27 @@ func TestDBA(t *testing.T) {
 		t.Error("Expected empty error")
 	}
 
-	var elemts = []core.Elemt{[]float64{2.}, []float64{4.}}
+	var average = 0.
+	for i := 0; i < len(testPoints); i++ {
+		average += (testPoints[i]).([]float64)[0]
+	}
+	average = average / float64(len(testPoints))
+	AssertDBA(t, testPoints, sp, []float64{average})
 
+	var elemts = make([]core.Elemt, len(testPoints))
+	for i := range testPoints {
+		e := (testPoints[i]).([]float64)[0]
+		elemts[i] = []float64{e, 2 * e}
+	}
+	AssertDBA(t, elemts, sp, []float64{average, 2*average})
+}
+
+func AssertDBA(t *testing.T, elemts []core.Elemt, sp real.RealSpace, average []float64) {
 	var dba, _ = core.DBA(elemts, sp)
-	if e := dba.([]float64)[0]; e != 3. {
-		t.Error("Expected 3 got", e)
-	}
-
-	elemts = testPoints
-	dba, _ = core.DBA(elemts, sp)
-	var s = 0.
-	for i := 0; i < len(elemts); i++ {
-		s += (elemts[i]).([]float64)[0]
-	}
-
-	var m = s / float64(len(elemts))
-	var e = dba.([]float64)[0]
-	if m != e {
-		t.Error("Expected", m, "got", e)
-	}
-
-	var elemts2 = make([]core.Elemt, len(elemts))
-	for i := range elemts {
-		e := (elemts[i]).([]float64)[0]
-		elemts2[i] = []float64{e, 2 * e}
-	}
-
-	var dba2, _ = core.DBA(elemts2, sp)
-	var ee = dba2.([]float64)
-	if ee[0] != m || ee[1] != 2*m {
-		t.Error("Expected [m m] got", ee)
+	for i, _ := range average {
+		if value := dba.([]float64)[i]; value != average[i] {
+			t.Error("Expected", average[i], "got", value)
+		}
 	}
 }
 
@@ -162,15 +149,8 @@ func TestClust_Initializer(t *testing.T) {
 }
 
 func TestClust_Empty(t *testing.T) {
-	var testPanic = func() {
-		if x := recover(); x == nil {
-			t.Error("Expected error")
-		}
-	}
-
 	func() {
-		defer testPanic()
-
-		core.Clust{}.AssignAll(testVectors, real.RealSpace{})
+		defer zetest.AssertPanic(t)
+		core.Clust{}.AssignAll(testPoints, real.RealSpace{})
 	}()
 }

@@ -18,42 +18,31 @@ var mcmcConf = algo.MCMCConf{
 
 var distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
 
-func TestMCMC_ParRun(t *testing.T) {
-	var conf = mcmcConf
-	conf.McmcIter = 100
-	conf.InitK = 1
-	var seed = uint64(1872365454256543)
-	conf.RGen = rand.New(rand.NewSource(seed))
-	var mcmc = par.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
-
-	zetest.DoTest_Run_Sync(t, &mcmc)
-}
-
 func TestMCMC_ParPredict_Given(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var mcmc = par.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Predict_Given(t, &mcmc)
+	zetest.DoTestRunSyncGiven(t, &mcmc)
 }
 
-func TestMCMC_ParPredict_KMeansPP(t *testing.T) {
+func TestMCMC_ParPredictKMeansPP(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	var seed = uint64(187232542653256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var mcmc = par.NewMCMC(conf, distrib, algo.KmeansPPInitializer, nil)
+	var mcmc = par.NewMCMC(conf, distrib, algo.KMeansPPInitializer, nil)
 
-	zetest.DoTest_Predict_KmeansPP(t, &mcmc)
+	zetest.DoTestRunSyncKMeansPP(t, &mcmc)
 }
 
-func TestMCMC_ParRun_Async(t *testing.T) {
+func TestMCMC_ParRunAsync(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
 	var mcmc = par.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
-	zetest.DoTest_Run_Async(t, &mcmc)
+	zetest.DoTestRunAsync(t, &mcmc)
 }
 
 func TestParMCMCSupport_ParLoss(t *testing.T) {
@@ -61,11 +50,7 @@ func TestParMCMCSupport_ParLoss(t *testing.T) {
 	conf.McmcIter = 0
 	var mcmc = par.NewMCMC(conf, distrib, algo.GivenInitializer, nil)
 
-	for _, elemt := range zetest.TestVectors {
-		mcmc.Push(elemt)
-	}
-
-	mcmc.Run(false)
+	zetest.PushAndRunSync(&mcmc)
 
 	var clust, _ = mcmc.Centroids()
 	var l1 = mcmc.Loss(mcmc, clust)

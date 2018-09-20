@@ -1,7 +1,8 @@
-package algo
+package mcmc
 
 import (
 	"distclus/core"
+	"distclus/kmeans"
 	"distclus/real"
 	"testing"
 	"reflect"
@@ -30,7 +31,7 @@ var distrib = NewMultivT(MultivTConf{mcmcConf})
 func TestMCMC_getCenters(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var mcmc = NewMCMC(conf, distrib, GivenInitializer, nil)
+	var mcmc = NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, nil)
 
 	for _, elemt := range TestVectors {
 		mcmc.Push(elemt)

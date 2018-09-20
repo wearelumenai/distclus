@@ -1,8 +1,8 @@
 package zetest
 
 import (
-	"distclus/algo"
 	"distclus/core"
+	"distclus/kmeans"
 	"distclus/real"
 	"math"
 	"reflect"
@@ -59,7 +59,7 @@ func DoTestRunSyncKMeansPP(t *testing.T, algo core.OnlineClust) {
 }
 
 // Algorithm must be configured with 3 centers
-func DoTestRunSyncCentroids(t *testing.T, km *algo.KMeans) {
+func DoTestRunSyncCentroids(t *testing.T, km *kmeans.KMeans) {
 	c0, _, _ := km.Predict(TestVectors[0], false)
 	c1, _, _ := km.Predict(TestVectors[1], false)
 	c2, _, _ := km.Predict(TestVectors[2], false)
@@ -91,7 +91,7 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	AssertEqual(t, c0, cn)
 }
 
-func DoTestRunAsyncCentroids(t *testing.T, km *algo.KMeans) {
+func DoTestRunAsyncCentroids(t *testing.T, km *kmeans.KMeans) {
 	c0, _, _ := km.Predict(TestVectors[0], false)
 	c1, _, _ := km.Predict(TestVectors[1], false)
 	c2, _, _ := km.Predict(TestVectors[2], false)

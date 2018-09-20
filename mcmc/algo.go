@@ -1,28 +1,29 @@
-package algo
+package mcmc
 
 import (
+	"distclus/core"
+	"distclus/kmeans"
+	"errors"
 	"fmt"
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
-	"distclus/core"
 	"time"
-	"errors"
 )
 
 type MCMCConf struct {
-	Dim int
-	FrameSize int
-	B, Amp, R float64
-	Norm float64
-	Nu float64
-	InitK int
-	MaxK int
+	Dim                int
+	FrameSize          int
+	B, Amp, R          float64
+	Norm               float64
+	Nu                 float64
+	InitK              int
+	MaxK               int
 	McmcIter, InitIter int
 	ProbaK             []float64
-	Space core.Space
-	RGen *rand.Rand
-	lamb, l2b, tau float64
+	Space              core.Space
+	RGen               *rand.Rand
+	lamb, l2b, tau     float64
 }
 
 func (conf *MCMCConf) Tau() float64 {
@@ -82,15 +83,15 @@ type MCMCDistrib interface {
 }
 
 type MCMCSupport interface {
-	Iterate(MCMC, core.Clust, int) core.Clust
-	Loss(MCMC, core.Clust) float64
+	Iterate(core.Clust, int) core.Clust
+	Loss(core.Clust) float64
 }
 
 type MCMC struct {
 	MCMCConf
 	MCMCSupport
-	Buffer
-	distrib MCMCDistrib
+	core.Buffer
+	distrib     MCMCDistrib
 	initializer core.Initializer
 	uniform     distuv.Uniform
 	store       map[int]core.Clust
@@ -102,13 +103,12 @@ type MCMC struct {
 	iter, acc   int
 }
 
-func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) MCMC {
+func NewSeqMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
 
 	conf.verify()
 
 	var m MCMC
 	m.MCMCConf = conf
-	m.MCMCSupport = SeqMCMCSupport{}
 	m.store = make(map[int]core.Clust)
 	m.status = core.Created
 	m.initializer = initializer
@@ -117,7 +117,8 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, d
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.rgen}
 	m.closing = make(chan bool, 1)
 	m.closed = make(chan bool, 1)
-	m.Buffer = newBuffer(data, m.FrameSize)
+	m.Buffer = core.NewBuffer(data, m.FrameSize)
+	m.MCMCSupport = SeqMCMCSupport{buffer:&m.Buffer, norm:m.Norm, space:m.Space, rgen:m.RGen}
 
 	if len(m.ProbaK) == 0 {
 		m.ProbaK = []float64{1, 0, 9}
@@ -127,7 +128,7 @@ func NewMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, d
 		m.MaxK = 16
 	}
 
-	return m
+	return &m
 }
 
 func (mcmc *MCMC) Centroids() (c core.Clust, err error) {
@@ -146,7 +147,7 @@ func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
 	case core.Closed:
 		err = errors.New("clustering ended")
 	default:
-		mcmc.Buffer.push(elemt)
+		mcmc.Buffer.Push(elemt)
 	}
 
 	return err
@@ -170,7 +171,7 @@ func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 
 func (mcmc *MCMC) Run(async bool) {
 	if async {
-		mcmc.setAsync()
+		mcmc.Buffer.SetAsync()
 		go mcmc.initAndRun(async)
 	} else {
 		mcmc.initAndRun(async)
@@ -194,14 +195,14 @@ func (mcmc *MCMC) handleFailedInitialisation(async bool) {
 		panic("failed to initialize")
 	}
 	time.Sleep(300 * time.Millisecond)
-	mcmc.Buffer.apply()
+	mcmc.Buffer.Apply()
 }
 
 func (mcmc *MCMC) runAlgorithm() {
-	var current = proposal {
-		k: mcmc.InitK,
-		loss: mcmc.Loss(*mcmc, mcmc.clust),
-		pdf: mcmc.proba(mcmc.clust, mcmc.clust),
+	var current = proposal{
+		k:    mcmc.InitK,
+		loss: mcmc.Loss(mcmc.clust),
+		pdf:  mcmc.proba(mcmc.clust, mcmc.clust),
 	}
 
 	for i, loop := 0, true; i < mcmc.McmcIter && loop; i++ {
@@ -211,7 +212,7 @@ func (mcmc *MCMC) runAlgorithm() {
 
 		default:
 			current = mcmc.doIter(current)
-			mcmc.apply()
+			mcmc.Apply()
 		}
 	}
 
@@ -235,19 +236,19 @@ func (mcmc *MCMC) doIter(current proposal) proposal {
 }
 
 type proposal struct {
-	k int
+	k       int
 	centers core.Clust
-	loss float64
-	pdf float64
+	loss    float64
+	pdf     float64
 }
 
 func (mcmc *MCMC) propose(current proposal) proposal {
 	var prop proposal
 	prop.k = mcmc.nextK(current.k)
 	var centers = mcmc.getCenters(prop.k, mcmc.clust)
-	centers = mcmc.Iterate(*mcmc, centers, 1)
+	centers = mcmc.Iterate(centers, 1)
 	prop.centers = mcmc.alter(centers)
-	prop.loss = mcmc.Loss(*mcmc, prop.centers)
+	prop.loss = mcmc.Loss(prop.centers)
 	prop.pdf = mcmc.proba(prop.centers, centers)
 	return prop
 }
@@ -262,14 +263,14 @@ func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
 }
 
 func (mcmc *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[WeightedChoice(mcmc.ProbaK, mcmc.rgen)]
+	var newK = k + []int{-1, 0, 1}[kmeans.WeightedChoice(mcmc.ProbaK, mcmc.rgen)]
 
 	switch {
 	case newK < 1:
 		return 1
 	case newK > mcmc.MaxK:
 		return mcmc.MaxK
-	case newK>len(mcmc.Data):
+	case newK > len(mcmc.Data):
 		return len(mcmc.Data)
 	default:
 		return newK
@@ -332,7 +333,7 @@ func (mcmc *MCMC) addCenter(prevK int, prev core.Clust) core.Clust {
 	for i := 0; i < prevK; i++ {
 		clust[i] = mcmc.Space.Copy(prev[i])
 	}
-	clust[prevK] = KMeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
+	clust[prevK] = kmeans.KMeansPPIter(prev, mcmc.Data, mcmc.Space, mcmc.rgen)
 	return clust
 }
 
@@ -359,11 +360,15 @@ func (mcmc *MCMC) AcceptRatio() float64 {
 }
 
 type SeqMCMCSupport struct {
+	buffer *core.Buffer
+	space  core.Space
+	norm float64
+	rgen   *rand.Rand
 }
 
-func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
-	conf := KMeansConf{len(clust), iter, m.Space, m.rgen}
-	var km = NewKMeans(conf, clust.Initializer, m.Data)
+func (support SeqMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
+	conf := kmeans.KMeansConf{len(clust), iter, support.space, support.rgen}
+	var km = kmeans.NewSeqKMeans(conf, clust.Initializer, support.buffer.Data)
 
 	km.Run(false)
 	km.Close()
@@ -373,6 +378,6 @@ func (SeqMCMCSupport) Iterate(m MCMC, clust core.Clust, iter int) core.Clust {
 	return result
 }
 
-func (SeqMCMCSupport) Loss(m MCMC, proposal core.Clust) float64 {
-	return proposal.Loss(m.Data, m.Space, m.Norm)
+func (support SeqMCMCSupport) Loss(proposal core.Clust) float64 {
+	return proposal.Loss(support.buffer.Data, support.space, support.norm)
 }

@@ -1,7 +1,7 @@
-package algo_test
+package kmeans_test
 
 import (
-	"distclus/algo"
+	"distclus/kmeans"
 	"distclus/core"
 	"distclus/real"
 	"golang.org/x/exp/rand"
@@ -23,7 +23,7 @@ func TestWeightedChoice(t *testing.T) {
 	var sum = make([]int, 3)
 	var n = 100000
 	for i := 0; i < n; i++ {
-		sum[algo.WeightedChoice(w, src)] += 1
+		sum[kmeans.WeightedChoice(w, src)] += 1
 	}
 	var diff = sum[2] - 80000
 	if diff < 79000 && diff > 81000 {
@@ -33,19 +33,19 @@ func TestWeightedChoice(t *testing.T) {
 
 func TestGivenInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = algo.GivenInitializer(4, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.GivenInitializer(4, TestPoints, real.RealSpace{}, src)
 	AssertCentroids(t, TestPoints[:4], clust)
 }
 
 func TestKMeansPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = algo.KMeansPPInitializer(14, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.KMeansPPInitializer(14, TestPoints, real.RealSpace{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 
 func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = algo.RandInitializer(14, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.RandInitializer(14, TestPoints, real.RealSpace{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 

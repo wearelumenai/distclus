@@ -1,6 +1,7 @@
 package main
 
 import (
+	"distclus/kmeans"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"os"
 	"encoding/csv"
@@ -8,11 +9,10 @@ import (
 	"fmt"
 	"io"
 	"distclus/core"
-	"distclus/algo"
+	"distclus/mcmc"
 	"distclus/real"
 	"golang.org/x/exp/rand"
 	"log"
-	"distclus/algo/par"
 )
 
 var (
@@ -31,24 +31,24 @@ var (
 	ocenters = app.Flag("out_centers", "Filename where to print centers in csv, if not set printed in stdout.").
 		Short('c').String()
 
-	mcmc  = app.Command("mcmc", "Compute an MCMC clustering.")
-	mcmcB = mcmc.Flag("mcmc_b", "b parameter").
+	mcmcCmd  = app.Command("mcmc", "Compute an MCMC clustering.")
+	mcmcB = mcmcCmd.Flag("mcmc_b", "b parameter").
 		Short('B').Default("100").Float()
-	mcmcAmp = mcmc.Flag("mcmc_amp", "amp MCMC parameter.").
+	mcmcAmp = mcmcCmd.Flag("mcmc_amp", "amp MCMC parameter.").
 		Short('A').Default("10").Float()
-	mcmcR = mcmc.Flag("mcmc_r", "Radius of the circumscribed ball.").
+	mcmcR = mcmcCmd.Flag("mcmc_r", "Radius of the circumscribed ball.").
 		Short('R').Default("1").Float()
-	mcmcNu = mcmc.Flag("mcmc_nu", "Number of degrees of freedom.").
+	mcmcNu = mcmcCmd.Flag("mcmc_nu", "Number of degrees of freedom.").
 		Short('D').Default("3").Float()
-	mcmcInitK = mcmc.Flag("mcmc_initk", "k initialisation value.").
+	mcmcInitK = mcmcCmd.Flag("mcmc_initk", "k initialisation value.").
 		Short('K').Default("8").Int()
-	mcmcFrameSize = mcmc.Flag("mcmc_framesize", "Frame size to consider in data history(default -1 ~ data set len).").
+	mcmcFrameSize = mcmcCmd.Flag("mcmc_framesize", "Frame size to consider in data history(default -1 ~ data set len).").
 		Short('F').Default("-1").Int()
-	mcmcInitializer = mcmc.Flag("mcmc_initializer", "Algorithm initializer(random, kmeans++).").
+	mcmcInitializer = mcmcCmd.Flag("mcmc_initializer", "Algorithm initializer(random, kmeans++).").
 		Default("random").Short('i').Enum("random", "kmeans++")
-	mcmcIter = mcmc.Flag("mcmc_iter", "Max iteration of mcmc clustering.").
+	mcmcIter = mcmcCmd.Flag("mcmc_iter", "Max iteration of mcmc clustering.").
 		Short('I').Default("200").Int()
-	mcmcInitIter = mcmc.Flag("mcmc_init_iter", "Number of initialisation iteration.").
+	mcmcInitIter = mcmcCmd.Flag("mcmc_init_iter", "Number of initialisation iteration.").
 		Default("0").Int()
 )
 
@@ -56,17 +56,17 @@ func main() {
 	kingpin.CommandLine.HelpFlag.Short('h')
 	parse := kingpin.MustParse(app.Parse(os.Args[1:]))
 	switch parse {
-	case mcmc.FullCommand():
+	case mcmcCmd.FullCommand():
 		runMcmc()
 	}
 }
 
 func runMcmc() {
 	var data []core.Elemt
-	var distrib algo.MCMCDistrib
+	var distrib mcmc.MCMCDistrib
 	var initializer = parseInitializer(*mcmcInitializer)
 
-	var mcmcConf = algo.MCMCConf{
+	var mcmcConf = mcmc.MCMCConf{
 		FrameSize: *mcmcFrameSize,
 		B:         *mcmcB,
 		Amp:       *mcmcAmp,
@@ -90,22 +90,22 @@ func runMcmc() {
 		if mcmcConf.FrameSize < 1 {
 			mcmcConf.FrameSize = len(data)
 		}
-		distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
+		distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
 	}
 
 
-	var mcmc = par.NewMCMC(mcmcConf, distrib, initializer, nil)
+	var algo = mcmc.NewParMCMC(mcmcConf, distrib, initializer, nil)
 
-	log.Println(fmt.Sprintf("Add data to mcmc model : %v obs.", len(data)))
+	log.Println(fmt.Sprintf("Add data to algo model : %v obs.", len(data)))
 	for _, elt := range data {
-		mcmc.Push(elt)
+		algo.Push(elt)
 	}
 
-	log.Println(fmt.Sprintf("Start model fit: %v", mcmc.MCMCConf))
-	mcmc.Run(false)
-	mcmc.Close()
+	log.Println(fmt.Sprintf("Start model fit: %v", algo.MCMCConf))
+	algo.Run(false)
+	algo.Close()
 
-	var centers, _ = mcmc.Centroids()
+	var centers, _ = algo.Centroids()
 	var labels = make([]int, len(data))
 	var abstract = make([]int, len(centers))
 	for i := range labels {
@@ -115,7 +115,7 @@ func runMcmc() {
 
 	log.Println(fmt.Sprintf("Cluster cards : %v", abstract))
 	log.Println(fmt.Sprintf("Loss : %v", centers.Loss(data, mcmcConf.Space, mcmcConf.Norm)))
-	log.Println(fmt.Sprintf("Acceptation ratio : %v", mcmc.AcceptRatio()))
+	log.Println(fmt.Sprintf("Acceptation ratio : %v", algo.AcceptRatio()))
 
 	printLabels(labels, olabels)
 	printCenters(centers, ocenters)
@@ -170,9 +170,9 @@ func parseInitializer(init string) core.Initializer {
 
 	switch init {
 	case "random":
-		initializer = algo.KMeansPPInitializer
+		initializer = kmeans.KMeansPPInitializer
 	case "kmeans++":
-		initializer = algo.RandInitializer
+		initializer = kmeans.RandInitializer
 	}
 
 	return initializer

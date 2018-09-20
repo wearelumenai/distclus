@@ -1,7 +1,7 @@
 package core_test
 
 import (
-	"distclus/algo/zetest"
+	"distclus/zetest"
 	"distclus/core"
 	"distclus/real"
 	"reflect"

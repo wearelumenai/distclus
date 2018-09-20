@@ -1,13 +1,13 @@
 package main
 
 import (
+	"distclus/kmeans"
 	"testing"
 	"time"
 	"distclus/core"
-	"distclus/algo"
+	"distclus/mcmc"
 	"distclus/real"
 	"golang.org/x/exp/rand"
-	"distclus/algo/par"
 )
 
 func BenchmarkRun(b *testing.B) {
@@ -18,10 +18,10 @@ func BenchmarkRun(b *testing.B) {
 
 func b1(log func(args ...interface{})) {
 	var data []core.Elemt
-	var distrib algo.MCMCDistrib
-	var initializer = algo.RandInitializer
+	var distrib mcmc.MCMCDistrib
+	var initializer = kmeans.RandInitializer
 	var seed = int(time.Now().UTC().Unix())
-	var mcmcConf = algo.MCMCConf{
+	var mcmcConf = mcmc.MCMCConf{
 	}
 	mcmcConf.Space = real.RealSpace{}
 	in := "cas.csv"
@@ -36,29 +36,29 @@ func b1(log func(args ...interface{})) {
 	mcmcConf.InitK = 1
 	mcmcConf.Norm = 2
 	mcmcConf.Nu = 3
-	distrib = algo.NewMultivT(algo.MultivTConf{mcmcConf})
-	var mcmc = par.NewMCMC(mcmcConf, distrib, initializer, nil)
+	distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
+	var algo = mcmc.NewParMCMC(mcmcConf, distrib, initializer, nil)
 
-	mcmc.Run(true)
+	algo.Run(true)
 
 	go func() {
 		for _, elt := range data {
-			mcmc.Push(elt)
+			algo.Push(elt)
 		}
 	}()
 
 	time.Sleep(15 * time.Second)
 
-	mcmc.Close()
+	algo.Close()
 
-	var centers, _ = mcmc.Centroids()
+	var centers, _ = algo.Centroids()
 	var labels = make([]int, len(centers))
 	for i := range data {
 		var _, l, _ = centers.Assign(data[i], mcmcConf.Space)
 		labels[l] += 1
 	}
 
-	log(len(mcmc.Data))
+	log(len(algo.Data))
 	log(labels)
-	log(mcmc.Loss(mcmc, centers))
+	log(algo.Loss(centers))
 }

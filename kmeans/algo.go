@@ -1,4 +1,4 @@
-package algo
+package kmeans
 
 import (
 	"fmt"
@@ -37,7 +37,7 @@ func (conf *KMeansConf) getRGen() *rand.Rand {
 type KMeans struct {
 	KMeansConf
 	KMeansSupport
-	Buffer
+	core.Buffer
 	status      core.ClustStatus
 	initializer core.Initializer
 	clust       core.Clust
@@ -47,23 +47,23 @@ type KMeans struct {
 }
 
 type KMeansSupport interface {
-	Iterate(km KMeans, proposal core.Clust) core.Clust
+	Iterate(proposal core.Clust) core.Clust
 }
 
-func NewKMeans(conf KMeansConf, initializer core.Initializer, data []core.Elemt) KMeans {
+func NewSeqKMeans(conf KMeansConf, initializer core.Initializer, data []core.Elemt) *KMeans {
 	conf.verify()
 
 	var km KMeans
 	km.KMeansConf = conf
-	km.KMeansSupport = SeqKMeansSupport{}
 	km.initializer = initializer
 	km.status = core.Created
 	km.rgen = conf.getRGen()
 	km.closing = make(chan bool, 1)
 	km.closed = make(chan bool, 1)
-	km.Buffer = newBuffer(data, -1)
+	km.Buffer = core.NewBuffer(data, -1)
+	km.KMeansSupport = SeqKMeansSupport{ buffer: &km.Buffer, space: km.Space}
 
-	return km
+	return &km
 }
 
 func (km *KMeans) Centroids() (c core.Clust, err error) {
@@ -82,7 +82,7 @@ func (km *KMeans) Push(elemt core.Elemt) (err error) {
 	case core.Closed:
 		err = errors.New("clustering ended")
 	default:
-		km.Buffer.push(elemt)
+		km.Buffer.Push(elemt)
 	}
 
 	return err
@@ -106,7 +106,7 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 
 func (km *KMeans) Run(async bool) {
 	if async {
-		km.setAsync()
+		km.Buffer.SetAsync()
 		go km.initAndRun(async)
 	} else {
 		km.initAndRun(async)
@@ -130,7 +130,7 @@ func (km *KMeans) handleFailedInitialisation(async bool) {
 		panic("failed to initialize")
 	}
 	time.Sleep(300 * time.Millisecond)
-	km.Buffer.apply()
+	km.Buffer.Apply()
 }
 
 func (km *KMeans) runAlgorithm() {
@@ -141,8 +141,8 @@ func (km *KMeans) runAlgorithm() {
 			loop = false
 
 		default:
-			km.clust = km.Iterate(*km, km.clust)
-			km.apply()
+			km.clust = km.Iterate(km.clust)
+			km.Buffer.Apply()
 		}
 	}
 
@@ -156,16 +156,18 @@ func (km *KMeans) Close() {
 }
 
 type SeqKMeansSupport struct {
+	buffer *core.Buffer
+	space core.Space
 }
 
-func (SeqKMeansSupport) Iterate(km KMeans, clust core.Clust) core.Clust {
+func (support SeqKMeansSupport) Iterate(clust core.Clust) core.Clust {
 
-	var result, _ = clust.AssignDBA(km.Data, km.Space)
+	var result, _ = clust.AssignDBA(support.buffer.Data, support.space)
 
-	return buildResult(clust, result)
+	return support.buildResult(clust, result)
 }
 
-func buildResult(clust core.Clust, result core.Clust) core.Clust {
+func (support SeqKMeansSupport) buildResult(clust core.Clust, result core.Clust) core.Clust {
 	for i := 0; i < len(result); i++ {
 		if result[i] == nil {
 			result[i] = clust[i]

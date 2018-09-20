@@ -1,4 +1,4 @@
-package algo
+package kmeans
 
 import (
 	"golang.org/x/exp/rand"

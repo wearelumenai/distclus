@@ -9,7 +9,14 @@ import (
 
 func NewParMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
 	var algo = NewSeqMCMC(conf, distrib, initializer, data)
-	algo.MCMCSupport = ParMCMCSupport{config: conf, buffer: &algo.Buffer, space:algo.Space, norm: algo.Norm}
+	var support = ParMCMCSupport{}
+	support.config = conf
+	support.buffer = &algo.Buffer
+	support.space = algo.Space
+	support.norm = algo.Norm
+	support.degree = runtime.NumCPU()
+	support.wg = &sync.WaitGroup{}
+	algo.MCMCSupport = &support
 	return algo
 }
 
@@ -17,7 +24,10 @@ type ParMCMCSupport struct {
 	config MCMCConf
 	buffer *core.Buffer
 	space  core.Space
-	norm float64
+	norm   float64
+	degree int
+	out    chan msgMCMC
+	wg     *sync.WaitGroup
 }
 
 func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
@@ -31,28 +41,24 @@ func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
 	return result
 }
 
-func (support ParMCMCSupport) Loss(clust core.Clust) float64 {
-	var out = support.startMCMCWorkers(clust)
-	var aggr = lossAggregate(out)
+func (support *ParMCMCSupport) Loss(clust core.Clust) float64 {
+	support.startMCMCWorkers(clust)
+	var aggr = support.lossAggregate()
 	return aggr.sum
 }
 
-func (support ParMCMCSupport) startMCMCWorkers(clust core.Clust) (chan msgMCMC) {
-	var degree = runtime.NumCPU()
-	var offset = (len(support.buffer.Data)-1)/degree + 1
-	var out = make(chan msgMCMC, degree)
-	var wg = &sync.WaitGroup{}
+func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust)  {
+	var offset = (len(support.buffer.Data)-1)/support.degree + 1
+	support.out = make(chan msgMCMC, support.degree)
+	support.wg.Add(support.degree)
 
-	wg.Add(degree)
-	for i := 0; i < degree; i++ {
+	for i := 0; i < support.degree; i++ {
 		var part = getChunk(i, offset, support.buffer.Data)
-		go lossMapReduce(clust, part, support.space, support.norm, out, wg)
+		go support.lossMapReduce(clust, part)
 	}
 
-	wg.Wait()
-	close(out)
-
-	return out
+	support.wg.Wait()
+	close(support.out)
 }
 
 func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
@@ -67,23 +73,23 @@ func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
 }
 
 type msgMCMC struct {
-	sum float64
+	sum  float64
 	card int
 }
 
-func lossMapReduce(clust core.Clust, elemts []core.Elemt, space core.Space, norm float64, out chan<- msgMCMC, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (support *ParMCMCSupport) lossMapReduce(clust core.Clust, elemts []core.Elemt) {
+	defer support.wg.Done()
 
 	var reduced msgMCMC
-	reduced.sum = clust.Loss(elemts, space, norm)
+	reduced.sum = clust.Loss(elemts, support.space, support.norm)
 	reduced.card = len(elemts)
 
-	out <- reduced
+	support.out <- reduced
 }
 
-func lossAggregate(out chan msgMCMC) msgMCMC {
+func (support *ParMCMCSupport) lossAggregate() msgMCMC {
 	var aggregate msgMCMC
-	for agg := range out {
+	for agg := range support.out {
 		aggregate.sum += agg.sum
 		aggregate.card += agg.card
 	}

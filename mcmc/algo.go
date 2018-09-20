@@ -11,11 +11,10 @@ import (
 	"time"
 )
 
-
 type MCMC struct {
 	MCMCSupport
 	core.Buffer
-	config MCMCConf
+	config      MCMCConf
 	store       CenterStore
 	distrib     MCMCDistrib
 	initializer core.Initializer
@@ -32,11 +31,6 @@ type MCMCSupport interface {
 	Loss(core.Clust) float64
 }
 
-type MCMCDistrib interface {
-	Sample(mu core.Elemt) core.Elemt
-	Pdf(x, mu core.Elemt) float64
-}
-
 func NewSeqMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
 
 	conf.Verify()
@@ -51,7 +45,7 @@ func NewSeqMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer
 	m.closing = make(chan bool, 1)
 	m.closed = make(chan bool, 1)
 	m.Buffer = core.NewBuffer(data, m.config.FrameSize)
-	m.MCMCSupport = SeqMCMCSupport{buffer:&m.Buffer, config:m.config}
+	m.MCMCSupport = SeqMCMCSupport{buffer: &m.Buffer, config: m.config}
 	m.store = NewCenterStore(&m.Buffer, conf.Space, m.config.RGen)
 	return &m
 }
@@ -158,6 +152,13 @@ func (mcmc *MCMC) runAlgorithm() {
 	mcmc.closed <- true
 }
 
+type proposal struct {
+	k       int
+	centers core.Clust
+	loss    float64
+	pdf     float64
+}
+
 func (mcmc *MCMC) doIter(current proposal) proposal {
 
 	var prop = mcmc.propose(current)
@@ -191,13 +192,6 @@ func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
 
 	var rho = math.Exp(rGibbs + rInit + rProp)
 	return mcmc.uniform.Rand() < rho
-}
-
-type proposal struct {
-	k       int
-	centers core.Clust
-	loss    float64
-	pdf     float64
 }
 
 func (mcmc *MCMC) nextK(k int) int {
@@ -240,29 +234,4 @@ func (mcmc *MCMC) Close() {
 
 func (mcmc *MCMC) AcceptRatio() float64 {
 	return float64(mcmc.acc) / float64(mcmc.iter)
-}
-
-type SeqMCMCSupport struct {
-	config MCMCConf
-	buffer *core.Buffer
-}
-
-func (support SeqMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
-	var conf = kmeans.KMeansConf{
-		K: len(clust),
-		Iter: iter,
-		Space: support.config.Space,
-		RGen: support.config.RGen,
-	}
-	var km = kmeans.NewSeqKMeans(conf, clust.Initializer, support.buffer.Data)
-
-	km.Run(false)
-	km.Close()
-	var result, _ = km.Centroids()
-
-	return result
-}
-
-func (support SeqMCMCSupport) Loss(proposal core.Clust) float64 {
-	return proposal.Loss(support.buffer.Data, support.config.Space, support.config.Norm)
 }

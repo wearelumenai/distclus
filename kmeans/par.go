@@ -12,7 +12,6 @@ func NewParKMeans(conf KMeansConf, initializer core.Initializer, data []core.Ele
 	support.buffer = &km.Buffer
 	support.space = km.Space
 	support.degree = runtime.NumCPU()
-	support.wg = &sync.WaitGroup{}
 	km.KMeansSupport = &support
 	return km
 }
@@ -21,40 +20,12 @@ type ParKMeansSupport struct {
 	buffer *core.Buffer
 	space core.Space
 	degree int
+}
+
+type workerSupport struct {
+	ParKMeansSupport
 	out chan msgKMeans
 	wg *sync.WaitGroup
-}
-
-func (support *ParKMeansSupport) Iterate(clust core.Clust) core.Clust {
-	support.startKMeansWorkers(clust)
-	var aggr = support.assignAggregate()
-	return support.buildResult(clust, aggr)
-}
-
-func (support *ParKMeansSupport) startKMeansWorkers(clust core.Clust) {
-	var offset = (len(support.buffer.Data)-1)/support.degree + 1
-	support.out = make(chan msgKMeans, support.degree)
-	support.wg.Add(support.degree)
-
-	for i := 0; i < support.degree; i++ {
-		var part = getChunk(i, offset, support.buffer.Data)
-		go support.assignMapReduce(clust, part)
-	}
-
-	support.wg.Wait()
-	close(support.out)
-
-}
-
-func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
-	var start = i * offset
-	var end = start + offset
-
-	if end > len(elemts) {
-		end = len(elemts)
-	}
-
-	return elemts[start:end]
 }
 
 type msgKMeans struct {
@@ -62,7 +33,32 @@ type msgKMeans struct {
 	cards []int
 }
 
-func (support *ParKMeansSupport) assignMapReduce(clust core.Clust, elemts []core.Elemt) {
+func (support *ParKMeansSupport) Iterate(clust core.Clust) core.Clust {
+	var workers = support.startKMeansWorkers(clust)
+	var aggr = workers.assignAggregate()
+	return support.buildResult(clust, aggr)
+}
+
+func (support *ParKMeansSupport) startKMeansWorkers(clust core.Clust) workerSupport {
+	var offset = (len(support.buffer.Data)-1)/support.degree + 1
+	var workers = workerSupport{	}
+	workers.ParKMeansSupport = *support
+	workers.out = make(chan msgKMeans, support.degree)
+	workers.wg = &sync.WaitGroup{}
+	workers.wg.Add(support.degree)
+
+	for i := 0; i < support.degree; i++ {
+		var part = getChunk(i, offset, support.buffer.Data)
+		go workers.assignMapReduce(clust, part)
+	}
+
+	workers.wg.Wait()
+	close(workers.out)
+
+	return workers
+}
+
+func (support *workerSupport) assignMapReduce(clust core.Clust, elemts []core.Elemt) {
 	defer support.wg.Done()
 
 	var reduced msgKMeans
@@ -71,7 +67,7 @@ func (support *ParKMeansSupport) assignMapReduce(clust core.Clust, elemts []core
 	support.out <- reduced
 }
 
-func (support *ParKMeansSupport) assignAggregate() msgKMeans {
+func (support *workerSupport) assignAggregate() msgKMeans {
 	var aggregate msgKMeans
 	for other := range support.out {
 		if aggregate.dbas == nil {
@@ -85,7 +81,7 @@ func (support *ParKMeansSupport) assignAggregate() msgKMeans {
 	return aggregate
 }
 
-func (support *ParKMeansSupport) assignCombine(aggregate msgKMeans, other msgKMeans) msgKMeans {
+func (support *workerSupport) assignCombine(aggregate msgKMeans, other msgKMeans) msgKMeans {
 	for i := 0; i < len(aggregate.dbas); i++ {
 		switch {
 		case aggregate.cards[i] == 0:
@@ -112,5 +108,16 @@ func (support *ParKMeansSupport)buildResult(clust core.Clust, aggr msgKMeans) co
 		}
 	}
 	return result
+}
+
+func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
+	var start = i * offset
+	var end = start + offset
+
+	if end > len(elemts) {
+		end = len(elemts)
+	}
+
+	return elemts[start:end]
 }
 

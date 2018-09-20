@@ -15,7 +15,6 @@ func NewParMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer
 	support.space = algo.Space
 	support.norm = algo.Norm
 	support.degree = runtime.NumCPU()
-	support.wg = &sync.WaitGroup{}
 	algo.MCMCSupport = &support
 	return algo
 }
@@ -26,8 +25,17 @@ type ParMCMCSupport struct {
 	space  core.Space
 	norm   float64
 	degree int
-	out    chan msgMCMC
-	wg     *sync.WaitGroup
+}
+
+type workerSupport struct {
+	ParMCMCSupport
+	out chan msgMCMC
+	wg *sync.WaitGroup
+}
+
+type msgMCMC struct {
+	sum  float64
+	card int
 }
 
 func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
@@ -42,23 +50,28 @@ func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
 }
 
 func (support *ParMCMCSupport) Loss(clust core.Clust) float64 {
-	support.startMCMCWorkers(clust)
-	var aggr = support.lossAggregate()
+	var workers = support.startMCMCWorkers(clust)
+	var aggr = workers.lossAggregate()
 	return aggr.sum
 }
 
-func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust)  {
+func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport  {
 	var offset = (len(support.buffer.Data)-1)/support.degree + 1
-	support.out = make(chan msgMCMC, support.degree)
-	support.wg.Add(support.degree)
+	var workers = workerSupport{	}
+	workers.ParMCMCSupport = *support
+	workers.out = make(chan msgMCMC, support.degree)
+	workers.wg = &sync.WaitGroup{}
+	workers.wg.Add(support.degree)
 
 	for i := 0; i < support.degree; i++ {
 		var part = getChunk(i, offset, support.buffer.Data)
-		go support.lossMapReduce(clust, part)
+		go workers.lossMapReduce(clust, part)
 	}
 
-	support.wg.Wait()
-	close(support.out)
+	workers.wg.Wait()
+	close(workers.out)
+
+	return  workers
 }
 
 func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
@@ -72,12 +85,7 @@ func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
 	return elemts[start:end]
 }
 
-type msgMCMC struct {
-	sum  float64
-	card int
-}
-
-func (support *ParMCMCSupport) lossMapReduce(clust core.Clust, elemts []core.Elemt) {
+func (support *workerSupport) lossMapReduce(clust core.Clust, elemts []core.Elemt) {
 	defer support.wg.Done()
 
 	var reduced msgMCMC
@@ -87,7 +95,7 @@ func (support *ParMCMCSupport) lossMapReduce(clust core.Clust, elemts []core.Ele
 	support.out <- reduced
 }
 
-func (support *ParMCMCSupport) lossAggregate() msgMCMC {
+func (support *workerSupport) lossAggregate() msgMCMC {
 	var aggregate msgMCMC
 	for agg := range support.out {
 		aggregate.sum += agg.sum

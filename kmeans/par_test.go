@@ -1,6 +1,7 @@
 package kmeans_test
 
 import (
+	"distclus/core"
 	"distclus/kmeans"
 	"distclus/real"
 	"testing"
@@ -10,7 +11,7 @@ import (
 
 func TestKMeans_ParPredictGiven(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
-	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, nil)
+	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
 	zetest.DoTestRunSyncGiven(t, km)
 }
@@ -19,7 +20,7 @@ func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
 	var seed = uint64(187236548914256543)
 	rgen := rand.New(rand.NewSource(seed))
 	var conf = kmeans.KMeansConf{Iter: 20, K: 3, Space: real.RealSpace{}, RGen: rgen}
-	var km = kmeans.NewParKMeans(conf, kmeans.KMeansPPInitializer, nil)
+	var km = kmeans.NewParKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
 
 	zetest.DoTestRunSyncKMeansPP(t, km)
 	zetest.DoTestRunSyncCentroids(t, km)
@@ -27,7 +28,7 @@ func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
 
 func TestKMeans_ParRunAsync(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
-	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, nil)
+	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
 	zetest.DoTestRunAsync(t, km)
 	zetest.DoTestRunAsyncCentroids(t, km)

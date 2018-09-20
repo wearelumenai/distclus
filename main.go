@@ -101,7 +101,6 @@ func runMcmc() {
 		algo.Push(elt)
 	}
 
-	log.Println(fmt.Sprintf("Start model fit: %v", algo.MCMCConf))
 	algo.Run(false)
 	algo.Close()
 

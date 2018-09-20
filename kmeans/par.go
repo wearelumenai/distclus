@@ -10,15 +10,15 @@ func NewParKMeans(conf KMeansConf, initializer core.Initializer, data []core.Ele
 	var km = NewSeqKMeans(conf, initializer, data)
 	var support = ParKMeansSupport{}
 	support.buffer = &km.Buffer
-	support.space = km.Space
+	support.config = km.config
 	support.degree = runtime.NumCPU()
 	km.KMeansSupport = &support
 	return km
 }
 
 type ParKMeansSupport struct {
+	config KMeansConf
 	buffer *core.Buffer
-	space core.Space
 	degree int
 }
 
@@ -62,7 +62,7 @@ func (support *workerSupport) assignMapReduce(clust core.Clust, elemts []core.El
 	defer support.wg.Done()
 
 	var reduced msgKMeans
-	reduced.dbas, reduced.cards = clust.AssignDBA(elemts, support.space)
+	reduced.dbas, reduced.cards = clust.AssignDBA(elemts, support.config.Space)
 
 	support.out <- reduced
 }
@@ -89,7 +89,7 @@ func (support *workerSupport) assignCombine(aggregate msgKMeans, other msgKMeans
 			aggregate.cards[i] = other.cards[i]
 
 		case other.cards[i] > 0:
-			support.space.Combine(aggregate.dbas[i], aggregate.cards[i],
+			support.config.Space.Combine(aggregate.dbas[i], aggregate.cards[i],
 				other.dbas[i], other.cards[i])
 			aggregate.cards[i] += other.cards[i]
 		}

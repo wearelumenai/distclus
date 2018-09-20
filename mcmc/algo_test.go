@@ -84,18 +84,3 @@ func TestMCMC_AcceptRatio(t *testing.T) {
 		t.Error("Expected ratio in [0 1], got", r)
 	}
 }
-
-func TestMCMC_ConfErrorIter(t *testing.T) {
-	defer zetest.AssertPanic(t)
-	var conf = mcmcConf
-	conf.McmcIter = -10
-	mcmc.NewSeqMCMC(conf, distrib, kmeans.KMeansPPInitializer, []core.Elemt{})
-}
-
-func TestMCMC_ConfErrorK(t *testing.T) {
-	defer zetest.AssertPanic(t)
-	var conf = mcmcConf
-	conf.InitK = 3
-	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.KMeansPPInitializer, []core.Elemt{})
-	algo.Run(false)
-}

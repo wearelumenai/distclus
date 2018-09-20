@@ -58,16 +58,3 @@ func TestKMeans_Empty(t *testing.T) {
 
 	zetest.DoTestEmpty(t, builder)
 }
-
-func TestKMeans_ConfErrorIter(t *testing.T) {
-	defer zetest.AssertPanic(t)
-	var conf = kmeans.KMeansConf{Iter: -10, K: 3, Space: real.RealSpace{}}
-	var km = kmeans.NewSeqKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
-	km.Run(false)
-}
-
-func TestKMeans_ConfErrorK(t *testing.T) {
-	defer zetest.AssertPanic(t)
-	var conf = kmeans.KMeansConf{Iter: 10, K: -3, Space: real.RealSpace{}}
-	kmeans.NewSeqKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
-}

@@ -1,52 +1,39 @@
-package mcmc
+package mcmc_test
 
 import (
 	"distclus/core"
 	"distclus/kmeans"
+	"distclus/mcmc"
 	"distclus/real"
+	"distclus/zetest"
+	"golang.org/x/exp/rand"
 	"testing"
 	"reflect"
+	"time"
 	"unsafe"
 )
-
-var TestVectors = []core.Elemt{
-	[]float64{7.2, 6, 8, 11, 10},
-	[]float64{-8, -10.5, -7, -8.5, -9},
-	[]float64{42, 41.2, 42, 40.2, 45},
-	[]float64{9, 8, 7, 7.5, 10},
-	[]float64{7.2, 6, 8, 11, 10},
-	[]float64{-9, -10, -8, -8, -7.5},
-	[]float64{42, 41.2, 42.2, 40.2, 45},
-	[]float64{50, 51.2, 49, 40, 45.2},
-}
-
-var mcmcConf = MCMCConf{
-	Dim:      5, FrameSize: 8, B: 100, Amp: 1,
-	Norm:     2, Nu: 3, InitK: 3, McmcIter: 20,
-	InitIter: 0, Space: real.RealSpace{},
-}
-
-var distrib = NewMultivT(MultivTConf{mcmcConf})
 
 func TestMCMC_getCenters(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var mcmc = NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, nil)
+	var buffer = core.NewBuffer([]core.Elemt{}, -1)
+	var seed = uint64(time.Now().UTC().Unix())
+	var rgen = rand.New(rand.NewSource(seed))
+	var space = real.RealSpace{}
+	var store = mcmc.NewCenterStore(&buffer, space, rgen)
 
-	for _, elemt := range TestVectors {
-		mcmc.Push(elemt)
+	for _, elemt := range zetest.TestVectors {
+		buffer.Push(elemt)
 	}
 
-	mcmc.Run(false)
-
-	var clust3, _ = mcmc.Centroids()
-	var clust = mcmc.getCenters(3, clust3)
+	var clust3, _ = kmeans.GivenInitializer(3, zetest.TestVectors, space, rgen)
+	var clust = store.GetCenters(3, clust3)
 
 	if !reflect.DeepEqual(clust3, clust) {
 		t.Error("Expected same centers")
 	}
 
-	clust = mcmc.getCenters(4, clust)
+	clust = store.GetCenters(4, clust)
 
 	if len(clust) != 4 {
 		t.Error("Expected 4 centers")
@@ -63,13 +50,13 @@ func TestMCMC_getCenters(t *testing.T) {
 	}
 
 	var clust4 = clust
-	clust = mcmc.getCenters(3, clust4)
+	clust = store.GetCenters(3, clust4)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
-	clust = mcmc.getCenters(2, clust)
+	clust = store.GetCenters(2, clust)
 
 	for i := 0; i < 2; i++ {
 		if !reflect.DeepEqual(clust[i], clust3[i]) && !reflect.DeepEqual(clust[i], clust3[i+1]) {
@@ -78,13 +65,13 @@ func TestMCMC_getCenters(t *testing.T) {
 	}
 
 	var clust2 = clust
-	clust = mcmc.getCenters(3, clust)
+	clust = store.GetCenters(3, clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
-	clust = mcmc.getCenters(4, clust)
+	clust = store.GetCenters(4, clust)
 
 	if !reflect.DeepEqual(clust, clust4) {
 		t.Error("Expected same centers")

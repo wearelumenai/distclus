@@ -10,10 +10,8 @@ import (
 func NewParMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
 	var algo = NewSeqMCMC(conf, distrib, initializer, data)
 	var support = ParMCMCSupport{}
-	support.config = conf
 	support.buffer = &algo.Buffer
-	support.space = algo.Space
-	support.norm = algo.Norm
+	support.config = algo.config
 	support.degree = runtime.NumCPU()
 	algo.MCMCSupport = &support
 	return algo
@@ -22,8 +20,6 @@ func NewParMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer
 type ParMCMCSupport struct {
 	config MCMCConf
 	buffer *core.Buffer
-	space  core.Space
-	norm   float64
 	degree int
 }
 
@@ -89,7 +85,7 @@ func (support *workerSupport) lossMapReduce(clust core.Clust, elemts []core.Elem
 	defer support.wg.Done()
 
 	var reduced msgMCMC
-	reduced.sum = clust.Loss(elemts, support.space, support.norm)
+	reduced.sum = clust.Loss(elemts, support.config.Space, support.config.Norm)
 	reduced.card = len(elemts)
 
 	support.out <- reduced

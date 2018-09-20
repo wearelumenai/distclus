@@ -46,7 +46,7 @@ func TestParMCMCSupport_ParLoss(t *testing.T) {
 
 	var clust, _ = algo.Centroids()
 	var l1 = algo.Loss(clust)
-	var l2 = clust.Loss(algo.Data, algo.Space, algo.Norm)
+	var l2 = clust.Loss(algo.Data, conf.Space, conf.Norm)
 
 	if math.Abs(l1-l2)>1e-6 {
 		t.Error("Expected", l2, "got", l1)

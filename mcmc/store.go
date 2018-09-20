@@ -27,7 +27,6 @@ func (store *CenterStore) GetCenters(k int, clust core.Clust) core.Clust {
 
 	if !ok {
 		centers = store.genCenters(k, clust)
-		store.centers[k] = centers
 	}
 
 	return centers

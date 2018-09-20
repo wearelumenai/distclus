@@ -28,12 +28,14 @@ func TestMCMC_getCenters(t *testing.T) {
 
 	var clust3, _ = kmeans.GivenInitializer(3, zetest.TestVectors, space, rgen)
 	var clust = store.GetCenters(3, clust3)
+	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust3, clust) {
 		t.Error("Expected same centers")
 	}
 
 	clust = store.GetCenters(4, clust)
+	store.SetCenters(clust)
 
 	if len(clust) != 4 {
 		t.Error("Expected 4 centers")
@@ -51,12 +53,14 @@ func TestMCMC_getCenters(t *testing.T) {
 
 	var clust4 = clust
 	clust = store.GetCenters(3, clust4)
+	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
 	clust = store.GetCenters(2, clust)
+	store.SetCenters(clust)
 
 	for i := 0; i < 2; i++ {
 		if !reflect.DeepEqual(clust[i], clust3[i]) && !reflect.DeepEqual(clust[i], clust3[i+1]) {
@@ -66,12 +70,14 @@ func TestMCMC_getCenters(t *testing.T) {
 
 	var clust2 = clust
 	clust = store.GetCenters(3, clust)
+	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
 	clust = store.GetCenters(4, clust)
+	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust4) {
 		t.Error("Expected same centers")

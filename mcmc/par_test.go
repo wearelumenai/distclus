@@ -21,7 +21,7 @@ func TestMCMC_ParPredict_Given(t *testing.T) {
 func TestMCMC_ParPredictKMeansPP(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
-	var seed = uint64(187232542653256543)
+	var seed = uint64(187232592652256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var algo = mcmc.NewParMCMC(conf, distrib, kmeans.KMeansPPInitializer, []core.Elemt{})
 

@@ -40,7 +40,7 @@ type msgMCMC struct {
 
 func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
 	var conf = kmeans.KMeansConf{K: len(clust), Iter: iter, Space: support.config.Space}
-	var km = kmeans.NewSeqKMeans(conf, clust.Initializer, support.buffer.Data)
+	var km = kmeans.NewParKMeans(conf, clust.Initializer, support.buffer.Data)
 
 	km.Run(false)
 	km.Close()

@@ -4,7 +4,7 @@ import (
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/zetest"
+	"distclus/internal/test"
 	"golang.org/x/exp/rand"
 	"math"
 	"testing"
@@ -15,7 +15,7 @@ func TestMCMC_ParPredict_Given(t *testing.T) {
 	conf.McmcIter = 0
 	var algo = mcmc.NewParMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncGiven(t, algo)
+	test.DoTestRunSyncGiven(t, algo)
 }
 
 func TestMCMC_ParPredictKMeansPP(t *testing.T) {
@@ -25,7 +25,7 @@ func TestMCMC_ParPredictKMeansPP(t *testing.T) {
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var algo = mcmc.NewParMCMC(conf, distrib, kmeans.KMeansPPInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncKMeansPP(t, algo)
+	test.DoTestRunSyncKMeansPP(t, algo)
 }
 
 func TestMCMC_ParRunAsync(t *testing.T) {
@@ -34,7 +34,7 @@ func TestMCMC_ParRunAsync(t *testing.T) {
 	conf.McmcIter = 1 << 30
 	var algo = mcmc.NewParMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunAsync(t, algo)
+	test.DoTestRunAsync(t, algo)
 }
 
 func TestParMCMCSupport_ParLoss(t *testing.T) {
@@ -42,7 +42,7 @@ func TestParMCMCSupport_ParLoss(t *testing.T) {
 	conf.McmcIter = 0
 	var algo = mcmc.NewParMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.PushAndRunSync(algo)
+	test.PushAndRunSync(algo)
 
 	var clust, _ = algo.Centroids()
 	var l1 = algo.Loss(clust)

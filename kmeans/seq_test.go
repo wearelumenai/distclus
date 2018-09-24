@@ -2,7 +2,7 @@ package kmeans_test
 
 import (
 	"distclus/kmeans"
-	"distclus/zetest"
+	"distclus/internal/test"
 	"distclus/core"
 	"distclus/real"
 	"golang.org/x/exp/rand"
@@ -13,14 +13,14 @@ func TestKMeans_Initialization(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
 	var km = kmeans.NewSeqKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestInitialization(t, km)
+	test.DoTestInitialization(t, km)
 }
 
 func TestKMeans_RunSyncGiven(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
 	var km = kmeans.NewSeqKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncGiven(t, km)
+	test.DoTestRunSyncGiven(t, km)
 }
 
 func TestKMeans_RunSyncKMeansPP(t *testing.T) {
@@ -29,23 +29,23 @@ func TestKMeans_RunSyncKMeansPP(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 20, K: 3, Space: real.RealSpace{}, RGen: rgen}
 	var km = kmeans.NewSeqKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncKMeansPP(t, km)
-	zetest.DoTestRunSyncCentroids(t, km)
+	test.DoTestRunSyncKMeansPP(t, km)
+	test.DoTestRunSyncCentroids(t, km)
 }
 
 func TestKMeans_RunAsync(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
 	var km = kmeans.NewSeqKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunAsync(t, km)
-	zetest.DoTestRunAsyncCentroids(t, km)
+	test.DoTestRunAsync(t, km)
+	test.DoTestRunAsyncCentroids(t, km)
 }
 
 func TestKMeans_Workflow(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
 	var km = kmeans.NewSeqKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
 
-	zetest.DoTestWorkflow(t, km)
+	test.DoTestWorkflow(t, km)
 }
 
 func TestKMeans_Empty(t *testing.T) {
@@ -56,5 +56,5 @@ func TestKMeans_Empty(t *testing.T) {
 		return km
 	}
 
-	zetest.DoTestEmpty(t, builder)
+	test.DoTestEmpty(t, builder)
 }

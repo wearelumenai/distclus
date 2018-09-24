@@ -4,7 +4,7 @@ import (
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/zetest"
+	"distclus/internal/test"
 	"distclus/real"
 	"golang.org/x/exp/rand"
 	"testing"
@@ -23,7 +23,7 @@ func TestMCMC_Initialization(t *testing.T) {
 	conf.McmcIter = 0
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestInitialization(t, algo)
+	test.DoTestInitialization(t, algo)
 }
 
 func TestMCMC_RunSyncGiven(t *testing.T) {
@@ -31,7 +31,7 @@ func TestMCMC_RunSyncGiven(t *testing.T) {
 	conf.McmcIter = 0
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncGiven(t, algo)
+	test.DoTestRunSyncGiven(t, algo)
 }
 
 func TestMCMC_RunSyncKMeansPP(t *testing.T) {
@@ -41,7 +41,7 @@ func TestMCMC_RunSyncKMeansPP(t *testing.T) {
 	conf.RGen = rand.New(rand.NewSource(seed))
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.KMeansPPInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncKMeansPP(t, algo)
+	test.DoTestRunSyncKMeansPP(t, algo)
 }
 
 func TestMCMC_RunAsync(t *testing.T) {
@@ -50,7 +50,7 @@ func TestMCMC_RunAsync(t *testing.T) {
 	conf.McmcIter = 1 << 30
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunAsync(t, algo)
+	test.DoTestRunAsync(t, algo)
 }
 
 func TestMCMC_Workflow(t *testing.T) {
@@ -58,7 +58,7 @@ func TestMCMC_Workflow(t *testing.T) {
 	conf.McmcIter = 1 << 30
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.KMeansPPInitializer, []core.Elemt{})
 
-	zetest.DoTestWorkflow(t, algo)
+	test.DoTestWorkflow(t, algo)
 }
 
 func TestMCMC_MaxK(t *testing.T) {
@@ -68,7 +68,7 @@ func TestMCMC_MaxK(t *testing.T) {
 	conf.Amp = 1e6
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.PushAndRunSync(algo)
+	test.PushAndRunSync(algo)
 
 	var clust, _ = algo.Centroids()
 	if l := len(clust); l > 6 {
@@ -78,7 +78,7 @@ func TestMCMC_MaxK(t *testing.T) {
 
 func TestMCMC_AcceptRatio(t *testing.T) {
 	var algo = mcmc.NewSeqMCMC(mcmcConf, distrib, kmeans.GivenInitializer, []core.Elemt{})
-	zetest.PushAndRunSync(algo)
+	test.PushAndRunSync(algo)
 	var r = algo.AcceptRatio()
 	if r < 0 || r > 1 {
 		t.Error("Expected ratio in [0 1], got", r)

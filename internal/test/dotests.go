@@ -1,4 +1,4 @@
-package zetest
+package test
 
 import (
 	"distclus/core"

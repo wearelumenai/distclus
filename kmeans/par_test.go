@@ -6,14 +6,14 @@ import (
 	"distclus/real"
 	"testing"
 	"golang.org/x/exp/rand"
-	"distclus/zetest"
+	"distclus/internal/test"
 )
 
 func TestKMeans_ParPredictGiven(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 0, K: 3, Space: real.RealSpace{}}
 	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncGiven(t, km)
+	test.DoTestRunSyncGiven(t, km)
 }
 
 func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
@@ -22,14 +22,14 @@ func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 20, K: 3, Space: real.RealSpace{}, RGen: rgen}
 	var km = kmeans.NewParKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
 
-	zetest.DoTestRunSyncKMeansPP(t, km)
-	zetest.DoTestRunSyncCentroids(t, km)
+	test.DoTestRunSyncKMeansPP(t, km)
+	test.DoTestRunSyncCentroids(t, km)
 }
 
 func TestKMeans_ParRunAsync(t *testing.T) {
 	var conf = kmeans.KMeansConf{Iter: 1 << 30, K: 3, Space: real.RealSpace{}}
 	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
-	zetest.DoTestRunAsync(t, km)
-	zetest.DoTestRunAsyncCentroids(t, km)
+	test.DoTestRunAsync(t, km)
+	test.DoTestRunAsyncCentroids(t, km)
 }

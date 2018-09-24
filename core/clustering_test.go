@@ -1,7 +1,7 @@
 package core_test
 
 import (
-	"distclus/zetest"
+	"distclus/internal/test"
 	"distclus/core"
 	"distclus/real"
 	"reflect"
@@ -150,7 +150,7 @@ func TestClust_Initializer(t *testing.T) {
 
 func TestClust_Empty(t *testing.T) {
 	func() {
-		defer zetest.AssertPanic(t)
+		defer test.AssertPanic(t)
 		core.Clust{}.AssignAll(testPoints, real.RealSpace{})
 	}()
 }

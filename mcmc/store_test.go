@@ -5,7 +5,7 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/real"
-	"distclus/zetest"
+	"distclus/internal/test"
 	"golang.org/x/exp/rand"
 	"testing"
 	"reflect"
@@ -22,11 +22,11 @@ func TestMCMC_getCenters(t *testing.T) {
 	var space = real.RealSpace{}
 	var store = mcmc.NewCenterStore(&buffer, space, rgen)
 
-	for _, elemt := range zetest.TestVectors {
+	for _, elemt := range test.TestVectors {
 		buffer.Push(elemt)
 	}
 
-	var clust3, _ = kmeans.GivenInitializer(3, zetest.TestVectors, space, rgen)
+	var clust3, _ = kmeans.GivenInitializer(3, test.TestVectors, space, rgen)
 	var clust = store.GetCenters(3, clust3)
 	store.SetCenters(clust)
 

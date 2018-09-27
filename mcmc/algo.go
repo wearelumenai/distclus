@@ -60,7 +60,7 @@ func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
 	return mcmc.AbstractAlgo.Push(elemt)
 }
 
-func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (pred core.Elemt, idx int, err error) {
+func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (pred core.Elemt, label int, err error) {
 	return mcmc.AbstractAlgo.Predict(elemt, push)
 }
 

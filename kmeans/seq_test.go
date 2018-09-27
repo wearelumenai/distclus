@@ -4,6 +4,7 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"distclus/kmeans"
+	real "distclus/real"
 	"testing"
 )
 
@@ -13,6 +14,17 @@ func TestKMeans_Initialization(t *testing.T) {
 
 	test.DoTestInitialization(t, km)
 }
+
+func TestKMeans_DefaultConf(t *testing.T) {
+	var conf = kmeans.KMeansConf{AlgoConf: core.AlgoConf{
+		Space: real.RealSpace{},
+		InitK: 3,
+	}, Iter: 0}
+	var km = kmeans.NewSeqKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
+
+	test.DoTestInitialization(t, km)
+}
+
 
 func TestKMeans_RunSyncGiven(t *testing.T) {
 	var conf = kmeans.KMeansConf{AlgoConf: algoConf, Iter: 0}

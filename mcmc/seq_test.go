@@ -32,6 +32,15 @@ func TestMCMC_Initialization(t *testing.T) {
 	test.DoTestInitialization(t, algo)
 }
 
+func TestMCMC_DefaultConf(t *testing.T) {
+	var conf = mcmcConf
+	conf.AlgoConf.RGen = nil
+	conf.McmcIter = 0
+	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
+
+	test.DoTestInitialization(t, algo)
+}
+
 func TestMCMC_RunSyncGiven(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0

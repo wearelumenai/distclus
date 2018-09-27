@@ -61,36 +61,39 @@ func (algo *AbstractAlgo) Run(async bool) {
 		algo.Buffer.SetAsync()
 		go algo.initAndRunAsync()
 	} else {
-		algo.initAndRunSync()
+		var err = algo.initAndRunSync()
+		if err != nil {
+			panic(err)
+		}
 	}
+	algo.status = Running
 }
 
-func (algo *AbstractAlgo) Predict(elemt Elemt, push bool) (pred Elemt, idx int, err error) {
+func (algo *AbstractAlgo) Predict(elemt Elemt, push bool) (pred Elemt, label int, err error) {
 	var clust Clust
 	clust, err = algo.Centroids()
 
 	if err == nil {
-		pred, idx, _ = clust.Assign(elemt, algo.config.Space)
+		pred, label, _ = clust.Assign(elemt, algo.config.Space)
 		if push {
 			err = algo.Push(elemt)
 		}
 	}
 
-	return pred, idx, err
+	return pred, label, err
 }
 
 func (mcmc *AbstractAlgo) Close() {
 	mcmc.closing <- true
 	<-mcmc.closed
+	mcmc.status = Closed
 }
 
 func (algo *AbstractAlgo) initAndRunSync() error {
 	var ok bool
 	algo.Clust, ok = algo.initializer(algo.config.InitK, algo.Data, algo.config.Space, algo.config.RGen)
 	if ok {
-		algo.status = Running
 		algo.RunAlgorithm(algo.closing)
-		algo.status = Closed
 		algo.closed <- true
 		return nil
 	}

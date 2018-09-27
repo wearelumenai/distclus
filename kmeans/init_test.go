@@ -1,6 +1,7 @@
 package kmeans_test
 
 import (
+	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/core"
 	"distclus/real"
@@ -13,6 +14,12 @@ import (
 var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
 	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
 	[]float64{-5.}, []float64{-8.}, []float64{9.}}
+
+func TestCheckK(t *testing.T) {
+	defer test.AssertPanic(t)
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	kmeans.GivenInitializer(0, TestPoints, real.RealSpace{}, src)
+}
 
 func TestWeightedChoice(t *testing.T) {
 	if testing.Short() {

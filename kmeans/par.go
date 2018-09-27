@@ -48,7 +48,7 @@ func (support *ParKMeansSupport) startKMeansWorkers(clust core.Clust) workerSupp
 	workers.wg.Add(support.degree)
 
 	for i := 0; i < support.degree; i++ {
-		var part = getChunk(i, offset, support.buffer.Data)
+		var part = core.GetChunk(i, offset, support.buffer.Data)
 		go workers.assignMapReduce(clust, part)
 	}
 
@@ -108,16 +108,5 @@ func (support *ParKMeansSupport)buildResult(clust core.Clust, aggr msgKMeans) co
 		}
 	}
 	return result
-}
-
-func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
-	var start = i * offset
-	var end = start + offset
-
-	if end > len(elemts) {
-		end = len(elemts)
-	}
-
-	return elemts[start:end]
 }
 

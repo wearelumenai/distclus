@@ -66,7 +66,7 @@ func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport 
 	workers.wg.Add(support.degree)
 
 	for i := 0; i < support.degree; i++ {
-		var part = getChunk(i, offset, support.buffer.Data)
+		var part = core.GetChunk(i, offset, support.buffer.Data)
 		go workers.lossMapReduce(clust, part)
 	}
 
@@ -74,17 +74,6 @@ func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport 
 	close(workers.out)
 
 	return workers
-}
-
-func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {
-	var start = i * offset
-	var end = start + offset
-
-	if end > len(elemts) {
-		end = len(elemts)
-	}
-
-	return elemts[start:end]
 }
 
 func (support *workerSupport) lossMapReduce(clust core.Clust, elemts []core.Elemt) {

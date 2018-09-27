@@ -1,11 +1,9 @@
 package mcmc
 
 import (
-	"golang.org/x/exp/rand"
+	"distclus/core"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distmv"
-	"distclus/core"
-	"time"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 )
@@ -20,7 +18,6 @@ type MultivT struct {
 	MultivTConf
 	normal *distmv.Normal
 	chi2   *distuv.ChiSquared
-	rgen   *rand.Rand
 	k      float64
 	i      float64
 }
@@ -37,17 +34,9 @@ func NewMultivT(conf MultivTConf) MultivT {
 	var sigma = mat.NewDiagonal(conf.Dim, s)
 
 	var m = MultivT{}
-
-	if conf.RGen == nil {
-		var seed = uint64(time.Now().UTC().Unix())
-		m.rgen = rand.New(rand.NewSource(seed))
-	} else {
-		m.rgen = conf.RGen
-	}
-
 	m.MultivTConf = conf
-	m.normal, _ = distmv.NewNormal(mu, sigma, m.rgen)
-	m.chi2 = &distuv.ChiSquared{K: conf.Nu, Src: m.rgen}
+	m.normal, _ = distmv.NewNormal(mu, sigma, m.RGen)
+	m.chi2 = &distuv.ChiSquared{K: conf.Nu, Src: m.RGen}
 	m.i = (float64(conf.Dim) + conf.Nu) / 2.
 	m.k = math.Log(math.Gamma(m.i) / math.Gamma(float64(conf.Nu)/2.))
 

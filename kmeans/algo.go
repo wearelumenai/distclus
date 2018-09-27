@@ -44,7 +44,7 @@ func (km *KMeans) Push(elemt core.Elemt) (err error) {
 	return km.AbstractAlgo.Push(elemt)
 }
 
-func (km *KMeans) Predict(elemt core.Elemt, push bool) (pred core.Elemt, idx int, err error) {
+func (km *KMeans) Predict(elemt core.Elemt, push bool) (pred core.Elemt, label int, err error) {
 	return km.AbstractAlgo.Predict(elemt, push)
 }
 

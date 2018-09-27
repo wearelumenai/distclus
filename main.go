@@ -67,13 +67,15 @@ func runMcmc() {
 	var initializer = parseInitializer(*mcmcInitializer)
 
 	var mcmcConf = mcmc.MCMCConf{
-		FrameSize: *mcmcFrameSize,
+		AlgoConf: core.AlgoConf {
+			InitK:     *mcmcInitK,
+			FrameSize: *mcmcFrameSize,
+		},
 		B:         *mcmcB,
 		Amp:       *mcmcAmp,
 		R:         *mcmcR,
 		Norm:      *norm,
 		Nu:        *mcmcNu,
-		InitK:     *mcmcInitK,
 		McmcIter:  *mcmcIter,
 		InitIter:  *mcmcInitIter,
 	}

@@ -12,10 +12,12 @@ type SeqMCMCSupport struct {
 
 func (support SeqMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
 	var conf = kmeans.KMeansConf{
-		K: len(clust),
+		AlgoConf: core.AlgoConf{
+			InitK: len(clust),
+			Space: support.config.Space,
+			RGen: support.config.RGen,
+		},
 		Iter: iter,
-		Space: support.config.Space,
-		RGen: support.config.RGen,
 	}
 	var km = kmeans.NewSeqKMeans(conf, clust.Initializer, support.buffer.Data)
 

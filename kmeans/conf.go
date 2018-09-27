@@ -3,19 +3,16 @@ package kmeans
 import (
 	"distclus/core"
 	"fmt"
-	"golang.org/x/exp/rand"
 )
 
 type KMeansConf struct {
-	K     int
-	Iter  int
-	Space core.Space
-	RGen  *rand.Rand
+	core.AlgoConf
+	Iter int
 }
 
 func (conf *KMeansConf) Verify() {
-	if conf.K < 1 {
-		panic(fmt.Sprintf("Illegal value for InitK: %v", conf.K))
+	if conf.InitK < 1 {
+		panic(fmt.Sprintf("Illegal value for InitK: %v", conf.InitK))
 	}
 
 	if conf.Iter < 0 {

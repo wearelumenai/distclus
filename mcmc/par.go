@@ -26,7 +26,7 @@ type ParMCMCSupport struct {
 type workerSupport struct {
 	ParMCMCSupport
 	out chan msgMCMC
-	wg *sync.WaitGroup
+	wg  *sync.WaitGroup
 }
 
 type msgMCMC struct {
@@ -35,7 +35,13 @@ type msgMCMC struct {
 }
 
 func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
-	var conf = kmeans.KMeansConf{K: len(clust), Iter: iter, Space: support.config.Space}
+	var conf = kmeans.KMeansConf{
+		AlgoConf: core.AlgoConf{
+			InitK: len(clust),
+			Space: support.config.Space,
+		},
+		Iter: iter,
+	}
 	var km = kmeans.NewParKMeans(conf, clust.Initializer, support.buffer.Data)
 
 	km.Run(false)
@@ -51,9 +57,9 @@ func (support *ParMCMCSupport) Loss(clust core.Clust) float64 {
 	return aggr.sum
 }
 
-func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport  {
+func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport {
 	var offset = (len(support.buffer.Data)-1)/support.degree + 1
-	var workers = workerSupport{	}
+	var workers = workerSupport{}
 	workers.ParMCMCSupport = *support
 	workers.out = make(chan msgMCMC, support.degree)
 	workers.wg = &sync.WaitGroup{}
@@ -67,7 +73,7 @@ func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport 
 	workers.wg.Wait()
 	close(workers.out)
 
-	return  workers
+	return workers
 }
 
 func getChunk(i int, offset int, elemts []core.Elemt) []core.Elemt {

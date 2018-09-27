@@ -29,9 +29,9 @@ func NewSeqMCMC(config MCMCConf, distrib MCMCDistrib, initializer core.Initializ
 	config.Verify()
 
 	var m MCMC
-	m.config = config
 	m.AbstractAlgo = core.NewAlgo(config.AlgoConf, data, initializer)
 	m.AbstractAlgo.RunAlgorithm = m.runAlgorithm
+	m.config = config
 	m.distrib = distrib
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.config.RGen}
 	m.MCMCSupport = SeqMCMCSupport{buffer: &m.Buffer, config: m.config}

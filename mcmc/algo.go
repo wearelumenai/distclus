@@ -3,74 +3,20 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"errors"
-	"fmt"
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 	"time"
 )
 
-type AlgoConf struct {
-	InitK int
-	Space core.Space
-	RGen  *rand.Rand
-}
-
-type AbstractAlgo struct {
-	config AlgoConf
-	core.Buffer
-	clust        core.Clust
-	status       core.ClustStatus
-	initializer  core.Initializer
-	closing      chan bool
-	closed       chan bool
-	runAlgorithm func()
-}
-
-func (algo *AbstractAlgo) Run(async bool) {
-	if async {
-		algo.Buffer.SetAsync()
-		go algo.initAndRunAsync()
-	} else {
-		algo.initAndRunSync()
-	}
-}
-
-func (algo *AbstractAlgo) initAndRunSync() error {
-	var ok bool
-	algo.clust, ok = algo.initializer(algo.config.InitK, algo.Data, algo.config.Space, algo.config.RGen)
-	if ok {
-		algo.status = core.Running
-		algo.runAlgorithm()
-		return nil
-	}
-	return errors.New("Failed to initialize")
-}
-
-func (algo *AbstractAlgo) initAndRunAsync() error {
-	var err = algo.initAndRunSync()
-	if err != nil {
-		time.Sleep(300 * time.Millisecond)
-		algo.Buffer.Apply()
-		err = algo.initAndRunAsync()
-	}
-	return err
-}
-
 type MCMC struct {
+	*core.AbstractAlgo
 	MCMCSupport
-	core.Buffer
-	config      MCMCConf
-	store       CenterStore
-	distrib     MCMCDistrib
-	initializer core.Initializer
-	uniform     distuv.Uniform
-	clust       core.Clust
-	status      core.ClustStatus
-	closing     chan bool
-	closed      chan bool
-	iter, acc   int
+	config    MCMCConf
+	store     CenterStore
+	distrib   MCMCDistrib
+	uniform   distuv.Uniform
+	iter, acc int
 }
 
 type MCMCSupport interface {
@@ -78,22 +24,18 @@ type MCMCSupport interface {
 	Loss(core.Clust) float64
 }
 
-func NewSeqMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
-
-	conf.Verify()
-	setConfigDefaults(&conf)
+func NewSeqMCMC(config MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
+	setConfigDefaults(&config)
+	config.Verify()
 
 	var m MCMC
-	m.config = conf
-	m.status = core.Created
-	m.initializer = initializer
+	m.config = config
+	m.AbstractAlgo = core.NewAlgo(config.AlgoConf, data, initializer)
+	m.AbstractAlgo.RunAlgorithm = m.runAlgorithm
 	m.distrib = distrib
 	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.config.RGen}
-	m.closing = make(chan bool, 1)
-	m.closed = make(chan bool, 1)
-	m.Buffer = core.NewBuffer(data, m.config.FrameSize)
 	m.MCMCSupport = SeqMCMCSupport{buffer: &m.Buffer, config: m.config}
-	m.store = NewCenterStore(&m.Buffer, conf.Space, m.config.RGen)
+	m.store = NewCenterStore(&m.Buffer, config.Space, m.config.RGen)
 	return &m
 }
 
@@ -111,83 +53,35 @@ func setConfigDefaults(conf *MCMCConf) {
 }
 
 func (mcmc *MCMC) Centroids() (c core.Clust, err error) {
-	switch mcmc.status {
-	case core.Created:
-		err = fmt.Errorf("clustering not started")
-	default:
-		c = mcmc.clust
-	}
-
-	return
+	return mcmc.AbstractAlgo.Centroids()
 }
 
 func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
-	switch mcmc.status {
-	case core.Closed:
-		err = errors.New("clustering ended")
-	default:
-		mcmc.Buffer.Push(elemt)
-	}
-
-	return err
+	return mcmc.AbstractAlgo.Push(elemt)
 }
 
-func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) {
-	var pred core.Elemt
-	var idx int
-
-	var clust, err = mcmc.Centroids()
-
-	if err == nil {
-		pred, idx, _ = clust.Assign(elemt, mcmc.config.Space)
-		if push {
-			err = mcmc.Push(elemt)
-		}
-	}
-
-	return pred, idx, err
+func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (pred core.Elemt, idx int, err error) {
+	return mcmc.AbstractAlgo.Predict(elemt, push)
 }
 
 func (mcmc *MCMC) Run(async bool) {
-	if async {
-		mcmc.Buffer.SetAsync()
-		go mcmc.initAndRunAsync()
-	} else {
-		mcmc.initAndRunSync()
-	}
+	mcmc.AbstractAlgo.Run(async)
 }
 
-func (mcmc *MCMC) initAndRunSync() error {
-	var ok bool
-	mcmc.clust, ok = mcmc.initializer(mcmc.config.InitK, mcmc.Data, mcmc.config.Space, mcmc.config.RGen)
-	if ok {
-		mcmc.status = core.Running
-		mcmc.runAlgorithm()
-		return nil
-	}
-	return errors.New("Failed to initialize")
+func (mcmc *MCMC) Close() {
+	mcmc.AbstractAlgo.Close()
 }
 
-func (mcmc *MCMC) initAndRunAsync() error {
-	var err = mcmc.initAndRunSync()
-	if err != nil {
-		time.Sleep(300 * time.Millisecond)
-		mcmc.Buffer.Apply()
-		err = mcmc.initAndRunAsync()
-	}
-	return err
-}
-
-func (mcmc *MCMC) runAlgorithm() {
+func (mcmc *MCMC) runAlgorithm(closing <-chan bool) {
 	var current = proposal{
 		k:    mcmc.config.InitK,
-		loss: mcmc.Loss(mcmc.clust),
-		pdf:  mcmc.proba(mcmc.clust, mcmc.clust),
+		loss: mcmc.Loss(mcmc.Clust),
+		pdf:  mcmc.proba(mcmc.Clust, mcmc.Clust),
 	}
 
 	for i, loop := 0, true; i < mcmc.config.McmcIter && loop; i++ {
 		select {
-		case <-mcmc.closing:
+		case <- closing:
 			loop = false
 
 		default:
@@ -195,9 +89,6 @@ func (mcmc *MCMC) runAlgorithm() {
 			mcmc.Apply()
 		}
 	}
-
-	mcmc.status = core.Closed
-	mcmc.closed <- true
 }
 
 type proposal struct {
@@ -213,8 +104,8 @@ func (mcmc *MCMC) doIter(current proposal) proposal {
 
 	if mcmc.accept(current, prop) {
 		current = prop
-		mcmc.clust = prop.centers
-		mcmc.store.SetCenters(mcmc.clust)
+		mcmc.Clust = prop.centers
+		mcmc.store.SetCenters(mcmc.Clust)
 		mcmc.acc += 1
 	}
 
@@ -225,7 +116,7 @@ func (mcmc *MCMC) doIter(current proposal) proposal {
 func (mcmc *MCMC) propose(current proposal) proposal {
 	var prop proposal
 	prop.k = mcmc.nextK(current.k)
-	var centers = mcmc.store.GetCenters(prop.k, mcmc.clust)
+	var centers = mcmc.store.GetCenters(prop.k, mcmc.Clust)
 	centers = mcmc.Iterate(centers, 1)
 	prop.centers = mcmc.alter(centers)
 	prop.loss = mcmc.Loss(prop.centers)
@@ -273,11 +164,6 @@ func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
 		p += mcmc.distrib.Pdf(mu[i], x[i])
 	}
 	return p
-}
-
-func (mcmc *MCMC) Close() {
-	mcmc.closing <- true
-	<-mcmc.closed
 }
 
 func (mcmc *MCMC) AcceptRatio() float64 {

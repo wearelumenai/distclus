@@ -3,22 +3,19 @@ package mcmc
 import (
 	"distclus/core"
 	"fmt"
-	"golang.org/x/exp/rand"
 	"math"
 )
 
+
 type MCMCConf struct {
+	core.AlgoConf
 	Dim                int
-	FrameSize          int
 	B, Amp, R          float64
 	Norm               float64
 	Nu                 float64
-	InitK              int
 	MaxK               int
 	McmcIter, InitIter int
 	ProbaK             []float64
-	Space              core.Space
-	RGen               *rand.Rand
 	lamb, l2b, tau     float64
 }
 

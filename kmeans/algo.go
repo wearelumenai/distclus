@@ -1,17 +1,17 @@
 package kmeans
 
 import (
-	"fmt"
-	"time"
-	"golang.org/x/exp/rand"
 	"distclus/core"
 	"errors"
+	"fmt"
+	"golang.org/x/exp/rand"
+	"time"
 )
 
 type KMeans struct {
 	KMeansSupport
 	core.Buffer
-	config KMeansConf
+	config      KMeansConf
 	status      core.ClustStatus
 	initializer core.Initializer
 	clust       core.Clust
@@ -34,7 +34,7 @@ func NewSeqKMeans(conf KMeansConf, initializer core.Initializer, data []core.Ele
 	km.closing = make(chan bool, 1)
 	km.closed = make(chan bool, 1)
 	km.Buffer = core.NewBuffer(data, -1)
-	km.KMeansSupport = SeqKMeansSupport{ buffer: &km.Buffer, config:km.config}
+	km.KMeansSupport = SeqKMeansSupport{buffer: &km.Buffer, config: km.config}
 
 	return &km
 }
@@ -87,29 +87,31 @@ func (km *KMeans) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 func (km *KMeans) Run(async bool) {
 	if async {
 		km.Buffer.SetAsync()
-		go km.initAndRun(async)
+		go km.initAndRunAsync()
 	} else {
-		km.initAndRun(async)
+		km.initAndRunSync()
 	}
 }
 
-func (km *KMeans) initAndRun(async bool) {
-	for ok := false; !ok; {
-		km.clust, ok = km.initializer(km.config.K, km.Data, km.config.Space, km.config.RGen)
-		if !ok {
-			km.handleFailedInitialisation(async)
-		}
+func (km *KMeans) initAndRunSync() error {
+	var ok bool
+	km.clust, ok = km.initializer(km.config.K, km.Data, km.config.Space, km.config.RGen)
+	if ok {
+		km.status = core.Running
+		km.runAlgorithm()
+		return nil
 	}
-	km.status = core.Running
-	km.runAlgorithm()
+	return errors.New("Failed to initialize")
 }
 
-func (km *KMeans) handleFailedInitialisation(async bool) {
-	if !async {
-		panic("failed to initialize")
+func (km *KMeans) initAndRunAsync() error {
+	var err = km.initAndRunSync()
+	if err != nil {
+		time.Sleep(300 * time.Millisecond)
+		km.Buffer.Apply()
+		err = km.initAndRunAsync()
 	}
-	time.Sleep(300 * time.Millisecond)
-	km.Buffer.Apply()
+	return err
 }
 
 func (km *KMeans) runAlgorithm() {

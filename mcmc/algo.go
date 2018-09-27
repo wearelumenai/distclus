@@ -11,6 +11,53 @@ import (
 	"time"
 )
 
+type AlgoConf struct {
+	InitK int
+	Space core.Space
+	RGen  *rand.Rand
+}
+
+type AbstractAlgo struct {
+	config AlgoConf
+	core.Buffer
+	clust        core.Clust
+	status       core.ClustStatus
+	initializer  core.Initializer
+	closing      chan bool
+	closed       chan bool
+	runAlgorithm func()
+}
+
+func (algo *AbstractAlgo) Run(async bool) {
+	if async {
+		algo.Buffer.SetAsync()
+		go algo.initAndRunAsync()
+	} else {
+		algo.initAndRunSync()
+	}
+}
+
+func (algo *AbstractAlgo) initAndRunSync() error {
+	var ok bool
+	algo.clust, ok = algo.initializer(algo.config.InitK, algo.Data, algo.config.Space, algo.config.RGen)
+	if ok {
+		algo.status = core.Running
+		algo.runAlgorithm()
+		return nil
+	}
+	return errors.New("Failed to initialize")
+}
+
+func (algo *AbstractAlgo) initAndRunAsync() error {
+	var err = algo.initAndRunSync()
+	if err != nil {
+		time.Sleep(300 * time.Millisecond)
+		algo.Buffer.Apply()
+		err = algo.initAndRunAsync()
+	}
+	return err
+}
+
 type MCMC struct {
 	MCMCSupport
 	core.Buffer
@@ -104,30 +151,31 @@ func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (core.Elemt, int, error) 
 func (mcmc *MCMC) Run(async bool) {
 	if async {
 		mcmc.Buffer.SetAsync()
-		go mcmc.initAndRun(async)
+		go mcmc.initAndRunAsync()
 	} else {
-		mcmc.initAndRun(async)
+		mcmc.initAndRunSync()
 	}
 }
 
-func (mcmc *MCMC) initAndRun(async bool) {
-	for ok := false; !ok; {
-		mcmc.clust, ok = mcmc.initializer(mcmc.config.InitK,
-			mcmc.Data, mcmc.config.Space, mcmc.config.RGen)
-		if !ok {
-			mcmc.handleFailedInitialisation(async)
-		}
+func (mcmc *MCMC) initAndRunSync() error {
+	var ok bool
+	mcmc.clust, ok = mcmc.initializer(mcmc.config.InitK, mcmc.Data, mcmc.config.Space, mcmc.config.RGen)
+	if ok {
+		mcmc.status = core.Running
+		mcmc.runAlgorithm()
+		return nil
 	}
-	mcmc.status = core.Running
-	mcmc.runAlgorithm()
+	return errors.New("Failed to initialize")
 }
 
-func (mcmc *MCMC) handleFailedInitialisation(async bool) {
-	if !async {
-		panic("failed to initialize")
+func (mcmc *MCMC) initAndRunAsync() error {
+	var err = mcmc.initAndRunSync()
+	if err != nil {
+		time.Sleep(300 * time.Millisecond)
+		mcmc.Buffer.Apply()
+		err = mcmc.initAndRunAsync()
 	}
-	time.Sleep(300 * time.Millisecond)
-	mcmc.Buffer.Apply()
+	return err
 }
 
 func (mcmc *MCMC) runAlgorithm() {

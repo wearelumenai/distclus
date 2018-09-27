@@ -15,7 +15,7 @@ type KMeansConf struct {
 
 func (conf *KMeansConf) Verify() {
 	if conf.K < 1 {
-		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
+		panic(fmt.Sprintf("Illegal value for InitK: %v", conf.K))
 	}
 
 	if conf.Iter < 0 {

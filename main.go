@@ -41,7 +41,7 @@ var (
 	mcmcNu = mcmcCmd.Flag("mcmc_nu", "Number of degrees of freedom.").
 		Short('D').Default("3").Float()
 	mcmcInitK = mcmcCmd.Flag("mcmc_initk", "k initialisation value.").
-		Short('K').Default("8").Int()
+		Short('InitK').Default("8").Int()
 	mcmcFrameSize = mcmcCmd.Flag("mcmc_framesize", "Frame size to consider in data history(default -1 ~ data set len).").
 		Short('F').Default("-1").Int()
 	mcmcInitializer = mcmcCmd.Flag("mcmc_initializer", "Algorithm initializer(random, kmeans++).").

@@ -8,7 +8,7 @@ import (
 // Checks if clustering initialization is possible.
 func check(k int, elemts []core.Elemt) bool {
 	if k < 1 {
-		panic("K is lower than 1")
+		panic("InitK is lower than 1")
 	}
 
 	if len(elemts) < k {

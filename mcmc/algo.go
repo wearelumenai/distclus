@@ -10,7 +10,7 @@ import (
 type MCMC struct {
 	template    *core.AlgorithmTemplate
 	config      MCMCConf
-	strategy    MCMCSupport
+	strategy    MCMCStrategy
 	initializer core.Initializer
 	uniform     distuv.Uniform
 	distrib     MCMCDistrib
@@ -18,7 +18,7 @@ type MCMC struct {
 	iter, acc   int
 }
 
-type MCMCSupport interface {
+type MCMCStrategy interface {
 	Iterate(core.Clust, int) core.Clust
 	Loss(core.Clust) float64
 }

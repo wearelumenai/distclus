@@ -38,7 +38,7 @@ func TestMCMC_ParRunAsync(t *testing.T) {
 	test.DoTestRunAsync(t, algo)
 }
 
-func TestParMCMCSupport_ParLoss(t *testing.T) {
+func TestParMCMCStrategy_Loss(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var algo = mcmc.NewParMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})

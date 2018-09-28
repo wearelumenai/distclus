@@ -7,36 +7,40 @@ import (
 	"time"
 )
 
-type AlgoConf struct {
-	InitK              int
-	Space              Space
-	FrameSize          int
-	RGen               *rand.Rand
+type AlgorithmConf struct {
+	InitK     int
+	Space     Space
+	FrameSize int
+	RGen      *rand.Rand
 }
 
-type AbstractAlgo struct {
-	config AlgoConf
+type AlgorithmTemplate struct {
+	config AlgorithmConf
 	Buffer
-	Clust        Clust
-	status       ClustStatus
-	initializer  Initializer
-	closing      chan bool
-	closed       chan bool
-	RunAlgorithm func(<-chan bool)
+	Clust           Clust
+	status          ClustStatus
+	closing         chan bool
+	closed          chan bool
+	templateMethods AlgorithmTemplateMethods
 }
 
-func NewAlgo(config AlgoConf, data []Elemt, initializer Initializer) *AbstractAlgo {
-	var algo = AbstractAlgo{}
+type AlgorithmTemplateMethods struct {
+	Initialize func() (centroids Clust, ready bool)
+	Run        func(closing <-chan bool)
+}
+
+func NewAlgo(config AlgorithmConf, data []Elemt, templateMethods AlgorithmTemplateMethods) *AlgorithmTemplate {
+	var algo = AlgorithmTemplate{}
 	algo.config = config
 	algo.Buffer = NewBuffer(data, config.FrameSize)
-	algo.initializer = initializer
+	algo.templateMethods = templateMethods
 	algo.status = Created
 	algo.closing = make(chan bool, 1)
 	algo.closed = make(chan bool, 1)
 	return &algo
 }
 
-func (algo *AbstractAlgo) Centroids() (clust Clust, err error) {
+func (algo *AlgorithmTemplate) Centroids() (clust Clust, err error) {
 	switch algo.status {
 	case Created:
 		err = fmt.Errorf("clustering not started")
@@ -46,7 +50,7 @@ func (algo *AbstractAlgo) Centroids() (clust Clust, err error) {
 	return clust, err
 }
 
-func (algo *AbstractAlgo) Push(elemt Elemt) (err error) {
+func (algo *AlgorithmTemplate) Push(elemt Elemt) (err error) {
 	switch algo.status {
 	case Closed:
 		err = errors.New("clustering ended")
@@ -56,7 +60,7 @@ func (algo *AbstractAlgo) Push(elemt Elemt) (err error) {
 	return err
 }
 
-func (algo *AbstractAlgo) Run(async bool) {
+func (algo *AlgorithmTemplate) Run(async bool) {
 	if async {
 		algo.Buffer.SetAsync()
 		go algo.initAndRunAsync()
@@ -69,7 +73,7 @@ func (algo *AbstractAlgo) Run(async bool) {
 	algo.status = Running
 }
 
-func (algo *AbstractAlgo) Predict(elemt Elemt, push bool) (pred Elemt, label int, err error) {
+func (algo *AlgorithmTemplate) Predict(elemt Elemt, push bool) (pred Elemt, label int, err error) {
 	var clust Clust
 	clust, err = algo.Centroids()
 
@@ -83,24 +87,24 @@ func (algo *AbstractAlgo) Predict(elemt Elemt, push bool) (pred Elemt, label int
 	return pred, label, err
 }
 
-func (mcmc *AbstractAlgo) Close() {
+func (mcmc *AlgorithmTemplate) Close() {
 	mcmc.closing <- true
 	<-mcmc.closed
 	mcmc.status = Closed
 }
 
-func (algo *AbstractAlgo) initAndRunSync() error {
+func (algo *AlgorithmTemplate) initAndRunSync() error {
 	var ok bool
-	algo.Clust, ok = algo.initializer(algo.config.InitK, algo.Data, algo.config.Space, algo.config.RGen)
+	algo.Clust, ok = algo.templateMethods.Initialize()
 	if ok {
-		algo.RunAlgorithm(algo.closing)
+		algo.templateMethods.Run(algo.closing)
 		algo.closed <- true
 		return nil
 	}
 	return errors.New("Failed to initialize")
 }
 
-func (algo *AbstractAlgo) initAndRunAsync() error {
+func (algo *AlgorithmTemplate) initAndRunAsync() error {
 	var err = algo.initAndRunSync()
 	if err != nil {
 		time.Sleep(300 * time.Millisecond)
@@ -109,5 +113,3 @@ func (algo *AbstractAlgo) initAndRunAsync() error {
 	}
 	return err
 }
-
-

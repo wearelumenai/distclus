@@ -3,20 +3,19 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
-	"time"
 )
 
 type MCMC struct {
-	*core.AbstractAlgo
-	MCMCSupport
-	config    MCMCConf
-	store     CenterStore
-	distrib   MCMCDistrib
-	uniform   distuv.Uniform
-	iter, acc int
+	template    *core.AlgorithmTemplate
+	config      MCMCConf
+	strategy    MCMCSupport
+	initializer core.Initializer
+	uniform     distuv.Uniform
+	distrib     MCMCDistrib
+	store       CenterStore
+	iter, acc   int
 }
 
 type MCMCSupport interface {
@@ -24,69 +23,45 @@ type MCMCSupport interface {
 	Loss(core.Clust) float64
 }
 
-func NewSeqMCMC(config MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
-	setConfigDefaults(&config)
-	config.Verify()
-
-	var m MCMC
-	m.AbstractAlgo = core.NewAlgo(config.AlgoConf, data, initializer)
-	m.AbstractAlgo.RunAlgorithm = m.runAlgorithm
-	m.config = config
-	m.distrib = distrib
-	m.uniform = distuv.Uniform{Max: 1, Min: 0, Src: m.config.RGen}
-	m.MCMCSupport = SeqMCMCSupport{buffer: &m.Buffer, config: m.config}
-	m.store = NewCenterStore(&m.Buffer, config.Space, m.config.RGen)
-	return &m
-}
-
-func setConfigDefaults(conf *MCMCConf) {
-	if conf.RGen == nil {
-		var seed = uint64(time.Now().UTC().Unix())
-		conf.RGen = rand.New(rand.NewSource(seed))
-	}
-	if len(conf.ProbaK) == 0 {
-		conf.ProbaK = []float64{1, 0, 9}
-	}
-	if conf.MaxK == 0 {
-		conf.MaxK = 16
-	}
-}
-
 func (mcmc *MCMC) Centroids() (c core.Clust, err error) {
-	return mcmc.AbstractAlgo.Centroids()
+	return mcmc.template.Centroids()
 }
 
 func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
-	return mcmc.AbstractAlgo.Push(elemt)
+	return mcmc.template.Push(elemt)
 }
 
 func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (pred core.Elemt, label int, err error) {
-	return mcmc.AbstractAlgo.Predict(elemt, push)
+	return mcmc.template.Predict(elemt, push)
 }
 
 func (mcmc *MCMC) Run(async bool) {
-	mcmc.AbstractAlgo.Run(async)
+	mcmc.template.Run(async)
 }
 
 func (mcmc *MCMC) Close() {
-	mcmc.AbstractAlgo.Close()
+	mcmc.template.Close()
+}
+
+func (mcmc *MCMC) initializeAlgorithm() (centroids core.Clust, ready bool) {
+	return mcmc.initializer(mcmc.config.InitK, mcmc.template.Data, mcmc.config.Space, mcmc.config.RGen)
 }
 
 func (mcmc *MCMC) runAlgorithm(closing <-chan bool) {
 	var current = proposal{
 		k:    mcmc.config.InitK,
-		loss: mcmc.Loss(mcmc.Clust),
-		pdf:  mcmc.proba(mcmc.Clust, mcmc.Clust),
+		loss: mcmc.strategy.Loss(mcmc.template.Clust),
+		pdf:  mcmc.proba(mcmc.template.Clust, mcmc.template.Clust),
 	}
 
 	for i, loop := 0, true; i < mcmc.config.McmcIter && loop; i++ {
 		select {
-		case <- closing:
+		case <-closing:
 			loop = false
 
 		default:
 			current = mcmc.doIter(current)
-			mcmc.Apply()
+			mcmc.template.Apply()
 		}
 	}
 }
@@ -104,8 +79,8 @@ func (mcmc *MCMC) doIter(current proposal) proposal {
 
 	if mcmc.accept(current, prop) {
 		current = prop
-		mcmc.Clust = prop.centers
-		mcmc.store.SetCenters(mcmc.Clust)
+		mcmc.template.Clust = prop.centers
+		mcmc.store.SetCenters(mcmc.template.Clust)
 		mcmc.acc += 1
 	}
 
@@ -116,10 +91,10 @@ func (mcmc *MCMC) doIter(current proposal) proposal {
 func (mcmc *MCMC) propose(current proposal) proposal {
 	var prop proposal
 	prop.k = mcmc.nextK(current.k)
-	var centers = mcmc.store.GetCenters(prop.k, mcmc.Clust)
-	centers = mcmc.Iterate(centers, 1)
+	var centers = mcmc.store.GetCenters(prop.k, mcmc.template.Clust)
+	centers = mcmc.strategy.Iterate(centers, 1)
 	prop.centers = mcmc.alter(centers)
-	prop.loss = mcmc.Loss(prop.centers)
+	prop.loss = mcmc.strategy.Loss(prop.centers)
 	prop.pdf = mcmc.proba(prop.centers, centers)
 	return prop
 }
@@ -141,8 +116,8 @@ func (mcmc *MCMC) nextK(k int) int {
 		return 1
 	case newK > mcmc.config.MaxK:
 		return mcmc.config.MaxK
-	case newK > len(mcmc.Data):
-		return len(mcmc.Data)
+	case newK > len(mcmc.template.Data):
+		return len(mcmc.template.Data)
 	default:
 		return newK
 	}

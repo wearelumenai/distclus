@@ -10,7 +10,7 @@ import (
 )
 
 var seed = uint64(187236548914256543)
-var algoConf = core.AlgoConf{
+var algoConf = core.AlgorithmConf{
 	InitK: 3,
 	Space: real.RealSpace{},
 	RGen: rand.New(rand.NewSource(seed)),
@@ -18,7 +18,7 @@ var algoConf = core.AlgoConf{
 
 func TestKMeans_ConfErrorIter(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = kmeans.KMeansConf{AlgoConf: algoConf, Iter: -10}
+	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, Iter: -10}
 	conf.Verify()
 }
 
@@ -26,6 +26,6 @@ func TestKMeans_ConfErrorK(t *testing.T) {
 	defer test.AssertPanic(t)
 	var aconf = algoConf
 	aconf.InitK = -12
-	var conf = kmeans.KMeansConf{AlgoConf: aconf, Iter: 10}
+	var conf = kmeans.KMeansConf{AlgorithmConf: aconf, Iter: 10}
 	conf.Verify()
 }

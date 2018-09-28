@@ -7,6 +7,7 @@ import (
 	"distclus/internal/test"
 	"golang.org/x/exp/rand"
 	"math"
+	"runtime"
 	"testing"
 )
 
@@ -44,9 +45,16 @@ func TestParMCMCSupport_ParLoss(t *testing.T) {
 
 	test.PushAndRunSync(algo)
 
+
+	var strategy = mcmc.ParMCMCStrategy{}
+	buffer := core.NewBuffer(test.TestVectors, conf.FrameSize)
+	strategy.Buffer = &buffer
+	strategy.Config = conf
+	strategy.Degree = runtime.NumCPU()
+
 	var clust, _ = algo.Centroids()
-	var l1 = algo.Loss(clust)
-	var l2 = clust.Loss(algo.Data, conf.Space, conf.Norm)
+	var l1 = strategy.Loss(clust)
+	var l2 = clust.Loss(test.TestVectors, conf.Space, conf.Norm)
 
 	if math.Abs(l1-l2)>1e-6 {
 		t.Error("Expected", l2, "got", l1)

@@ -58,7 +58,5 @@ func b1(log func(args ...interface{})) {
 		labels[l] += 1
 	}
 
-	log(len(algo.Data))
 	log(labels)
-	log(algo.Loss(centers))
 }

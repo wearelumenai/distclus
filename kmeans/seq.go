@@ -1,25 +1,51 @@
 package kmeans
 
-import "distclus/core"
+import (
+	"distclus/core"
+	"golang.org/x/exp/rand"
+	"time"
+)
 
-type SeqKMeansSupport struct {
-	config KMeansConf
-	buffer *core.Buffer
+func NewSeqKMeans(config KMeansConf, initializer core.Initializer, data []core.Elemt) *KMeans {
+	config.Verify()
+	setConfigDefaults(&config)
+
+	var km KMeans
+	var algoTemplateMethods = core.AlgorithmTemplateMethods{
+		Initialize: km.initializeAlgorithm,
+		Run:        km.runAlgorithm,
+	}
+	km.template = core.NewAlgo(config.AlgorithmConf, data, algoTemplateMethods)
+
+	km.config = config
+	km.initializer = initializer
+	km.strategy = SeqKMeansStrategy{Buffer: &km.template.Buffer, Config: km.config}
+
+	return &km
 }
 
-func (support SeqKMeansSupport) Iterate(clust core.Clust) core.Clust {
-
-	var result, _ = clust.AssignDBA(support.buffer.Data, support.config.Space)
-
-	return support.buildResult(clust, result)
+type SeqKMeansStrategy struct {
+	Config KMeansConf
+	Buffer *core.Buffer
 }
 
-func (support SeqKMeansSupport) buildResult(clust core.Clust, result core.Clust) core.Clust {
+func setConfigDefaults(conf *KMeansConf) {
+	if conf.RGen == nil {
+		var seed = uint64(time.Now().UTC().Unix())
+		conf.RGen = rand.New(rand.NewSource(seed))
+	}
+}
+
+func (strategy SeqKMeansStrategy) Iterate(clust core.Clust) core.Clust {
+	var result, _ = clust.AssignDBA(strategy.Buffer.Data, strategy.Config.Space)
+	return strategy.buildResult(clust, result)
+}
+
+func (strategy SeqKMeansStrategy) buildResult(clust core.Clust, result core.Clust) core.Clust {
 	for i := 0; i < len(result); i++ {
 		if result[i] == nil {
 			result[i] = clust[i]
 		}
 	}
-
 	return result
 }

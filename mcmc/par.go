@@ -9,22 +9,22 @@ import (
 
 func NewParMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
 	var algo = NewSeqMCMC(conf, distrib, initializer, data)
-	var support = ParMCMCSupport{}
-	support.buffer = &algo.Buffer
-	support.config = algo.config
-	support.degree = runtime.NumCPU()
-	algo.MCMCSupport = &support
+	var strategy = ParMCMCStrategy{}
+	strategy.Buffer = &algo.template.Buffer
+	strategy.Config = algo.config
+	strategy.Degree = runtime.NumCPU()
+	algo.strategy = &strategy
 	return algo
 }
 
-type ParMCMCSupport struct {
-	config MCMCConf
-	buffer *core.Buffer
-	degree int
+type ParMCMCStrategy struct {
+	Config MCMCConf
+	Buffer *core.Buffer
+	Degree int
 }
 
 type workerSupport struct {
-	ParMCMCSupport
+	ParMCMCStrategy
 	out chan msgMCMC
 	wg  *sync.WaitGroup
 }
@@ -34,15 +34,15 @@ type msgMCMC struct {
 	card int
 }
 
-func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
+func (strategy ParMCMCStrategy) Iterate(clust core.Clust, iter int) core.Clust {
 	var conf = kmeans.KMeansConf{
-		AlgoConf: core.AlgoConf{
+		AlgorithmConf: core.AlgorithmConf{
 			InitK: len(clust),
-			Space: support.config.Space,
+			Space: strategy.Config.Space,
 		},
 		Iter: iter,
 	}
-	var km = kmeans.NewParKMeans(conf, clust.Initializer, support.buffer.Data)
+	var km = kmeans.NewParKMeans(conf, clust.Initializer, strategy.Buffer.Data)
 
 	km.Run(false)
 	km.Close()
@@ -51,22 +51,22 @@ func (support ParMCMCSupport) Iterate(clust core.Clust, iter int) core.Clust {
 	return result
 }
 
-func (support *ParMCMCSupport) Loss(clust core.Clust) float64 {
-	var workers = support.startMCMCWorkers(clust)
+func (strategy *ParMCMCStrategy) Loss(clust core.Clust) float64 {
+	var workers = strategy.startMCMCWorkers(clust)
 	var aggr = workers.lossAggregate()
 	return aggr.sum
 }
 
-func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport {
-	var offset = (len(support.buffer.Data)-1)/support.degree + 1
+func (strategy *ParMCMCStrategy) startMCMCWorkers(clust core.Clust) workerSupport {
+	var offset = (len(strategy.Buffer.Data)-1)/strategy.Degree + 1
 	var workers = workerSupport{}
-	workers.ParMCMCSupport = *support
-	workers.out = make(chan msgMCMC, support.degree)
+	workers.ParMCMCStrategy = *strategy
+	workers.out = make(chan msgMCMC, strategy.Degree)
 	workers.wg = &sync.WaitGroup{}
-	workers.wg.Add(support.degree)
+	workers.wg.Add(strategy.Degree)
 
-	for i := 0; i < support.degree; i++ {
-		var part = core.GetChunk(i, offset, support.buffer.Data)
+	for i := 0; i < strategy.Degree; i++ {
+		var part = core.GetChunk(i, offset, strategy.Buffer.Data)
 		go workers.lossMapReduce(clust, part)
 	}
 
@@ -76,19 +76,19 @@ func (support *ParMCMCSupport) startMCMCWorkers(clust core.Clust) workerSupport 
 	return workers
 }
 
-func (support *workerSupport) lossMapReduce(clust core.Clust, elemts []core.Elemt) {
-	defer support.wg.Done()
+func (strategy *workerSupport) lossMapReduce(clust core.Clust, elemts []core.Elemt) {
+	defer strategy.wg.Done()
 
 	var reduced msgMCMC
-	reduced.sum = clust.Loss(elemts, support.config.Space, support.config.Norm)
+	reduced.sum = clust.Loss(elemts, strategy.Config.Space, strategy.Config.Norm)
 	reduced.card = len(elemts)
 
-	support.out <- reduced
+	strategy.out <- reduced
 }
 
-func (support *workerSupport) lossAggregate() msgMCMC {
+func (strategy *workerSupport) lossAggregate() msgMCMC {
 	var aggregate msgMCMC
-	for agg := range support.out {
+	for agg := range strategy.out {
 		aggregate.sum += agg.sum
 		aggregate.card += agg.card
 	}

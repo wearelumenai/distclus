@@ -6,7 +6,7 @@ import (
 )
 
 type KMeansConf struct {
-	core.AlgoConf
+	core.AlgorithmConf
 	Iter int
 }
 

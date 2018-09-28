@@ -2,58 +2,42 @@ package kmeans
 
 import (
 	"distclus/core"
-	"golang.org/x/exp/rand"
-	"time"
 )
 
 type KMeans struct {
-	*core.AbstractAlgo
-	KMeansSupport
+	template    *core.AlgorithmTemplate
 	config      KMeansConf
+	strategy    KMeansStrategy
+	initializer core.Initializer
 }
 
-type KMeansSupport interface {
+type KMeansStrategy interface {
 	Iterate(proposal core.Clust) core.Clust
 }
 
-func NewSeqKMeans(config KMeansConf, initializer core.Initializer, data []core.Elemt) *KMeans {
-	config.Verify()
-	setConfigDefaults(&config)
-
-	var km KMeans
-	km.AbstractAlgo = core.NewAlgo(config.AlgoConf, data, initializer)
-	km.AbstractAlgo.RunAlgorithm = km.runAlgorithm
-	km.config = config
-	km.KMeansSupport = SeqKMeansSupport{buffer: &km.Buffer, config: km.config}
-
-	return &km
-}
-
-func setConfigDefaults(conf *KMeansConf) {
-	if conf.RGen == nil {
-		var seed = uint64(time.Now().UTC().Unix())
-		conf.RGen = rand.New(rand.NewSource(seed))
-	}
-}
-
 func (km *KMeans) Centroids() (c core.Clust, err error) {
-	return km.AbstractAlgo.Centroids()
+	return km.template.Centroids()
 }
 
 func (km *KMeans) Push(elemt core.Elemt) (err error) {
-	return km.AbstractAlgo.Push(elemt)
+	return km.template.Push(elemt)
 }
 
 func (km *KMeans) Predict(elemt core.Elemt, push bool) (pred core.Elemt, label int, err error) {
-	return km.AbstractAlgo.Predict(elemt, push)
+	return km.template.Predict(elemt, push)
 }
 
 func (km *KMeans) Run(async bool) {
-	km.AbstractAlgo.Run(async)
+	km.template.Run(async)
 }
 
 func (km *KMeans) Close() {
-	km.AbstractAlgo.Close()
+	km.template.Close()
+}
+
+func (km *KMeans) initializeAlgorithm() (centroids core.Clust, ready bool) {
+	return km.initializer(km.config.InitK, km.template.Data, km.config.Space, km.config.RGen)
+
 }
 
 func (km *KMeans) runAlgorithm(closing <-chan bool) {
@@ -64,9 +48,8 @@ func (km *KMeans) runAlgorithm(closing <-chan bool) {
 			loop = false
 
 		default:
-			km.Clust = km.Iterate(km.Clust)
-			km.Buffer.Apply()
+			km.template.Clust = km.strategy.Iterate(km.template.Clust)
+			km.template.Buffer.Apply()
 		}
 	}
 }
-

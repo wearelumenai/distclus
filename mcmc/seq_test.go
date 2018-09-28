@@ -11,7 +11,7 @@ import (
 )
 
 var mcmcConf = mcmc.MCMCConf{
-	AlgoConf: core.AlgoConf{
+	AlgorithmConf: core.AlgorithmConf{
 		InitK: 3,
 		FrameSize: 8,
 		Space: real.RealSpace{},
@@ -34,7 +34,7 @@ func TestMCMC_Initialization(t *testing.T) {
 
 func TestMCMC_DefaultConf(t *testing.T) {
 	var conf = mcmcConf
-	conf.AlgoConf.RGen = nil
+	conf.AlgorithmConf.RGen = nil
 	conf.McmcIter = 0
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 

@@ -4,19 +4,18 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"distclus/real"
-	"golang.org/x/exp/rand"
 	"reflect"
 	"testing"
 	"time"
 )
 
-var conf = core.AlgoConf{
+var conf = core.AlgorithmConf{
 	InitK: 3,
 	Space: real.RealSpace{},
 }
 
 type mockAlgo struct {
-	*core.AbstractAlgo
+	*core.AlgorithmTemplate
 }
 
 func (algo *mockAlgo) runAlgorithm(closing <-chan bool) {
@@ -31,10 +30,13 @@ func (algo *mockAlgo) runAlgorithm(closing <-chan bool) {
 	}
 }
 
-func newMockAlgo(init core.Initializer) *mockAlgo {
+func newMockAlgo(init func() (core.Clust, bool)) *mockAlgo {
 	var mock = mockAlgo{}
-	mock.AbstractAlgo = core.NewAlgo(conf, make([]core.Elemt, 0), init)
-	mock.RunAlgorithm = mock.runAlgorithm
+	var algoTemplateMethods = core.AlgorithmTemplateMethods {
+		Initialize: init,
+		Run: mock.runAlgorithm,
+	}
+	mock.AlgorithmTemplate = core.NewAlgo(conf, make([]core.Elemt, 0), algoTemplateMethods)
 	return &mock
 }
 
@@ -42,21 +44,21 @@ type mockInitializer struct {
 	try int
 }
 
-func (*mockInitializer) NoInitialize(int, []core.Elemt, core.Space, *rand.Rand) (core.Clust, bool) {
+func (*mockInitializer) NoInitialize() (core.Clust, bool) {
 	return nil, false
 }
 
-func (*mockInitializer) Initialize(int, []core.Elemt, core.Space, *rand.Rand) (core.Clust, bool) {
+func (*mockInitializer) Initialize() (core.Clust, bool) {
 	var clust = test.TestVectors[:2]
 	return clust, true
 }
 
-func (mock *mockInitializer) TryInitialize(k int, elemts []core.Elemt, space core.Space, rgen *rand.Rand) (core.Clust, bool) {
+func (mock *mockInitializer) TryInitialize() (core.Clust, bool) {
 	if mock.try < 2 {
 		mock.try++
-		return mock.NoInitialize(k, elemts, space, rgen)
+		return mock.NoInitialize()
 	} else {
-		return mock.Initialize(k, elemts, space, rgen)
+		return mock.Initialize()
 	}
 }
 
@@ -69,7 +71,6 @@ func TestAbstractAlgo_InitSync(t *testing.T) {
 func TestAbstractAlgo_InitAsync(t *testing.T) {
 	var initializer = &mockInitializer{}
 	var algo = newMockAlgo(initializer.TryInitialize)
-	algo.RunAlgorithm = func(_ <-chan bool) {}
 	algo.Run(true)
 
 	var clust0, _ = algo.Centroids()

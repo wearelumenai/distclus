@@ -9,7 +9,7 @@ import (
 )
 
 var mcmcConf = MCMCConf{
-	AlgoConf: core.AlgoConf{
+	AlgorithmConf: core.AlgorithmConf{
 		InitK: 3,
 		FrameSize: 8,
 		Space: real.RealSpace{},

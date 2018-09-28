@@ -8,7 +8,7 @@ import (
 
 
 type MCMCConf struct {
-	core.AlgoConf
+	core.AlgorithmConf
 	Dim                int
 	B, Amp, R          float64
 	Norm               float64

@@ -36,8 +36,8 @@ func newMockAlgo(init func() (core.Clust, bool)) *mockAlgo {
 		Initialize: init,
 		Run: mock.runAlgorithm,
 	}
-	mock.data = core.NewBuffer( make([]core.Elemt, 0), -1)
-	mock.template = core.NewAlgo(conf, mock.data, algoTemplateMethods)
+	mock.data = core.NewDataBuffer( make([]core.Elemt, 0), -1)
+	mock.template = core.NewAlgorithmTemplate(conf, mock.data, algoTemplateMethods)
 	return &mock
 }
 

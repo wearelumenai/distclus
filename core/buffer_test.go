@@ -8,7 +8,7 @@ import (
 
 func TestBuffer_Push(t *testing.T) {
 	elemts := []core.Elemt{[]float64{1.2, 3.2},[]float64{1.2, 3.2}}
-	var buf = core.NewBuffer(elemts, -1)
+	var buf = core.NewDataBuffer(elemts, -1)
 
 	if l:= len(buf.Data); l!=2 {
 		t.Error("Expected 2 got", l)
@@ -35,7 +35,7 @@ func TestBuffer_Push(t *testing.T) {
 
 func TestBuffer_FrameMore(t *testing.T) {
 	elemts := []core.Elemt{[]float64{1.2, 3.2},[]float64{1.2, 3.2}}
-	var buf = core.NewBuffer(elemts, 50)
+	var buf = core.NewDataBuffer(elemts, 50)
 
 	if l:= len(buf.Data); l!=2 {
 		t.Error("Expected 2 got", l)
@@ -66,7 +66,7 @@ func TestBuffer_FrameLess(t *testing.T) {
 		elemts[i] = [][]float64{{float64(i), 1.2, 3.2},{1.2, 3.2}}
 	}
 
-	var buf = core.NewBuffer(elemts, 50)
+	var buf = core.NewDataBuffer(elemts, 50)
 
 	if l:= len(buf.Data); l!=50 {
 		t.Error("Expected 50 got", l)
@@ -92,7 +92,7 @@ func TestBuffer_FrameLess(t *testing.T) {
 }
 
 func TestBuffer_Apply(t *testing.T) {
-	var buf = core.NewBuffer(nil, -1)
+	var buf = core.NewDataBuffer(nil, -1)
 
 	for i := 0; i < 128; i++ {
 		buf.Push([]float64{float64(i), 1., 2., 4.})

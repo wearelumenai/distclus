@@ -23,7 +23,7 @@ type bufferSizeStrategy interface {
 
 // Creates a fixed size buffer if given size > 0.
 // Otherwise creates an infinite size buffer.
-func NewBuffer(data []Elemt, size int) *DataBuffer {
+func NewDataBuffer(data []Elemt, size int) *DataBuffer {
 	var buf = DataBuffer{
 		pipe:  make(chan Elemt, 2000),
 		async: false,

@@ -25,11 +25,11 @@ type AlgorithmTemplateMethods struct {
 	Run        func(closing <-chan bool)
 }
 
-func NewAlgo(config AlgorithmConf, buffer Buffer, templateMethods AlgorithmTemplateMethods) *AlgorithmTemplate {
+func NewAlgorithmTemplate(config AlgorithmConf, buffer Buffer, methods AlgorithmTemplateMethods) *AlgorithmTemplate {
 	var algo = AlgorithmTemplate{}
 	algo.config = config
 	algo.buffer = buffer
-	algo.templateMethods = templateMethods
+	algo.templateMethods = methods
 	algo.status = Created
 	algo.closing = make(chan bool, 1)
 	algo.closed = make(chan bool, 1)

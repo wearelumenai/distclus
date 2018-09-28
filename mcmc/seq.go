@@ -13,7 +13,7 @@ func NewSeqMCMC(config MCMCConf, distrib MCMCDistrib, initializer core.Initializ
 	config.Verify()
 
 	var mcmc MCMC
-	mcmc.data = core.NewBuffer(data,config.FrameSize)
+	mcmc.data = core.NewDataBuffer(data,config.FrameSize)
 	mcmc.config = config
 	mcmc.initializer = initializer
 	mcmc.distrib = distrib
@@ -25,7 +25,7 @@ func NewSeqMCMC(config MCMCConf, distrib MCMCDistrib, initializer core.Initializ
 		Initialize: mcmc.initializeAlgorithm,
 		Run:        mcmc.runAlgorithm,
 	}
-	mcmc.template = core.NewAlgo(config.AlgorithmConf, mcmc.data, algoTemplateMethods)
+	mcmc.template = core.NewAlgorithmTemplate(config.AlgorithmConf, mcmc.data, algoTemplateMethods)
 
 	return &mcmc
 }

@@ -2,30 +2,25 @@ package kmeans_test
 
 import (
 	"distclus/core"
+	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/real"
-	"distclus/internal/test"
-	"golang.org/x/exp/rand"
 	"testing"
 )
 
-var seed = uint64(187236548914256543)
 var algoConf = core.AlgorithmConf{
-	InitK: 3,
 	Space: real.RealSpace{},
-	RGen: rand.New(rand.NewSource(seed)),
 }
 
 func TestKMeans_ConfErrorIter(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, Iter: -10}
+	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: -10}
 	conf.Verify()
 }
 
 func TestKMeans_ConfErrorK(t *testing.T) {
 	defer test.AssertPanic(t)
 	var aconf = algoConf
-	aconf.InitK = -12
-	var conf = kmeans.KMeansConf{AlgorithmConf: aconf, Iter: 10}
+	var conf = kmeans.KMeansConf{AlgorithmConf: aconf, K: -12, Iter: 10}
 	conf.Verify()
 }

@@ -37,9 +37,9 @@ type msgMCMC struct {
 func (strategy ParMCMCStrategy) Iterate(clust core.Clust, iter int) core.Clust {
 	var conf = kmeans.KMeansConf{
 		AlgorithmConf: core.AlgorithmConf{
-			InitK: len(clust),
 			Space: strategy.Config.Space,
 		},
+		K:    len(clust),
 		Iter: iter,
 	}
 	var km = kmeans.NewParKMeans(conf, clust.Initializer, strategy.Buffer.Data)

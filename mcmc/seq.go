@@ -51,11 +51,11 @@ func setConfigDefaults(conf *MCMCConf) {
 func (strategy SeqMCMCStrategy) Iterate(clust core.Clust, iter int) core.Clust {
 	var conf = kmeans.KMeansConf{
 		AlgorithmConf: core.AlgorithmConf{
-			InitK: len(clust),
 			Space: strategy.Config.Space,
-			RGen: strategy.Config.RGen,
 		},
+		K:    len(clust),
 		Iter: iter,
+		RGen: strategy.Config.RGen,
 	}
 	var km = kmeans.NewSeqKMeans(conf, clust.Initializer, strategy.Buffer.Data)
 

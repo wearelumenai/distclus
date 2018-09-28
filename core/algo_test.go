@@ -10,7 +10,6 @@ import (
 )
 
 var conf = core.AlgorithmConf{
-	InitK: 3,
 	Space: real.RealSpace{},
 }
 

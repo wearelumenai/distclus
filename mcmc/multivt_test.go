@@ -10,11 +10,11 @@ import (
 
 var mcmcConf = MCMCConf{
 	AlgorithmConf: core.AlgorithmConf{
-		InitK: 3,
-		FrameSize: 8,
 		Space: real.RealSpace{},
-		RGen:     rand.New(rand.NewSource(6305689164243)),
 	},
+	InitK: 3,
+	FrameSize: 8,
+	RGen:     rand.New(rand.NewSource(6305689164243)),
 	Dim: 3, B: 100, Amp: 1,
 	Norm: 2, Nu: 3, McmcIter: 20,
 	InitIter: 1,

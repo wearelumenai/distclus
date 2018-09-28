@@ -3,12 +3,15 @@ package mcmc
 import (
 	"distclus/core"
 	"fmt"
+	"golang.org/x/exp/rand"
 	"math"
 )
 
-
 type MCMCConf struct {
 	core.AlgorithmConf
+	InitK              int
+	FrameSize          int
+	RGen               *rand.Rand
 	Dim                int
 	B, Amp, R          float64
 	Norm               float64

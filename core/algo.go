@@ -3,15 +3,11 @@ package core
 import (
 	"errors"
 	"fmt"
-	"golang.org/x/exp/rand"
 	"time"
 )
 
 type AlgorithmConf struct {
-	InitK     int
 	Space     Space
-	FrameSize int
-	RGen      *rand.Rand
 }
 
 type AlgorithmTemplate struct {

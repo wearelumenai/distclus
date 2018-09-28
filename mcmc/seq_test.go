@@ -12,11 +12,11 @@ import (
 
 var mcmcConf = mcmc.MCMCConf{
 	AlgorithmConf: core.AlgorithmConf{
-		InitK: 3,
-		FrameSize: 8,
 		Space: real.RealSpace{},
-		RGen:  rand.New(rand.NewSource(6305689164243)),
 	},
+	InitK: 3,
+	FrameSize: 8,
+	RGen:  rand.New(rand.NewSource(6305689164243)),
 	Dim: 5, B: 100, Amp: 1,
 	Norm: 2, Nu: 3, McmcIter: 20,
 	InitIter: 0,
@@ -34,7 +34,7 @@ func TestMCMC_Initialization(t *testing.T) {
 
 func TestMCMC_DefaultConf(t *testing.T) {
 	var conf = mcmcConf
-	conf.AlgorithmConf.RGen = nil
+	conf.RGen = nil
 	conf.McmcIter = 0
 	var algo = mcmc.NewSeqMCMC(conf, distrib, kmeans.GivenInitializer, []core.Elemt{})
 

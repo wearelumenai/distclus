@@ -68,9 +68,10 @@ func runMcmc() {
 
 	var mcmcConf = mcmc.MCMCConf{
 		AlgorithmConf: core.AlgorithmConf{
-			InitK:     *mcmcInitK,
-			FrameSize: *mcmcFrameSize,
+			Space: real.RealSpace{},
 		},
+		InitK:     *mcmcInitK,
+		FrameSize: *mcmcFrameSize,
 		B:         *mcmcB,
 		Amp:       *mcmcAmp,
 		R:         *mcmcR,

@@ -38,7 +38,7 @@ func (km *KMeans) Close() {
 
 func (km *KMeans) initializeAlgorithm() (centroids core.Clust, ready bool) {
 	km.data.Apply()
-	return km.initializer(km.config.InitK, km.data.Data, km.config.Space, km.config.RGen)
+	return km.initializer(km.config.K, km.data.Data, km.config.Space, km.config.RGen)
 
 }
 

@@ -15,7 +15,7 @@ func TestKMeans_ParPredictGiven(t *testing.T) {
 }
 
 func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
-	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: 20}
+	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: 20, RGen: rgen()}
 	var km = kmeans.NewParKMeans(conf, kmeans.KMeansPPInitializer, []core.Elemt{})
 
 	test.DoTestRunSyncKMeansPP(t, km)
@@ -23,7 +23,7 @@ func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
 }
 
 func TestKMeans_ParRunAsync(t *testing.T) {
-	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: 1 << 30}
+	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: 1 << 30, RGen: rgen()}
 	var km = kmeans.NewParKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
 	test.DoTestRunAsync(t, km)

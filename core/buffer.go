@@ -16,11 +16,6 @@ type DataBuffer struct {
 	strategy bufferSizeStrategy
 }
 
-// Handle the way data are stored, i.e. infinite or fixed size buffer.
-type bufferSizeStrategy interface {
-	push(data []Elemt, elemt Elemt) []Elemt
-}
-
 // Creates a fixed size buffer if given size > 0.
 // Otherwise creates an infinite size buffer.
 func NewDataBuffer(data []Elemt, size int) *DataBuffer {
@@ -88,6 +83,11 @@ func (b *DataBuffer) apply_next() bool {
 	}
 
 	return loop
+}
+
+// Handle the way data are stored, i.e. infinite or fixed size buffer.
+type bufferSizeStrategy interface {
+	push(data []Elemt, elemt Elemt) []Elemt
 }
 
 // Fixed size buffer

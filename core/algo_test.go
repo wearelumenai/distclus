@@ -15,7 +15,8 @@ var conf = core.AlgorithmConf{
 }
 
 type mockAlgo struct {
-	*core.AlgorithmTemplate
+	template *core.AlgorithmTemplate
+	data *core.DataBuffer
 }
 
 func (algo *mockAlgo) runAlgorithm(closing <-chan bool) {
@@ -25,7 +26,7 @@ func (algo *mockAlgo) runAlgorithm(closing <-chan bool) {
 			loop = false
 
 		default:
-			algo.Apply()
+			algo.data.Apply()
 		}
 	}
 }
@@ -36,7 +37,8 @@ func newMockAlgo(init func() (core.Clust, bool)) *mockAlgo {
 		Initialize: init,
 		Run: mock.runAlgorithm,
 	}
-	mock.AlgorithmTemplate = core.NewAlgo(conf, make([]core.Elemt, 0), algoTemplateMethods)
+	mock.data = core.NewBuffer( make([]core.Elemt, 0), -1)
+	mock.template = core.NewAlgo(conf, mock.data, algoTemplateMethods)
 	return &mock
 }
 
@@ -65,21 +67,21 @@ func (mock *mockInitializer) TryInitialize() (core.Clust, bool) {
 func TestAbstractAlgo_InitSync(t *testing.T) {
 	defer test.AssertPanic(t)
 	var algo = newMockAlgo((&mockInitializer{}).NoInitialize)
-	algo.Run(false)
+	algo.template.Run(false)
 }
 
 func TestAbstractAlgo_InitAsync(t *testing.T) {
 	var initializer = &mockInitializer{}
 	var algo = newMockAlgo(initializer.TryInitialize)
-	algo.Run(true)
+	algo.template.Run(true)
 
-	var clust0, _ = algo.Centroids()
+	var clust0, _ = algo.template.Centroids()
 	if clust0 != nil {
 		t.Error("Expected uninitialized centroids")
 	}
 
 	time.Sleep(800 * time.Millisecond)
-	var clust1, _ = algo.Centroids()
+	var clust1, _ = algo.template.Centroids()
 	if clust1 == nil {
 		t.Error("Expected initialized centroids")
 	}
@@ -90,60 +92,60 @@ func TestAbstractAlgo_InitAsync(t *testing.T) {
 
 func TestAbstractAlgo_Push(t *testing.T) {
 	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	algo.Push(test.TestVectors[1])
+	algo.template.Push(test.TestVectors[1])
 
-	if len(algo.Data) != 1 {
+	if len(algo.data.Data) != 1 {
 		t.Error("Expected 1 element")
 	}
 
-	if !reflect.DeepEqual(algo.Data[0], test.TestVectors[1]) {
-		t.Error("Expected .2 got", algo.Data[0])
+	if !reflect.DeepEqual(algo.data.Data[0], test.TestVectors[1]) {
+		t.Error("Expected .2 got", algo.data.Data[0])
 	}
 }
 
 func TestAbstractAlgo_Predict(t *testing.T) {
 	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	algo.Run(true)
+	algo.template.Run(true)
 	time.Sleep(300 * time.Millisecond)
 
-	var _, label, _ = algo.Predict(test.TestVectors[1], false)
+	var _, label, _ = algo.template.Predict(test.TestVectors[1], false)
 	time.Sleep(300 * time.Millisecond)
 
 	if label != 1 {
 		t.Error("Expected label 1")
 	}
 
-	if len(algo.Data) != 0 {
+	if len(algo.data.Data) != 0 {
 		t.Error("Expected no element")
 	}
 
-	algo.Close()
+	algo.template.Close()
 }
 
 func TestAbstractAlgo_PredictAndPush(t *testing.T) {
 	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	algo.Run(true)
+	algo.template.Run(true)
 	time.Sleep(300 * time.Millisecond)
 
-	var _, label, _ = algo.Predict(test.TestVectors[1], true)
+	var _, label, _ = algo.template.Predict(test.TestVectors[1], true)
 	time.Sleep(300 * time.Millisecond)
 
 	if label != 1 {
 		t.Error("Expected label 1")
 	}
 
-	if len(algo.Data) != 1 {
+	if len(algo.data.Data) != 1 {
 		t.Error("Expected 1 element")
 	}
 
-	if !reflect.DeepEqual(algo.Data[0], test.TestVectors[1]) {
-		t.Error("Expected .2 got", algo.Data[0])
+	if !reflect.DeepEqual(algo.data.Data[0], test.TestVectors[1]) {
+		t.Error("Expected .2 got", algo.data.Data[0])
 	}
 
-	algo.Close()
+	algo.template.Close()
 }
 
 func TestAbstractAlgo_Workflow(t *testing.T) {
 	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	test.DoTestWorkflow(t, algo)
+	test.DoTestWorkflow(t, algo.template)
 }

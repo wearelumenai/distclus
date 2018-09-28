@@ -20,7 +20,7 @@ func TestMCMC_getCenters(t *testing.T) {
 	var seed = uint64(time.Now().UTC().Unix())
 	var rgen = rand.New(rand.NewSource(seed))
 	var space = real.RealSpace{}
-	var store = mcmc.NewCenterStore(&buffer, space, rgen)
+	var store = mcmc.NewCenterStore(buffer, space, rgen)
 
 	for _, elemt := range test.TestVectors {
 		buffer.Push(elemt)

@@ -8,18 +8,18 @@ import (
 )
 
 func NewParMCMC(conf MCMCConf, distrib MCMCDistrib, initializer core.Initializer, data []core.Elemt) *MCMC {
-	var algo = NewSeqMCMC(conf, distrib, initializer, data)
+	var mcmc = NewSeqMCMC(conf, distrib, initializer, data)
 	var strategy = ParMCMCStrategy{}
-	strategy.Buffer = &algo.template.Buffer
-	strategy.Config = algo.config
+	strategy.Buffer = mcmc.data
+	strategy.Config = mcmc.config
 	strategy.Degree = runtime.NumCPU()
-	algo.strategy = &strategy
-	return algo
+	mcmc.strategy = &strategy
+	return mcmc
 }
 
 type ParMCMCStrategy struct {
 	Config MCMCConf
-	Buffer *core.Buffer
+	Buffer *core.DataBuffer
 	Degree int
 }
 

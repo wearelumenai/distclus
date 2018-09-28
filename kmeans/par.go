@@ -9,7 +9,7 @@ import (
 func NewParKMeans(conf KMeansConf, initializer core.Initializer, data []core.Elemt) *KMeans {
 	var km = NewSeqKMeans(conf, initializer, data)
 	var strategy = ParKMeansStrategy{}
-	strategy.Buffer = &km.template.Buffer
+	strategy.Buffer = km.data
 	strategy.Config = km.config
 	strategy.Degree = runtime.NumCPU()
 	km.strategy = &strategy
@@ -18,7 +18,7 @@ func NewParKMeans(conf KMeansConf, initializer core.Initializer, data []core.Ele
 
 type ParKMeansStrategy struct {
 	Config KMeansConf
-	Buffer *core.Buffer
+	Buffer *core.DataBuffer
 	Degree int
 }
 

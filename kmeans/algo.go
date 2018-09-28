@@ -6,6 +6,7 @@ import (
 
 type KMeans struct {
 	template    *core.AlgorithmTemplate
+	data        *core.DataBuffer
 	config      KMeansConf
 	strategy    KMeansStrategy
 	initializer core.Initializer
@@ -36,7 +37,8 @@ func (km *KMeans) Close() {
 }
 
 func (km *KMeans) initializeAlgorithm() (centroids core.Clust, ready bool) {
-	return km.initializer(km.config.InitK, km.template.Data, km.config.Space, km.config.RGen)
+	km.data.Apply()
+	return km.initializer(km.config.InitK, km.data.Data, km.config.Space, km.config.RGen)
 
 }
 
@@ -49,7 +51,7 @@ func (km *KMeans) runAlgorithm(closing <-chan bool) {
 
 		default:
 			km.template.Clust = km.strategy.Iterate(km.template.Clust)
-			km.template.Buffer.Apply()
+			km.data.Apply()
 		}
 	}
 }

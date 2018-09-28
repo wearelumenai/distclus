@@ -1,10 +1,15 @@
 package core
 
-// Buffer that stores data.
+type Buffer interface {
+	Push(elemt Elemt)
+	SetAsync()
+}
+
+// DataBuffer that stores data.
 // In synchronous mode, when pushed() is called data are stored.
 // In asynchronous mode, when pushed() is called data are staged.
 // Staged data are stored when apply() is called.
-type Buffer struct {
+type DataBuffer struct {
 	pipe     chan Elemt
 	Data     []Elemt
 	async    bool
@@ -18,8 +23,8 @@ type bufferSizeStrategy interface {
 
 // Creates a fixed size buffer if given size > 0.
 // Otherwise creates an infinite size buffer.
-func NewBuffer(data []Elemt, size int) Buffer {
-	var buf = Buffer{
+func NewBuffer(data []Elemt, size int) *DataBuffer {
+	var buf = DataBuffer{
 		pipe:  make(chan Elemt, 2000),
 		async: false,
 	}
@@ -44,11 +49,11 @@ func NewBuffer(data []Elemt, size int) Buffer {
 		copy(buf.Data, data)
 	}
 
-	return buf
+	return &buf
 }
 
 // Stores or stages an element depending on synchronous / asynchronous mode.
-func (b *Buffer) Push(elmt Elemt) {
+func (b *DataBuffer) Push(elmt Elemt) {
 	if b.async {
 		b.pipe <- elmt
 	} else {
@@ -56,12 +61,12 @@ func (b *Buffer) Push(elmt Elemt) {
 	}
 }
 
-func (b *Buffer) SetAsync() {
+func (b *DataBuffer) SetAsync() {
 	b.async = true
 }
 
 // Applies all staged data in asynchronous mode, otherwise do nothing
-func (b *Buffer) Apply() {
+func (b *DataBuffer) Apply() {
 	for loop := b.async; loop; {
 		loop = b.apply_next()
 	}
@@ -69,7 +74,7 @@ func (b *Buffer) Apply() {
 
 // Applies next staged data if available and returns true.
 // Otherwise returns false.
-func (b *Buffer) apply_next() bool {
+func (b *DataBuffer) apply_next() bool {
 	var loop = true
 
 	select {

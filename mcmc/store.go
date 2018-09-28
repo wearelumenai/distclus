@@ -8,12 +8,12 @@ import (
 
 type CenterStore struct {
 	centers map[int]core.Clust
-	buffer *core.Buffer
+	buffer *core.DataBuffer
 	space core.Space
 	rgen *rand.Rand
 }
 
-func NewCenterStore(buffer *core.Buffer, space core.Space, rgen *rand.Rand) CenterStore {
+func NewCenterStore(buffer *core.DataBuffer, space core.Space, rgen *rand.Rand) CenterStore {
 	var store = CenterStore{}
 	store.centers = make(map[int]core.Clust)
 	store.buffer = buffer

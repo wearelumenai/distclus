@@ -15,8 +15,8 @@ type AlgorithmConf struct {
 }
 
 type AlgorithmTemplate struct {
-	config AlgorithmConf
-	Buffer
+	config          AlgorithmConf
+	buffer          Buffer
 	Clust           Clust
 	status          ClustStatus
 	closing         chan bool
@@ -29,10 +29,10 @@ type AlgorithmTemplateMethods struct {
 	Run        func(closing <-chan bool)
 }
 
-func NewAlgo(config AlgorithmConf, data []Elemt, templateMethods AlgorithmTemplateMethods) *AlgorithmTemplate {
+func NewAlgo(config AlgorithmConf, buffer Buffer, templateMethods AlgorithmTemplateMethods) *AlgorithmTemplate {
 	var algo = AlgorithmTemplate{}
 	algo.config = config
-	algo.Buffer = NewBuffer(data, config.FrameSize)
+	algo.buffer = buffer
 	algo.templateMethods = templateMethods
 	algo.status = Created
 	algo.closing = make(chan bool, 1)
@@ -55,14 +55,14 @@ func (algo *AlgorithmTemplate) Push(elemt Elemt) (err error) {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		algo.Buffer.Push(elemt)
+		algo.buffer.Push(elemt)
 	}
 	return err
 }
 
 func (algo *AlgorithmTemplate) Run(async bool) {
 	if async {
-		algo.Buffer.SetAsync()
+		algo.buffer.SetAsync()
 		go algo.initAndRunAsync()
 	} else {
 		var err = algo.initAndRunSync()
@@ -108,7 +108,6 @@ func (algo *AlgorithmTemplate) initAndRunAsync() error {
 	var err = algo.initAndRunSync()
 	if err != nil {
 		time.Sleep(300 * time.Millisecond)
-		algo.Buffer.Apply()
 		err = algo.initAndRunAsync()
 	}
 	return err

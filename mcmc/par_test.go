@@ -48,7 +48,7 @@ func TestParMCMCStrategy_Loss(t *testing.T) {
 
 	var strategy = mcmc.ParMCMCStrategy{}
 	buffer := core.NewBuffer(test.TestVectors, conf.FrameSize)
-	strategy.Buffer = &buffer
+	strategy.Buffer = buffer
 	strategy.Config = conf
 	strategy.Degree = runtime.NumCPU()
 

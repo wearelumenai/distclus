@@ -11,22 +11,23 @@ func NewSeqKMeans(config KMeansConf, initializer core.Initializer, data []core.E
 	setConfigDefaults(&config)
 
 	var km KMeans
+	km.data = core.NewBuffer(data, config.FrameSize)
 	var algoTemplateMethods = core.AlgorithmTemplateMethods{
 		Initialize: km.initializeAlgorithm,
 		Run:        km.runAlgorithm,
 	}
-	km.template = core.NewAlgo(config.AlgorithmConf, data, algoTemplateMethods)
+	km.template = core.NewAlgo(config.AlgorithmConf, km.data, algoTemplateMethods)
 
 	km.config = config
 	km.initializer = initializer
-	km.strategy = SeqKMeansStrategy{Buffer: &km.template.Buffer, Config: km.config}
+	km.strategy = SeqKMeansStrategy{Buffer: km.data, Config: km.config}
 
 	return &km
 }
 
 type SeqKMeansStrategy struct {
 	Config KMeansConf
-	Buffer *core.Buffer
+	Buffer *core.DataBuffer
 }
 
 func setConfigDefaults(conf *KMeansConf) {

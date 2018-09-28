@@ -9,6 +9,7 @@ import (
 
 type MCMC struct {
 	template    *core.AlgorithmTemplate
+	data        *core.DataBuffer
 	config      MCMCConf
 	strategy    MCMCStrategy
 	initializer core.Initializer
@@ -44,7 +45,8 @@ func (mcmc *MCMC) Close() {
 }
 
 func (mcmc *MCMC) initializeAlgorithm() (centroids core.Clust, ready bool) {
-	return mcmc.initializer(mcmc.config.InitK, mcmc.template.Data, mcmc.config.Space, mcmc.config.RGen)
+	mcmc.data.Apply()
+	return mcmc.initializer(mcmc.config.InitK, mcmc.data.Data, mcmc.config.Space, mcmc.config.RGen)
 }
 
 func (mcmc *MCMC) runAlgorithm(closing <-chan bool) {
@@ -61,7 +63,7 @@ func (mcmc *MCMC) runAlgorithm(closing <-chan bool) {
 
 		default:
 			current = mcmc.doIter(current)
-			mcmc.template.Apply()
+			mcmc.data.Apply()
 		}
 	}
 }
@@ -116,8 +118,8 @@ func (mcmc *MCMC) nextK(k int) int {
 		return 1
 	case newK > mcmc.config.MaxK:
 		return mcmc.config.MaxK
-	case newK > len(mcmc.template.Data):
-		return len(mcmc.template.Data)
+	case newK > len(mcmc.data.Data):
+		return len(mcmc.data.Data)
 	default:
 		return newK
 	}

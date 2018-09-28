@@ -14,18 +14,18 @@ func NewSeqMCMC(config MCMCConf, distrib MCMCDistrib, initializer core.Initializ
 
 	var mcmc MCMC
 	mcmc.data = core.NewBuffer(data,config.FrameSize)
-	var algoTemplateMethods = core.AlgorithmTemplateMethods{
-		Initialize: mcmc.initializeAlgorithm,
-		Run:        mcmc.runAlgorithm,
-	}
-	mcmc.template = core.NewAlgo(config.AlgorithmConf, mcmc.data, algoTemplateMethods)
-
 	mcmc.config = config
 	mcmc.initializer = initializer
 	mcmc.distrib = distrib
 	mcmc.uniform = distuv.Uniform{Max: 1, Min: 0, Src: mcmc.config.RGen}
 	mcmc.store = NewCenterStore(mcmc.data, config.Space, mcmc.config.RGen)
 	mcmc.strategy = SeqMCMCStrategy{Buffer: mcmc.data, Config: mcmc.config}
+
+	var algoTemplateMethods = core.AlgorithmTemplateMethods{
+		Initialize: mcmc.initializeAlgorithm,
+		Run:        mcmc.runAlgorithm,
+	}
+	mcmc.template = core.NewAlgo(config.AlgorithmConf, mcmc.data, algoTemplateMethods)
 
 	return &mcmc
 }

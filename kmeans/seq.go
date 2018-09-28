@@ -12,15 +12,15 @@ func NewSeqKMeans(config KMeansConf, initializer core.Initializer, data []core.E
 
 	var km KMeans
 	km.data = core.NewBuffer(data, config.FrameSize)
+	km.config = config
+	km.initializer = initializer
+	km.strategy = SeqKMeansStrategy{Buffer: km.data, Config: km.config}
+
 	var algoTemplateMethods = core.AlgorithmTemplateMethods{
 		Initialize: km.initializeAlgorithm,
 		Run:        km.runAlgorithm,
 	}
 	km.template = core.NewAlgo(config.AlgorithmConf, km.data, algoTemplateMethods)
-
-	km.config = config
-	km.initializer = initializer
-	km.strategy = SeqKMeansStrategy{Buffer: km.data, Config: km.config}
 
 	return &km
 }

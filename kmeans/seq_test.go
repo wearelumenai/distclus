@@ -4,7 +4,6 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"distclus/kmeans"
-	"distclus/real"
 	"golang.org/x/exp/rand"
 	"testing"
 )
@@ -17,12 +16,7 @@ func TestKMeans_Initialization(t *testing.T) {
 }
 
 func TestKMeans_DefaultConf(t *testing.T) {
-	var conf = kmeans.KMeansConf{
-		AlgorithmConf: core.AlgorithmConf{
-			Space: real.RealSpace{},
-		}, K: 3,
-		Iter: 0,
-	}
+	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: 0}
 	var km = kmeans.NewSeqKMeans(conf, kmeans.GivenInitializer, []core.Elemt{})
 
 	test.DoTestInitialization(t, km)

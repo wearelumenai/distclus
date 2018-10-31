@@ -7,9 +7,10 @@ import (
 )
 
 type AlgorithmConf struct {
-	Space     Space
+	Space Space
 }
 
+// Clustering algorithm abstract implementation
 type AlgorithmTemplate struct {
 	config          AlgorithmConf
 	buffer          Buffer
@@ -20,11 +21,13 @@ type AlgorithmTemplate struct {
 	templateMethods AlgorithmTemplateMethods
 }
 
+// Template methods to be implemented by concrete algorithms
 type AlgorithmTemplateMethods struct {
 	Initialize func() (centroids Clust, ready bool)
 	Run        func(closing <-chan bool)
 }
 
+// Create a new algorithm instance
 func NewAlgorithmTemplate(config AlgorithmConf, buffer Buffer, methods AlgorithmTemplateMethods) *AlgorithmTemplate {
 	var algo = AlgorithmTemplate{}
 	algo.config = config
@@ -36,6 +39,7 @@ func NewAlgorithmTemplate(config AlgorithmConf, buffer Buffer, methods Algorithm
 	return &algo
 }
 
+// Get the centroids currently found by the algorithm
 func (algo *AlgorithmTemplate) Centroids() (clust Clust, err error) {
 	switch algo.status {
 	case Created:
@@ -46,6 +50,7 @@ func (algo *AlgorithmTemplate) Centroids() (clust Clust, err error) {
 	return clust, err
 }
 
+// Push a new observation in the algorithm
 func (algo *AlgorithmTemplate) Push(elemt Elemt) (err error) {
 	switch algo.status {
 	case Closed:
@@ -56,6 +61,7 @@ func (algo *AlgorithmTemplate) Push(elemt Elemt) (err error) {
 	return err
 }
 
+// Run the algorithm, asynchronously if async is true
 func (algo *AlgorithmTemplate) Run(async bool) {
 	if async {
 		algo.buffer.SetAsync()
@@ -69,6 +75,7 @@ func (algo *AlgorithmTemplate) Run(async bool) {
 	algo.status = Running
 }
 
+// Predict the cluster for a new observation
 func (algo *AlgorithmTemplate) Predict(elemt Elemt, push bool) (pred Elemt, label int, err error) {
 	var clust Clust
 	clust, err = algo.Centroids()
@@ -83,12 +90,14 @@ func (algo *AlgorithmTemplate) Predict(elemt Elemt, push bool) (pred Elemt, labe
 	return pred, label, err
 }
 
+// Stop the algorithm
 func (mcmc *AlgorithmTemplate) Close() {
 	mcmc.closing <- true
 	<-mcmc.closed
 	mcmc.status = Closed
 }
 
+// Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *AlgorithmTemplate) initAndRunSync() error {
 	var ok bool
 	algo.Clust, ok = algo.templateMethods.Initialize()
@@ -100,6 +109,7 @@ func (algo *AlgorithmTemplate) initAndRunSync() error {
 	return errors.New("Failed to initialize")
 }
 
+// Initialize the algorithm, if success run it asynchronously otherwise retry
 func (algo *AlgorithmTemplate) initAndRunAsync() error {
 	var err = algo.initAndRunSync()
 	if err != nil {

@@ -92,8 +92,10 @@ func (algo *AlgorithmTemplate) Predict(elemt Elemt, push bool) (pred Elemt, labe
 
 // Stop the algorithm
 func (mcmc *AlgorithmTemplate) Close() {
-	mcmc.closing <- true
-	<-mcmc.closed
+	if mcmc.status == Running {
+		mcmc.closing <- true
+		<-mcmc.closed
+	}
 	mcmc.status = Closed
 }
 

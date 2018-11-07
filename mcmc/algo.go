@@ -51,9 +51,10 @@ func (mcmc *MCMC) initializeAlgorithm() (centroids core.Clust, ready bool) {
 
 func (mcmc *MCMC) runAlgorithm(closing <-chan bool) {
 	var current = proposal{
-		k:    mcmc.config.InitK,
-		loss: mcmc.strategy.Loss(mcmc.template.Clust),
-		pdf:  mcmc.proba(mcmc.template.Clust, mcmc.template.Clust),
+		k:       mcmc.config.InitK,
+		centers: mcmc.template.Clust,
+		loss:    mcmc.strategy.Loss(mcmc.template.Clust),
+		pdf:     mcmc.proba(mcmc.template.Clust, mcmc.template.Clust),
 	}
 
 	for i, loop := 0, true; i < mcmc.config.McmcIter && loop; i++ {

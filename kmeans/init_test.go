@@ -1,19 +1,28 @@
 package kmeans_test
 
 import (
+	"distclus/core"
 	"distclus/internal/test"
 	"distclus/kmeans"
-	"distclus/core"
 	"distclus/real"
-	"golang.org/x/exp/rand"
 	"reflect"
 	"testing"
 	"time"
+
+	"golang.org/x/exp/rand"
 )
 
 var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},
 	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
 	[]float64{-5.}, []float64{-8.}, []float64{9.}}
+
+func TestWrongElementCount(t *testing.T) {
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	_, ok := kmeans.GivenInitializer(1, nil, real.RealSpace{}, src)
+	if ok {
+		t.Error("Expected not check")
+	}
+}
 
 func TestCheckK(t *testing.T) {
 	defer test.AssertPanic(t)
@@ -44,9 +53,9 @@ func TestGivenInitializer(t *testing.T) {
 	AssertCentroids(t, TestPoints[:4], clust)
 }
 
-func TestKMeansPPInitializer(t *testing.T) {
+func TestPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.KMeansPPInitializer(14, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.PPInitializer(14, TestPoints, real.RealSpace{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 

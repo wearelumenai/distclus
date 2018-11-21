@@ -2,7 +2,6 @@ package test
 
 import (
 	"distclus/core"
-	"distclus/kmeans"
 	"distclus/real"
 	"math"
 	"reflect"
@@ -10,6 +9,7 @@ import (
 	"time"
 )
 
+// TestVectors are values to test
 var TestVectors = []core.Elemt{
 	[]float64{7.2, 6, 8, 11, 10},
 	[]float64{-8, -10.5, -7, -8.5, -9},
@@ -21,7 +21,7 @@ var TestVectors = []core.Elemt{
 	[]float64{50, 51.2, 49, 40, 45.2},
 }
 
-// Algorithm must be configured with GivenInitializer with 3 centers and 0 iteration
+// DoTestInitialization Algorithm must be configured with GivenInitializer with 3 centers and 0 iteration
 func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
 	var actual = PushAndRunSync(algo)
 	var expected = TestVectors[:3]
@@ -29,10 +29,10 @@ func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
 	algo.Close()
 }
 
-// Algorithm must be configured with GivenInitializer with 3 centers
+// DoTestRunSyncGiven Algorithm must be configured with GivenInitializer with 3 centers
 func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.AssignAll(TestVectors, real.RealSpace{})
+	var actual = clust.AssignAll(TestVectors, real.Space{})
 
 	var expected = [][]int{{0, 3, 4}, {1, 5}, {2, 6, 7}}
 	AssertAssignation(t, expected, actual)
@@ -40,10 +40,10 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	algo.Close()
 }
 
-// Algorithm must be configured with KMeansPP with 3 centers
+// DoTestRunSyncKMeansPP Algorithm must be configured with KMeansPP with 3 centers
 func DoTestRunSyncKMeansPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.AssignAll(TestVectors,real.RealSpace{})
+	var actual = clust.AssignAll(TestVectors, real.Space{})
 
 	var expected = make([][]int, 3)
 	_, i0, _ := algo.Predict(TestVectors[0], false)
@@ -58,8 +58,8 @@ func DoTestRunSyncKMeansPP(t *testing.T, algo core.OnlineClust) {
 	algo.Close()
 }
 
-// Algorithm must be configured with 3 centers
-func DoTestRunSyncCentroids(t *testing.T, km *kmeans.KMeans) {
+// DoTestRunSyncCentroids Algorithm must be configured with 3 centers
+func DoTestRunSyncCentroids(t *testing.T, km *core.Algo) {
 	c0, _, _ := km.Predict(TestVectors[0], false)
 	c1, _, _ := km.Predict(TestVectors[1], false)
 	c2, _, _ := km.Predict(TestVectors[2], false)
@@ -73,7 +73,7 @@ func DoTestRunSyncCentroids(t *testing.T, km *kmeans.KMeans) {
 	AssertCentroids(t, expected, actual)
 }
 
-// Algorithm must be configured with 3 centers
+// DoTestRunAsync Algorithm must be configured with 3 centers
 func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	RunAsyncAndPush(algo)
 
@@ -91,7 +91,8 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	AssertEqual(t, c0, cn)
 }
 
-func DoTestRunAsyncCentroids(t *testing.T, km *kmeans.KMeans) {
+// DoTestRunAsyncCentroids test
+func DoTestRunAsyncCentroids(t *testing.T, km *core.Algo) {
 	c0, _, _ := km.Predict(TestVectors[0], false)
 	c1, _, _ := km.Predict(TestVectors[1], false)
 	c2, _, _ := km.Predict(TestVectors[2], false)
@@ -105,6 +106,7 @@ func DoTestRunAsyncCentroids(t *testing.T, km *kmeans.KMeans) {
 	AssertCentroids(t, expected, actual)
 }
 
+// DoTestWorkflow test
 func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 	DoTestBeforeRun(algo, t)
 
@@ -116,6 +118,7 @@ func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 	DoTestAfterClose(algo, t)
 }
 
+// DoTestAfterClose test
 func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	var err error
 	err = algo.Push(TestVectors[5])
@@ -128,6 +131,7 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	AssertNoError(t, err)
 }
 
+// DoTestAfterRun test
 func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
 	var err error
 	err = algo.Push(TestVectors[3])
@@ -137,6 +141,7 @@ func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
 	AssertNoError(t, err)
 }
 
+// DoTestBeforeRun test
 func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
 	var err error
 	algo.Push(TestVectors[0])
@@ -151,6 +156,7 @@ func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
 	AssertError(t, err)
 }
 
+// DoTestEmpty test
 func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) {
 	var init = core.Clust{
 		[]float64{0, 0, 0, 0, 0},
@@ -168,6 +174,7 @@ func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) 
 	}
 }
 
+// PushAndRunAsync test
 func PushAndRunAsync(algorithm core.OnlineClust) {
 	for _, elemt := range TestVectors {
 		algorithm.Push(elemt)
@@ -175,6 +182,7 @@ func PushAndRunAsync(algorithm core.OnlineClust) {
 	algorithm.Run(true)
 }
 
+// RunAsyncAndPush test
 func RunAsyncAndPush(algo core.OnlineClust) {
 	algo.Run(true)
 	for _, elemt := range TestVectors {
@@ -182,6 +190,7 @@ func RunAsyncAndPush(algo core.OnlineClust) {
 	}
 }
 
+// PushAndRunSync test
 func PushAndRunSync(algo core.OnlineClust) core.Clust {
 	for _, elemt := range TestVectors {
 		algo.Push(elemt)
@@ -191,6 +200,7 @@ func PushAndRunSync(algo core.OnlineClust) core.Clust {
 	return clust
 }
 
+// AssertCentroids test
 func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
 	if len(actual) != len(expected) {
 		t.Error("Expected ", len(expected), "centroids got", len(actual))
@@ -202,23 +212,28 @@ func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
 	}
 }
 
+// AssertAssignation test
 func AssertAssignation(t *testing.T, expected [][]int, actual [][]int) {
 	if !reflect.DeepEqual(actual, expected) {
 		t.Error("Expected", expected, "got", actual)
 	}
 }
 
+// AssertEqual test
 func AssertEqual(t *testing.T, expected core.Elemt, actual core.Elemt) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Expected same elements")
 	}
 }
+
+// AssertNotEqual test
 func AssertNotEqual(t *testing.T, unexpected core.Elemt, actual core.Elemt) {
 	if reflect.DeepEqual(unexpected, actual) {
 		t.Error("Expected different elements")
 	}
 }
 
+// AssertAlmostEqual test
 func AssertAlmostEqual(t *testing.T, expected []float64, actual []float64) {
 	if len(expected) != len(actual) {
 		t.Error("Expected", len(expected), "got", len(actual))
@@ -231,18 +246,21 @@ func AssertAlmostEqual(t *testing.T, expected []float64, actual []float64) {
 	}
 }
 
+// AssertNoError test
 func AssertNoError(t *testing.T, err error) {
 	if err != nil {
 		t.Error("Expected no workflow error")
 	}
 }
 
+// AssertError test
 func AssertError(t *testing.T, err error) {
 	if err == nil {
 		t.Error("Expected no workflow error")
 	}
 }
 
+// AssertPanic test
 func AssertPanic(t *testing.T) {
 	if x := recover(); x == nil {
 		t.Error("Expected error")

@@ -1,8 +1,8 @@
 package core_test
 
 import (
-	"distclus/internal/test"
 	"distclus/core"
+	"distclus/internal/test"
 	"distclus/real"
 	"reflect"
 	"testing"
@@ -17,7 +17,7 @@ func TestClust_Assign(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = real.RealSpace{}
+	var sp = real.Space{}
 	var c, ix, d = clust.Assign(testPoints[0], sp)
 
 	if c.([]float64)[0] != clust[0].([]float64)[0] || ix != 0 || d != 2. {
@@ -30,11 +30,11 @@ func TestClust_AssignDBA(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = real.RealSpace{}
+	var sp = real.Space{}
 	var result, cards = clust.AssignDBA(testPoints, sp)
 
 	for i, e := range result {
-		switch (i) {
+		switch i {
 		case 0:
 			if e.([]float64)[0] < 0 {
 				t.Error("Expected non negative elements")
@@ -58,7 +58,7 @@ func TestClust_AssignAll(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = real.RealSpace{}
+	var sp = real.Space{}
 	var result = clust.AssignAll(testPoints, sp)
 
 	for i, c := range result {
@@ -78,7 +78,7 @@ func TestClust_Loss(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = real.RealSpace{}
+	var sp = real.Space{}
 
 	var expected = 0.
 	for _, e := range testPoints {
@@ -103,7 +103,7 @@ func Distance2Mean(elemt core.Elemt) float64 {
 }
 
 func TestDBA(t *testing.T) {
-	var sp = real.RealSpace{}
+	var sp = real.Space{}
 
 	var _, err = core.DBA([]core.Elemt{}, sp)
 
@@ -123,10 +123,10 @@ func TestDBA(t *testing.T) {
 		e := (testPoints[i]).([]float64)[0]
 		elemts[i] = []float64{e, 2 * e}
 	}
-	AssertDBA(t, elemts, sp, []float64{average, 2*average})
+	AssertDBA(t, elemts, sp, []float64{average, 2 * average})
 }
 
-func AssertDBA(t *testing.T, elemts []core.Elemt, sp real.RealSpace, average []float64) {
+func AssertDBA(t *testing.T, elemts []core.Elemt, sp real.Space, average []float64) {
 	var dba, _ = core.DBA(elemts, sp)
 	for i, _ := range average {
 		if value := dba.([]float64)[i]; value != average[i] {
@@ -140,7 +140,7 @@ func TestClust_Initializer(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = real.RealSpace{}
+	var sp = real.Space{}
 	var c, _ = clust.Initializer(2, testPoints, sp, nil)
 
 	if !reflect.DeepEqual(clust, c) {
@@ -151,6 +151,7 @@ func TestClust_Initializer(t *testing.T) {
 func TestClust_Empty(t *testing.T) {
 	func() {
 		defer test.AssertPanic(t)
-		core.Clust{}.AssignAll(testPoints, real.RealSpace{})
+		var clust = core.Clust{}
+		clust.AssignAll(testPoints, real.Space{})
 	}()
 }

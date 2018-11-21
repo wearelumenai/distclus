@@ -7,7 +7,7 @@ import (
 
 func TestGetChunk(t *testing.T) {
 	for offset := 1; offset < len(testPoints)*2; offset++ {
-		for chunkNumber := 0; chunkNumber <= len(testPoints)/offset + 1; chunkNumber++ {
+		for chunkNumber := 0; chunkNumber <= len(testPoints)/offset+1; chunkNumber++ {
 			var parts = core.GetChunk(chunkNumber, offset, testPoints)
 			l := computeChunkSize(offset, chunkNumber)
 			if len(parts) != l {

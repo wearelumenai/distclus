@@ -2,15 +2,16 @@ package mcmc_test
 
 import (
 	"distclus/core"
+	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/real"
-	"distclus/internal/test"
-	"golang.org/x/exp/rand"
-	"testing"
 	"reflect"
+	"testing"
 	"time"
 	"unsafe"
+
+	"golang.org/x/exp/rand"
 )
 
 func TestMCMC_getCenters(t *testing.T) {
@@ -104,4 +105,3 @@ func TestMCMC_getCenters(t *testing.T) {
 		t.Error("Expected copy")
 	}
 }
-

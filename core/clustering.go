@@ -1,20 +1,23 @@
 package core
 
 import (
-	"golang.org/x/exp/rand"
 	"errors"
 	"math"
+
+	"golang.org/x/exp/rand"
 )
 
+// ClustStatus integer type
 type ClustStatus int
 
+// ClustStatus const values
 const (
 	Created ClustStatus = iota
 	Running
 	Closed
 )
 
-// Online Clustering algorithm.
+// OnlineClust interface
 // When a prediction is made, the element can be pushed to the model.
 // A prediction consists in a centroid and a label.
 // The following constraints must be met (otherwise an error is returned) :
@@ -29,57 +32,57 @@ type OnlineClust interface {
 	Close()
 }
 
-// Cluster centroids indexed by labels.
+// Clust type is an abbrevation for centroids indexed by labels.
 type Clust []Elemt
 
-// Initializes k centroids from the given elements.
-type Initializer = func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, success bool)
+// Initializer function initializes k centroids from the given elements.
+type Initializer func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, success bool)
 
-// Returns centroids and cardinalities in each clusters.
-func (c Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
-	centroids = make(Clust, len(c))
-	cards = make([]int, len(c))
+// AssignDBA returns centroids and cardinalities in each clusters.
+func (c *Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
+	centroids = make(Clust, len(*c))
+	cards = make([]int, len(*c))
 
-	for i, _ := range elemts {
-		var _, ix, _ = c.Assign(elemts[i], space)
+	for _, elemt := range elemts {
+		var _, ix, _ = c.Assign(elemt, space)
 
 		if cards[ix] == 0 {
-			centroids[ix] = space.Copy(elemts[i])
+			centroids[ix] = space.Copy(elemt)
 			cards[ix] = 1
 		} else {
-			space.Combine(centroids[ix], cards[ix], elemts[i], 1)
-			cards[ix] += 1
+			space.Combine(centroids[ix], cards[ix], elemt, 1)
+			cards[ix]++
 		}
 	}
 
 	return
 }
 
-// Assigns elemts to each centroids
-func (c Clust) AssignAll(elemts []Elemt, space Space) (clusters [][]int) {
-	clusters = make([][]int, len(c))
+// AssignAll assignes elemts to each centroids
+func (c *Clust) AssignAll(elemts []Elemt, space Space) (clusters [][]int) {
+	clusters = make([][]int, len(*c))
 
-	for i, _ := range elemts {
-		var idx, _ = c.nearest(elemts[i], space)
+	for i, elemt := range elemts {
+		var idx, _ = c.nearest(elemt, space)
 		clusters[idx] = append(clusters[idx], i)
 	}
 
 	return
 }
 
-// Returns the element nearest centroid, its label and the distance to the centroid
-func (c Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dist float64) {
+// Assign returns the element nearest centroid, its label and the distance to the centroid
+func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dist float64) {
 	label, dist = c.nearest(elemt, space)
-	centroid = c[label]
+	centroid = (*c)[label]
 	return
 }
 
-// Compute loss from distances between elements and their nearest centroid
-func (c Clust) Loss(elemts []Elemt, space Space, norm float64) float64 {
+// Loss computes loss from distances between elements and their nearest centroid
+func (c *Clust) Loss(elemts []Elemt, space Space, norm float64) float64 {
 	var sum = 0.
 
-	for i, _ := range elemts {
-		var _, min = c.nearest(elemts[i], space)
+	for _, elemt := range elemts {
+		var _, min = c.nearest(elemt, space)
 		sum += math.Pow(min, norm)
 	}
 
@@ -87,13 +90,12 @@ func (c Clust) Loss(elemts []Elemt, space Space, norm float64) float64 {
 }
 
 // Returns the label of element nearest centroid and the distance
-func (c Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
-	min = space.Dist(elemt, c[0])
+func (c *Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
+	min = space.Dist(elemt, (*c)[0])
 	label = 0
 
-	for i := 1; i < len(c); i++ {
-		var d = space.Dist(elemt, c[i])
-		if min > d {
+	for i := 1; i < len(*c); i++ {
+		if d := space.Dist(elemt, (*c)[i]); min > d {
 			min = d
 			label = i
 		}
@@ -102,12 +104,12 @@ func (c Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
 	return label, min
 }
 
-// Returns the averaged element
+// DBA returns the averaged element
 func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 
 	if len(elemts) == 0 {
 		err = errors.New("DBA needs at least one elements")
-		return 
+		return
 	}
 
 	dba = space.Copy(elemts[0])
@@ -115,13 +117,13 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 
 	for i := 1; i < len(elemts); i++ {
 		space.Combine(dba, weight, elemts[i], 1)
-		weight += 1
+		weight++
 	}
 
 	return
 }
 
-// An initializer that always returns the centroids
-func (c Clust) Initializer(int, []Elemt, Space, *rand.Rand) (Clust, bool) {
-	return c, true
+// Initializer that always returns the centroids
+func (c *Clust) Initializer(int, []Elemt, Space, *rand.Rand) (Clust, bool) {
+	return *c, true
 }

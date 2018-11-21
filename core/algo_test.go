@@ -3,148 +3,287 @@ package core_test
 import (
 	"distclus/core"
 	"distclus/internal/test"
-	"distclus/real"
-	"reflect"
 	"testing"
 	"time"
 )
 
-var conf = core.AlgorithmConf{
-	Space: real.RealSpace{},
+type mockConf struct {
+	Iter int
 }
 
-type mockAlgo struct {
-	template *core.AlgorithmTemplate
-	data *core.DataBuffer
+type mockImpl struct {
+	running     bool
+	initialized bool
+	count       int
+	async       bool
+	clust       core.Clust
 }
 
-func (algo *mockAlgo) runAlgorithm(closing <-chan bool) {
-	for loop := true; loop; {
+func (impl *mockImpl) Init(conf core.Conf) bool {
+	impl.initialized = true
+	return impl.clust != nil
+}
+
+func (impl *mockImpl) Run(conf core.Conf, space core.Space, closing <-chan bool) {
+	var mockConf = conf.(mockConf)
+	impl.running = true
+	for iter, loop := 0, true; iter < mockConf.Iter && loop; iter++ {
 		select {
+
 		case <-closing:
 			loop = false
+			impl.running = false
 
 		default:
-			algo.data.Apply()
 		}
 	}
 }
 
-func newMockAlgo(init func() (core.Clust, bool)) *mockAlgo {
-	var mock = mockAlgo{}
-	var algoTemplateMethods = core.AlgorithmTemplateMethods {
-		Initialize: init,
-		Run: mock.runAlgorithm,
+func (impl *mockImpl) Push(elemt core.Elemt) {
+	impl.count++
+}
+
+func (impl *mockImpl) SetAsync() {
+	impl.async = true
+}
+
+func (impl *mockImpl) Centroids() core.Clust {
+	return impl.clust
+}
+
+type mockSpace struct {
+	combine int
+	copy    int
+}
+
+func (mockSpace) Dist(e1, e2 core.Elemt) float64 {
+	return 42.
+}
+
+func (m mockSpace) Combine(e1 core.Elemt, w1 int, e2 core.Elemt, w2 int) {
+	m.combine++
+}
+
+func (m mockSpace) Copy(e core.Elemt) core.Elemt {
+	m.copy++
+	return e
+}
+
+func newAlgo(t *testing.T) (algo core.Algo) {
+	algo = core.NewAlgo(
+		mockConf{},
+		&mockImpl{
+			clust: make(core.Clust, 10),
+		},
+		mockSpace{},
+	)
+
+	// initialization
+	var conf = algo.Conf.(mockConf)
+	var impl = algo.Impl.(*mockImpl)
+
+	if impl.initialized {
+		t.Error("initialized before starting")
 	}
-	mock.data = core.NewDataBuffer( make([]core.Elemt, 0), -1)
-	mock.template = core.NewAlgorithmTemplate(conf, mock.data, algoTemplateMethods)
-	return &mock
-}
-
-type mockInitializer struct {
-	try int
-}
-
-func (*mockInitializer) NoInitialize() (core.Clust, bool) {
-	return nil, false
-}
-
-func (*mockInitializer) Initialize() (core.Clust, bool) {
-	var clust = test.TestVectors[:2]
-	return clust, true
-}
-
-func (mock *mockInitializer) TryInitialize() (core.Clust, bool) {
-	if mock.try < 2 {
-		mock.try++
-		return mock.NoInitialize()
-	} else {
-		return mock.Initialize()
+	if conf.Iter != 0 {
+		t.Error("iterated before starting")
 	}
+	if impl.running {
+		t.Error("running before starting")
+	}
+	if impl.count != 0 {
+		t.Error("count before starting")
+	}
+	if impl.async {
+		t.Error("async before starting")
+	}
+
+	return
 }
 
-func TestAbstractAlgo_InitSync(t *testing.T) {
+func TestError(t *testing.T) {
 	defer test.AssertPanic(t)
-	var algo = newMockAlgo((&mockInitializer{}).NoInitialize)
-	algo.template.Run(false)
+
+	var algo = newAlgo(t)
+	algo.Impl.(*mockImpl).clust = nil
+
+	algo.Run(false)
 }
 
-func TestAbstractAlgo_InitAsync(t *testing.T) {
-	var initializer = &mockInitializer{}
-	var algo = newMockAlgo(initializer.TryInitialize)
-	algo.template.Run(true)
+func Test_Predict(t *testing.T) {
 
-	var clust0, _ = algo.template.Centroids()
-	if clust0 != nil {
-		t.Error("Expected uninitialized centroids")
+	var algo = newAlgo(t)
+
+	_, _, err := algo.Predict(nil, false)
+
+	if err == nil {
+		t.Error("initialized before running")
 	}
 
-	time.Sleep(800 * time.Millisecond)
-	var clust1, _ = algo.template.Centroids()
-	if clust1 == nil {
-		t.Error("Expected initialized centroids")
+	algo.Run(false)
+
+	pred, label, err := algo.Predict(nil, false)
+
+	if err != nil {
+		t.Error("Error after initialization")
 	}
-	if initializer.try < 2 {
-		t.Error("Expected at least 2 tries")
+	if pred != nil {
+		t.Error("pred has been found")
+	}
+	if label != 0 {
+		t.Error("wrong label")
+	}
+	if algo.Impl.(*mockImpl).count != 0 {
+		t.Error("element has been pushed")
+	}
+
+	pred, label, err = algo.Predict(nil, true)
+
+	if err != nil {
+		t.Error("Error after prediction")
+	}
+	if pred != nil {
+		t.Error("pred has been found")
+	}
+	if label != 0 {
+		t.Error("wrong label")
+	}
+	if algo.Impl.(*mockImpl).count != 1 {
+		t.Error("element has not been pushed")
+	}
+
+	algo.Close()
+
+	_, _, err = algo.Predict(nil, true)
+
+	if err == nil {
+		t.Error("Missing error after close and prediction")
 	}
 }
 
-func TestAbstractAlgo_Push(t *testing.T) {
-	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	algo.template.Push(test.TestVectors[1])
+func Test_Scenario_Sync(t *testing.T) {
+	var algo = newAlgo(t)
 
-	if len(algo.data.Data) != 1 {
-		t.Error("Expected 1 element")
+	var err error
+	_, err = algo.Centroids()
+
+	if err == nil {
+		t.Error("centroids exist")
 	}
 
-	if !reflect.DeepEqual(algo.data.Data[0], test.TestVectors[1]) {
-		t.Error("Expected .2 got", algo.data.Data[0])
+	algo.Push(nil)
+
+	var conf = algo.Conf.(mockConf)
+	var impl = algo.Impl.(*mockImpl)
+	var space = algo.Space.(mockSpace)
+
+	if space.combine != 0 {
+		t.Error("combine has been done")
+	}
+	if space.copy != 0 {
+		t.Error("any copy has been processed")
+	}
+	if impl.initialized {
+		t.Error("initialized before starting")
+	}
+	if conf.Iter != 0 {
+		t.Error("iterated before starting")
+	}
+	if impl.running {
+		t.Error("running before starting")
+	}
+	if impl.count != 1 {
+		t.Error("count before starting")
+	}
+	if impl.async {
+		t.Error("async before starting")
+	}
+
+	algo.Run(false)
+
+	if !impl.initialized {
+		t.Error("not initialized")
+	}
+	if !impl.running {
+		t.Error("not running")
+	}
+
+	algo.Close()
+
+	if !impl.running {
+		t.Error("running")
 	}
 }
 
-func TestAbstractAlgo_Predict(t *testing.T) {
-	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	algo.template.Run(true)
-	time.Sleep(300 * time.Millisecond)
+func Test_Scenario_ASync(t *testing.T) {
+	var algo = newAlgo(t)
 
-	var _, label, _ = algo.template.Predict(test.TestVectors[1], false)
-	time.Sleep(300 * time.Millisecond)
+	var err error
+	_, err = algo.Centroids()
 
-	if label != 1 {
-		t.Error("Expected label 1")
+	if err == nil {
+		t.Error("centroids exist")
 	}
 
-	if len(algo.data.Data) != 0 {
-		t.Error("Expected no element")
+	algo.Push(nil)
+
+	var conf = algo.Conf.(mockConf)
+	var impl = algo.Impl.(*mockImpl)
+	var space = algo.Space.(mockSpace)
+
+	if space.combine != 0 {
+		t.Error("combine has been done")
+	}
+	if space.copy != 0 {
+		t.Error("any copy has been processed")
+	}
+	if impl.initialized {
+		t.Error("initialized before starting")
+	}
+	if conf.Iter != 0 {
+		t.Error("iterated before starting")
+	}
+	if impl.running {
+		t.Error("running before starting")
+	}
+	if impl.count != 1 {
+		t.Error("count before starting")
+	}
+	if impl.async {
+		t.Error("async before starting")
 	}
 
-	algo.template.Close()
-}
+	algo.Run(true)
 
-func TestAbstractAlgo_PredictAndPush(t *testing.T) {
-	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	algo.template.Run(true)
-	time.Sleep(300 * time.Millisecond)
+	time.Sleep(500. * time.Millisecond)
 
-	var _, label, _ = algo.template.Predict(test.TestVectors[1], true)
-	time.Sleep(300 * time.Millisecond)
-
-	if label != 1 {
-		t.Error("Expected label 1")
+	if !impl.async {
+		t.Error("not async after asynchronous execution")
+	}
+	if !impl.initialized {
+		t.Error("not initialized")
+	}
+	if !impl.running {
+		t.Error("not running")
 	}
 
-	if len(algo.data.Data) != 1 {
-		t.Error("Expected 1 element")
+	impl.clust = nil
+
+	algo.Run(true)
+
+	if !impl.async {
+		t.Error("not async after asynchronous execution")
+	}
+	if !impl.initialized {
+		t.Error("not initialized")
+	}
+	if !impl.running {
+		t.Error("not running")
 	}
 
-	if !reflect.DeepEqual(algo.data.Data[0], test.TestVectors[1]) {
-		t.Error("Expected .2 got", algo.data.Data[0])
+	algo.Close()
+
+	if !impl.running {
+		t.Error("running")
 	}
-
-	algo.template.Close()
-}
-
-func TestAbstractAlgo_Workflow(t *testing.T) {
-	var algo = newMockAlgo((&mockInitializer{}).Initialize)
-	test.DoTestWorkflow(t, algo.template)
 }

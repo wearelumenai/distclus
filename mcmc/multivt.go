@@ -2,18 +2,19 @@ package mcmc
 
 import (
 	"distclus/core"
+	"math"
+
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distmv"
 	"gonum.org/v1/gonum/stat/distuv"
-	"math"
 )
 
-// Configuration for multivariateT distribution
+// MultivTConf Configuration for multivariateT distribution
 type MultivTConf struct {
-	MCMCConf
+	Conf
 }
 
-// Real(float64[]) distribution wrapping StudentsT of Gonum
+// MultivT Real(float64[]) distribution wrapping StudentsT of Gonum
 type MultivT struct {
 	MultivTConf
 	normal *distmv.Normal
@@ -22,7 +23,7 @@ type MultivT struct {
 	i      float64
 }
 
-// Constructor for multivT distribution
+// NewMultivT Constructor for multivT distribution
 func NewMultivT(conf MultivTConf) MultivT {
 	mu := make([]float64, conf.Dim)
 	var s = make([]float64, conf.Dim)
@@ -57,7 +58,7 @@ func (m MultivT) Sample(mu core.Elemt) core.Elemt {
 	return z
 }
 
-// Density of a (uncorrelated) multivariate t distribution
+// Pdf Density of a (uncorrelated) multivariate t distribution
 func (m MultivT) Pdf(mu, x core.Elemt) float64 {
 	var cmu = mu.([]float64)
 	var cx = x.([]float64)

@@ -1,21 +1,21 @@
 package mcmc
 
 import (
-	"distclus/core"
 	"distclus/real"
-	"golang.org/x/exp/rand"
 	"math"
 	"testing"
+
+	"golang.org/x/exp/rand"
 )
 
 var mcmcConf = MCMCConf{
 	AlgorithmConf: core.AlgorithmConf{
 		Space: real.RealSpace{},
 	},
-	InitK: 3,
+	InitK:     3,
 	FrameSize: 8,
-	RGen:     rand.New(rand.NewSource(6305689164243)),
-	Dim: 3, B: 100, Amp: 1,
+	RGen:      rand.New(rand.NewSource(6305689164243)),
+	Dim:       3, B: 100, Amp: 1,
 	Norm: 2, Nu: 3, McmcIter: 20,
 	InitIter: 1,
 }

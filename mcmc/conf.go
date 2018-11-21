@@ -3,12 +3,15 @@ package mcmc
 import (
 	"distclus/core"
 	"fmt"
-	"golang.org/x/exp/rand"
 	"math"
+	"time"
+
+	"golang.org/x/exp/rand"
 )
 
-type MCMCConf struct {
-	core.AlgorithmConf
+// Conf is the mcmc configuration object
+type Conf struct {
+	space              core.Space
 	InitK              int
 	FrameSize          int
 	RGen               *rand.Rand
@@ -22,21 +25,24 @@ type MCMCConf struct {
 	lamb, l2b, tau     float64
 }
 
-func (conf *MCMCConf) Tau() float64 {
+// Tau returns configuration Tau
+func (conf *Conf) Tau() float64 {
 	if conf.tau == 0 {
 		conf.tau = 1 / math.Sqrt(float64(conf.FrameSize*20))
 	}
 	return conf.tau
 }
 
-func (c *MCMCConf) L2B() float64 {
-	if c.l2b == 0 {
-		c.l2b = math.Log(2 * c.B)
+// L2B returns configuration L2B
+func (conf *Conf) L2B() float64 {
+	if conf.l2b == 0 {
+		conf.l2b = math.Log(2 * conf.B)
 	}
-	return c.l2b
+	return conf.l2b
 }
 
-func (conf *MCMCConf) Lambda() float64 {
+// Lambda returns configuration lambda
+func (conf *Conf) Lambda() float64 {
 	if conf.lamb == 0 {
 		var r = conf.R
 
@@ -50,7 +56,22 @@ func (conf *MCMCConf) Lambda() float64 {
 	return conf.lamb
 }
 
-func (conf *MCMCConf) Verify() {
+// SetConfigDefaults initializes nil parameter values
+func SetConfigDefaults(conf *Conf) {
+	if conf.RGen == nil {
+		var seed = uint64(time.Now().UTC().Unix())
+		conf.RGen = rand.New(rand.NewSource(seed))
+	}
+	if len(conf.ProbaK) == 0 {
+		conf.ProbaK = []float64{1, 0, 9}
+	}
+	if conf.MaxK == 0 {
+		conf.MaxK = 16
+	}
+}
+
+// Verify configuration parameters
+func Verify(conf Conf) {
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}

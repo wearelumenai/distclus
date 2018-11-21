@@ -3,68 +3,69 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"gonum.org/v1/gonum/stat/distuv"
 	"math"
+
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
-type MCMC struct {
-	template    *core.AlgorithmTemplate
-	data        *core.DataBuffer
-	config      MCMCConf
-	strategy    MCMCStrategy
-	initializer core.Initializer
-	uniform     distuv.Uniform
-	distrib     MCMCDistrib
-	store       CenterStore
-	iter, acc   int
+// Impl of MCMC
+type Impl struct {
+	centroids core.Cluster
+	buffer    core.Buffer
+	strategy  Strategy
+	uniform   distuv.Uniform
+	distrib   Distrib
+	store     CenterStore
+	iter, acc int
 }
 
-type MCMCStrategy interface {
+// Strategy specifies strategy methods
+type Strategy interface {
 	Iterate(core.Clust, int) core.Clust
-	Loss(core.Clust) float64
+	Loss(Conf, core.Space, core.Clust) float64
 }
 
-func (mcmc *MCMC) Centroids() (c core.Clust, err error) {
-	return mcmc.template.Centroids()
+// Init initializes the algorithm
+func (impl *Impl) Init(conf core.Conf) (core.Clust, bool) {
+	var mcmcConf = conf.(Conf)
+	SetConfigDefaults(&mcmcConf)
+	Verify(mcmcConf)
+	impl.buffer.Apply()
+	return impl.initializer(mcmcConf.InitK, impl.buffer.Data, mcmcConf.Space, mcmcConf.RGen)
 }
 
-func (mcmc *MCMC) Push(elemt core.Elemt) (err error) {
-	return mcmc.template.Push(elemt)
+// NewImpl function
+func NewImpl(conf Conf, space core.Space, distrib Distrib, initializer core.Initializer, data []core.Elemt) (impl Impl) {
+	impl = Impl{
+		buffer:      core.NewDataBuffer(data, conf.FrameSize),
+		initializer: initializer,
+		distrib:     distrib,
+	}
+	impl.uniform = distuv.Uniform{Max: 1, Min: 0, Src: conf.RGen}
+	impl.store = NewCenterStore(impl.buffer, space, conf.RGen)
+	impl.strategy = SeqStrategy{Buffer: impl.buffer}
+
+	return
 }
 
-func (mcmc *MCMC) Predict(elemt core.Elemt, push bool) (pred core.Elemt, label int, err error) {
-	return mcmc.template.Predict(elemt, push)
-}
-
-func (mcmc *MCMC) Run(async bool) {
-	mcmc.template.Run(async)
-}
-
-func (mcmc *MCMC) Close() {
-	mcmc.template.Close()
-}
-
-func (mcmc *MCMC) initializeAlgorithm() (centroids core.Clust, ready bool) {
-	mcmc.data.Apply()
-	return mcmc.initializer(mcmc.config.InitK, mcmc.data.Data, mcmc.config.Space, mcmc.config.RGen)
-}
-
-func (mcmc *MCMC) runAlgorithm(closing <-chan bool) {
+// Run executes the algorithm
+func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) {
+	var mcmcConf = conf.(Conf)
 	var current = proposal{
-		k:       mcmc.config.InitK,
-		centers: mcmc.template.Clust,
-		loss:    mcmc.strategy.Loss(mcmc.template.Clust),
-		pdf:     mcmc.proba(mcmc.template.Clust, mcmc.template.Clust),
+		k:       mcmcConf.InitK,
+		centers: impl.centroids,
+		loss:    impl.strategy.Loss(mcmcConf, space, impl.centroids),
+		pdf:     impl.proba(impl.centroids, impl.centroids),
 	}
 
-	for i, loop := 0, true; i < mcmc.config.McmcIter && loop; i++ {
+	for i, loop := 0, true; i < mcmcConf.Iter && loop; i++ {
 		select {
 		case <-closing:
 			loop = false
 
 		default:
-			current = mcmc.doIter(current)
-			mcmc.data.Apply()
+			current = impl.doIter(mcmcConf, space, current)
+			impl.buffer.Apply()
 		}
 	}
 }
@@ -76,74 +77,77 @@ type proposal struct {
 	pdf     float64
 }
 
-func (mcmc *MCMC) doIter(current proposal) proposal {
+func (impl *Impl) doIter(conf Conf, space core.Space, current proposal) proposal {
+	var prop = impl.propose(conf, space, current)
 
-	var prop = mcmc.propose(current)
-
-	if mcmc.accept(current, prop) {
+	if impl.accept(conf, current, prop) {
 		current = prop
-		mcmc.template.Clust = prop.centers
-		mcmc.store.SetCenters(mcmc.template.Clust)
-		mcmc.acc += 1
+		algo.Clust = prop.centers
+		impl.store.SetCenters(algo.Clust)
+		impl.acc++
 	}
 
-	mcmc.iter += 1
+	impl.iter++
 	return current
 }
 
-func (mcmc *MCMC) propose(current proposal) proposal {
-	var prop proposal
-	prop.k = mcmc.nextK(current.k)
-	var centers = mcmc.store.GetCenters(prop.k, mcmc.template.Clust)
-	centers = mcmc.strategy.Iterate(centers, 1)
-	prop.centers = mcmc.alter(centers)
-	prop.loss = mcmc.strategy.Loss(prop.centers)
-	prop.pdf = mcmc.proba(prop.centers, centers)
-	return prop
+func (impl *Impl) propose(conf Conf, space core.Space, current proposal) (prop proposal) {
+	var k = impl.nextK(current.k)
+	var centers = impl.store.GetCenters(prop.k, impl.Clust)
+	centers = impl.strategy.Iterate(centers, 1)
+	centers = impl.alter(centers)
+	prop = proposal{
+		k:       k,
+		centers: centers,
+		loss:    impl.strategy.Loss(conf, space, centers),
+		pdf:     impl.proba(centers, centers),
+	}
+	return
 }
 
-func (mcmc *MCMC) accept(current proposal, prop proposal) bool {
+func (impl *Impl) accept(conf Conf, current proposal, prop proposal) bool {
 	var rProp = current.pdf - prop.pdf
-	var rInit = mcmc.config.L2B() * float64(mcmc.config.Dim*(current.k-prop.k))
-	var rGibbs = mcmc.config.Lambda() * (current.loss - prop.loss)
+	var rInit = conf.L2B() * float64(conf.Dim*(current.k-prop.k))
+	var rGibbs = conf.Lambda() * (current.loss - prop.loss)
 
 	var rho = math.Exp(rGibbs + rInit + rProp)
-	return mcmc.uniform.Rand() < rho
+	return impl.uniform.Rand() < rho
 }
 
-func (mcmc *MCMC) nextK(k int) int {
-	var newK = k + []int{-1, 0, 1}[kmeans.WeightedChoice(mcmc.config.ProbaK, mcmc.config.RGen)]
+func (impl *Impl) nextK(conf Conf, k int) int {
+	var newK = k + []int{-1, 0, 1}[kmeans.WeightedChoice(conf.ProbaK, conf.RGen)]
 
 	switch {
 	case newK < 1:
 		return 1
-	case newK > mcmc.config.MaxK:
-		return mcmc.config.MaxK
-	case newK > len(mcmc.data.Data):
-		return len(mcmc.data.Data)
+	case newK > conf.MaxK:
+		return conf.MaxK
+	case newK > len(impl.data.Data):
+		return len(impl.data.Data)
 	default:
 		return newK
 	}
 }
 
-func (mcmc *MCMC) alter(clust core.Clust) core.Clust {
+func (impl *Impl) alter(clust core.Clust) core.Clust {
 	var result = make(core.Clust, len(clust))
 
 	for i := range clust {
-		result[i] = mcmc.distrib.Sample(clust[i])
+		result[i] = impl.distrib.Sample(clust[i])
 	}
 
 	return result
 }
 
-func (mcmc *MCMC) proba(x, mu core.Clust) (p float64) {
+func (impl *Impl) proba(x, mu core.Clust) (p float64) {
 	p = 0.
 	for i := range x {
-		p += mcmc.distrib.Pdf(mu[i], x[i])
+		p += impl.distrib.Pdf(mu[i], x[i])
 	}
 	return p
 }
 
-func (mcmc *MCMC) AcceptRatio() float64 {
-	return float64(mcmc.acc) / float64(mcmc.iter)
+// AcceptRatio returns ratio between acc and iter
+func (impl *Impl) AcceptRatio() float64 {
+	return float64(impl.acc) / float64(impl.iter)
 }

@@ -2,86 +2,87 @@ package kmeans
 
 import (
 	"distclus/core"
-	"sync"
 	"runtime"
+	"sync"
 )
 
-func NewParKMeans(conf KMeansConf, initializer core.Initializer, data []core.Elemt) *KMeans {
-	var km = NewSeqKMeans(conf, initializer, data)
-	var strategy = ParKMeansStrategy{}
-	strategy.Buffer = km.data
-	strategy.Config = km.config
-	strategy.Degree = runtime.NumCPU()
-	km.strategy = &strategy
-	return km
+// NewParImpl parallelizes algorithm implementation
+func NewParImpl(conf core.Conf, data []core.Elemt, initializer core.Initializer) (impl Impl) {
+	impl = NewSeqImpl(conf, data, initializer)
+	var strategy = ParStrategy{
+		Degree: runtime.NumCPU(),
+	}
+	impl.strategy = strategy
+	return
 }
 
-type ParKMeansStrategy struct {
-	Config KMeansConf
-	Buffer *core.DataBuffer
+// ParStrategy parallelizes algorithm strategy
+type ParStrategy struct {
 	Degree int
 }
 
 type workerSupport struct {
-	ParKMeansStrategy
-	out chan msgKMeans
-	wg *sync.WaitGroup
+	ParStrategy
+	out chan msg
+	wg  *sync.WaitGroup
 }
 
-type msgKMeans struct {
-	dbas core.Clust
+type msg struct {
+	dbas  core.Clust
 	cards []int
 }
 
-func (strategy *ParKMeansStrategy) Iterate(clust core.Clust) core.Clust {
-	var workers = strategy.startKMeansWorkers(clust)
-	var aggr = workers.assignAggregate()
-	return strategy.buildResult(clust, aggr)
+// Iterate processes input cluster
+func (strategy ParStrategy) Iterate(space core.Space, centroids core.Clust, buffer core.DataBuffer) core.Clust {
+	var workers = strategy.startWorkers(space, centroids, buffer)
+	var aggr = workers.assignAggregate(space)
+	return strategy.buildResult(centroids, aggr)
 }
 
-func (strategy *ParKMeansStrategy) startKMeansWorkers(clust core.Clust) workerSupport {
-	var offset = (len(strategy.Buffer.Data)-1)/strategy.Degree + 1
-	var workers = workerSupport{	}
-	workers.ParKMeansStrategy = *strategy
-	workers.out = make(chan msgKMeans, strategy.Degree)
-	workers.wg = &sync.WaitGroup{}
+func (strategy ParStrategy) startWorkers(space core.Space, centroids core.Clust, buffer core.DataBuffer) (workers workerSupport) {
+	var offset = (len(buffer.Data)-1)/strategy.Degree + 1
+	workers = workerSupport{
+		ParStrategy: strategy,
+		out:         make(chan msg, strategy.Degree),
+		wg:          &sync.WaitGroup{},
+	}
 	workers.wg.Add(strategy.Degree)
 
 	for i := 0; i < strategy.Degree; i++ {
-		var part = core.GetChunk(i, offset, strategy.Buffer.Data)
-		go workers.assignMapReduce(clust, part)
+		var part = core.GetChunk(i, offset, buffer.Data)
+		go workers.assignMapReduce(space, centroids, part)
 	}
 
 	workers.wg.Wait()
 	close(workers.out)
 
-	return workers
+	return
 }
 
-func (strategy *workerSupport) assignMapReduce(clust core.Clust, elemts []core.Elemt) {
+func (strategy *workerSupport) assignMapReduce(space core.Space, centroids core.Clust, elemts []core.Elemt) {
 	defer strategy.wg.Done()
 
-	var reduced msgKMeans
-	reduced.dbas, reduced.cards = clust.AssignDBA(elemts, strategy.Config.Space)
+	var reduced msg
+	reduced.dbas, reduced.cards = centroids.AssignDBA(elemts, space)
 
 	strategy.out <- reduced
 }
 
-func (strategy *workerSupport) assignAggregate() msgKMeans {
-	var aggregate msgKMeans
+func (strategy *workerSupport) assignAggregate(space core.Space) msg {
+	var aggregate msg
 	for other := range strategy.out {
 		if aggregate.dbas == nil {
 			aggregate.dbas = other.dbas
 			aggregate.cards = other.cards
 		} else {
-			aggregate = strategy.assignCombine(aggregate, other)
+			aggregate = strategy.assignCombine(space, aggregate, other)
 		}
 	}
 
 	return aggregate
 }
 
-func (strategy *workerSupport) assignCombine(aggregate msgKMeans, other msgKMeans) msgKMeans {
+func (strategy *workerSupport) assignCombine(space core.Space, aggregate msg, other msg) msg {
 	for i := 0; i < len(aggregate.dbas); i++ {
 		switch {
 		case aggregate.cards[i] == 0:
@@ -89,7 +90,7 @@ func (strategy *workerSupport) assignCombine(aggregate msgKMeans, other msgKMean
 			aggregate.cards[i] = other.cards[i]
 
 		case other.cards[i] > 0:
-			strategy.Config.Space.Combine(aggregate.dbas[i], aggregate.cards[i],
+			space.Combine(aggregate.dbas[i], aggregate.cards[i],
 				other.dbas[i], other.cards[i])
 			aggregate.cards[i] += other.cards[i]
 		}
@@ -98,15 +99,14 @@ func (strategy *workerSupport) assignCombine(aggregate msgKMeans, other msgKMean
 	return aggregate
 }
 
-func (strategy *ParKMeansStrategy)buildResult(clust core.Clust, aggr msgKMeans) core.Clust {
+func (strategy *ParStrategy) buildResult(data core.Clust, aggr msg) core.Clust {
 	var result = make(core.Clust, len(aggr.dbas))
-	for i := 0; i < len(clust); i++ {
+	for i := 0; i < len(data); i++ {
 		if aggr.cards[i] > 0 {
 			result[i] = aggr.dbas[i]
 		} else {
-			result[i] = clust[i]
+			result[i] = data[i]
 		}
 	}
 	return result
 }
-

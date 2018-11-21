@@ -4,62 +4,66 @@ import (
 	"distclus/core"
 )
 
-// KMeans algorithm abstract implementation
-type KMeans struct {
-	template    *core.AlgorithmTemplate
-	data        *core.DataBuffer
-	config      KMeansConf
-	strategy    KMeansStrategy
+// Impl algorithm abstract implementation
+type Impl struct {
+	strategy    Strategy
+	buffer      core.DataBuffer
+	centroids   core.Clust
 	initializer core.Initializer
 }
 
-// Abstract KMeans strategy to be implemented by concrete algorithms
-type KMeansStrategy interface {
-	Iterate(proposal core.Clust) core.Clust
+// Strategy Abstract Impl strategy to be implemented by concrete algorithms
+type Strategy interface {
+	Iterate(space core.Space, centroids core.Clust, buffer core.DataBuffer) core.Clust
 }
 
-// Get the centroids currently found by the algorithm
-func (km *KMeans) Centroids() (c core.Clust, err error) {
-	return km.template.Centroids()
+// NewImpl returns a kmeans implementation
+func NewImpl(conf Conf, data []core.Elemt, initializer core.Initializer) Impl {
+	return Impl{
+		buffer:      *core.NewDataBuffer(data, conf.FrameSize),
+		strategy:    &SeqStrategy{},
+		initializer: initializer,
+	}
 }
 
-// Push a new observation in the algorithm
-func (km *KMeans) Push(elemt core.Elemt) (err error) {
-	return km.template.Push(elemt)
+// Init Algorithm
+func (impl *Impl) Init(conf core.Conf) (core.Clust, bool) {
+	var kmeansConf = conf.(Conf)
+	SetConfigDefaults(&kmeansConf)
+	Verify(kmeansConf)
+	impl.buffer.Apply()
+	return impl.initializer(kmeansConf.K, impl.buffer.Data, kmeansConf.space, kmeansConf.RGen)
 }
 
-// Predict the cluster for a new observation
-func (km *KMeans) Predict(elemt core.Elemt, push bool) (pred core.Elemt, label int, err error) {
-	return km.template.Predict(elemt, push)
-}
-
-// Run the algorithm, asynchronously if async is true
-func (km *KMeans) Run(async bool) {
-	km.template.Run(async)
-}
-
-// Stop the algorithm
-func (km *KMeans) Close() {
-	km.template.Close()
-}
-
-// Algorithm first iteration centroids initialization
-func (km *KMeans) initializeAlgorithm() (centroids core.Clust, ready bool) {
-	km.data.Apply()
-	return km.initializer(km.config.K, km.data.Data, km.config.Space, km.config.RGen)
-}
-
-// run the algorithm until signal received on closing channel or iteration number is reached
-func (km *KMeans) runAlgorithm(closing <-chan bool) {
-	for iter, loop := 0, true; iter < km.config.Iter && loop; iter++ {
+// Run the algorithm until signal received on closing channel or iteration number is reached
+func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) {
+	var kmeansConf = conf.(Conf)
+	for iter, loop := 0, true; iter < kmeansConf.Iter && loop; iter++ {
 		select {
 
 		case <-closing:
 			loop = false
 
 		default:
-			km.template.Clust = km.strategy.Iterate(km.template.Clust)
-			km.data.Apply()
+			impl.strategy.Iterate(space, impl.centroids, impl.buffer)
+			impl.buffer.Apply()
 		}
 	}
+}
+
+// Centroids returns a copy of impl centroids
+func (impl *Impl) Centroids() (centroids core.Clust) {
+	centroids = make(core.Clust, len(impl.centroids))
+	copy(centroids, impl.centroids)
+	return
+}
+
+// Push input element in the buffer
+func (impl *Impl) Push(elemt core.Elemt) {
+	impl.buffer.Push(elemt)
+}
+
+// SetAsync changes the status of impl buffer to async
+func (impl *Impl) SetAsync() {
+	impl.buffer.SetAsync()
 }

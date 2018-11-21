@@ -1,5 +1,6 @@
 package core
 
+// Buffer interface
 type Buffer interface {
 	Push(elemt Elemt)
 	SetAsync()
@@ -16,11 +17,14 @@ type DataBuffer struct {
 	strategy bufferSizeStrategy
 }
 
-// Creates a fixed size buffer if given size > 0.
+// Maximal default pipe size
+const pipeSize = 2000
+
+// NewDataBuffer creates a fixed size buffer if given size > 0.
 // Otherwise creates an infinite size buffer.
 func NewDataBuffer(data []Elemt, size int) *DataBuffer {
 	var buf = DataBuffer{
-		pipe:  make(chan Elemt, 2000),
+		pipe:  make(chan Elemt, pipeSize),
 		async: false,
 	}
 
@@ -39,7 +43,7 @@ func NewDataBuffer(data []Elemt, size int) *DataBuffer {
 
 	default:
 		// infinite buffer
-		buf.strategy = &infiniteSizeStrategy{ }
+		buf.strategy = &infiniteSizeStrategy{}
 		buf.Data = make([]Elemt, len(data))
 		copy(buf.Data, data)
 	}
@@ -47,7 +51,7 @@ func NewDataBuffer(data []Elemt, size int) *DataBuffer {
 	return &buf
 }
 
-// Stores or stages an element depending on synchronous / asynchronous mode.
+// Push stores or stages an element depending on synchronous / asynchronous mode.
 func (b *DataBuffer) Push(elmt Elemt) {
 	if b.async {
 		b.pipe <- elmt
@@ -56,21 +60,22 @@ func (b *DataBuffer) Push(elmt Elemt) {
 	}
 }
 
+// SetAsync set asynchronous execution status to true
 func (b *DataBuffer) SetAsync() {
 	b.async = true
 }
 
-// Applies all staged data in asynchronous mode, otherwise do nothing
+// Apply all staged data in asynchronous mode, otherwise do nothing
 func (b *DataBuffer) Apply() {
 	for loop := b.async; loop; {
-		loop = b.apply_next()
+		loop = b.applyNext()
 	}
 }
 
 // Applies next staged data if available and returns true.
 // Otherwise returns false.
-func (b *DataBuffer) apply_next() bool {
-	var loop = true
+func (b *DataBuffer) applyNext() (loop bool) {
+	loop = true
 
 	select {
 	case elmt, ok := <-b.pipe:
@@ -82,7 +87,7 @@ func (b *DataBuffer) apply_next() bool {
 		loop = false
 	}
 
-	return loop
+	return
 }
 
 // Handle the way data are stored, i.e. infinite or fixed size buffer.
@@ -92,7 +97,7 @@ type bufferSizeStrategy interface {
 
 // Fixed size buffer
 type fixedSizeStrategy struct {
-	size int
+	size     int
 	position int
 }
 
@@ -107,7 +112,8 @@ func (s *fixedSizeStrategy) push(data []Elemt, elemt Elemt) []Elemt {
 		data = append(data, elemt)
 	}
 
-	s.position += 1
+	s.position++
+
 	return data
 }
 
@@ -118,4 +124,3 @@ type infiniteSizeStrategy struct {
 func (s *infiniteSizeStrategy) push(data []Elemt, elemt Elemt) []Elemt {
 	return append(data, elemt)
 }
-

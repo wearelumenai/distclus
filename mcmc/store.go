@@ -3,16 +3,19 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+
 	"golang.org/x/exp/rand"
 )
 
+// CenterStore structure
 type CenterStore struct {
 	centers map[int]core.Clust
-	buffer *core.DataBuffer
-	space core.Space
-	rgen *rand.Rand
+	buffer  *core.DataBuffer
+	space   core.Space
+	rgen    *rand.Rand
 }
 
+// NewCenterStore returns a new center store
 func NewCenterStore(buffer *core.DataBuffer, space core.Space, rgen *rand.Rand) CenterStore {
 	var store = CenterStore{}
 	store.centers = make(map[int]core.Clust)
@@ -22,6 +25,7 @@ func NewCenterStore(buffer *core.DataBuffer, space core.Space, rgen *rand.Rand) 
 	return store
 }
 
+// GetCenters returns input centroids centers
 func (store *CenterStore) GetCenters(k int, clust core.Clust) core.Clust {
 	var centers, ok = store.centers[k]
 
@@ -32,6 +36,7 @@ func (store *CenterStore) GetCenters(k int, clust core.Clust) core.Clust {
 	return centers
 }
 
+// SetCenters set centers to input centroids
 func (store *CenterStore) SetCenters(clust core.Clust) {
 	store.centers[len(clust)] = clust
 }
@@ -59,7 +64,7 @@ func (store *CenterStore) addCenter(prevK int, prev core.Clust) core.Clust {
 	for i := 0; i < prevK; i++ {
 		clust[i] = store.space.Copy(prev[i])
 	}
-	clust[prevK] = kmeans.KMeansPPIter(prev, store.buffer.Data, store.space, store.rgen)
+	clust[prevK] = kmeans.PPIter(prev, store.buffer.Data, store.space, store.rgen)
 	return clust
 }
 

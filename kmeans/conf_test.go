@@ -1,7 +1,6 @@
 package kmeans_test
 
 import (
-	"distclus/core"
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/real"
@@ -14,13 +13,13 @@ var algoConf = core.AlgorithmConf{
 
 func TestKMeans_ConfErrorIter(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = kmeans.KMeansConf{AlgorithmConf: algoConf, K: 3, Iter: -10}
-	conf.Verify()
+	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: -10}
+	kmeans.Verify(conf)
 }
 
 func TestKMeans_ConfErrorK(t *testing.T) {
 	defer test.AssertPanic(t)
 	var aconf = algoConf
-	var conf = kmeans.KMeansConf{AlgorithmConf: aconf, K: -12, Iter: 10}
-	conf.Verify()
+	var conf = kmeans.Conf{AlgorithmConf: aconf, K: -12, Iter: 10}
+	kmeans.Verify(conf)
 }

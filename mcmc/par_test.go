@@ -2,13 +2,14 @@ package mcmc_test
 
 import (
 	"distclus/core"
+	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/internal/test"
-	"golang.org/x/exp/rand"
 	"math"
 	"runtime"
 	"testing"
+
+	"golang.org/x/exp/rand"
 )
 
 func TestMCMC_ParPredict_Given(t *testing.T) {
@@ -45,7 +46,6 @@ func TestParMCMCStrategy_Loss(t *testing.T) {
 
 	test.PushAndRunSync(algo)
 
-
 	var strategy = mcmc.ParMCMCStrategy{}
 	buffer := core.NewDataBuffer(test.TestVectors, conf.FrameSize)
 	strategy.Buffer = buffer
@@ -56,7 +56,7 @@ func TestParMCMCStrategy_Loss(t *testing.T) {
 	var l1 = strategy.Loss(clust)
 	var l2 = clust.Loss(test.TestVectors, conf.Space, conf.Norm)
 
-	if math.Abs(l1-l2)>1e-6 {
+	if math.Abs(l1-l2) > 1e-6 {
 		t.Error("Expected", l2, "got", l1)
 	}
 }

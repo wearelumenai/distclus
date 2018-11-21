@@ -1,18 +1,19 @@
 package main
 
 import (
-	"distclus/kmeans"
-	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
-	"encoding/csv"
-	"strconv"
-	"fmt"
-	"io"
 	"distclus/core"
+	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/real"
-	"golang.org/x/exp/rand"
+	"encoding/csv"
+	"fmt"
+	"io"
 	"log"
+	"os"
+	"strconv"
+
+	"golang.org/x/exp/rand"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
@@ -29,10 +30,10 @@ var (
 	olabels = app.Flag("out_labels", "Filename where to print labels in csv, if not set printed in stdout.").
 		Short('l').String()
 	ocenters = app.Flag("out_centers", "Filename where to print centers in csv, if not set printed in stdout.").
-		Short('c').String()
+			Short('c').String()
 
-	mcmcCmd  = app.Command("mcmc", "Compute an MCMC clustering.")
-	mcmcB = mcmcCmd.Flag("mcmc_b", "b parameter").
+	mcmcCmd = app.Command("mcmc", "Compute an MCMC clustering.")
+	mcmcB   = mcmcCmd.Flag("mcmc_b", "b parameter").
 		Short('B').Default("100").Float()
 	mcmcAmp = mcmcCmd.Flag("mcmc_amp", "amp MCMC parameter.").
 		Short('A').Default("10").Float()
@@ -41,15 +42,15 @@ var (
 	mcmcNu = mcmcCmd.Flag("mcmc_nu", "Number of degrees of freedom.").
 		Short('D').Default("3").Float()
 	mcmcInitK = mcmcCmd.Flag("mcmc_initk", "k initialisation value.").
-		Short('K').Default("8").Int()
+			Short('K').Default("8").Int()
 	mcmcFrameSize = mcmcCmd.Flag("mcmc_framesize", "Frame size to consider in data history(default -1 ~ data set len).").
-		Short('F').Default("-1").Int()
+			Short('F').Default("-1").Int()
 	mcmcInitializer = mcmcCmd.Flag("mcmc_initializer", "Algorithm initializer(random, kmeans++).").
-		Default("random").Short('i').Enum("random", "kmeans++")
+			Default("random").Short('i').Enum("random", "kmeans++")
 	mcmcIter = mcmcCmd.Flag("mcmc_iter", "Max iteration of mcmc clustering.").
-		Short('I').Default("200").Int()
+			Short('I').Default("200").Int()
 	mcmcInitIter = mcmcCmd.Flag("mcmc_init_iter", "Number of initialisation iteration.").
-		Default("0").Int()
+			Default("0").Int()
 )
 
 func main() {
@@ -95,7 +96,6 @@ func runMcmc() {
 		}
 		distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
 	}
-
 
 	var algo = mcmc.NewParMCMC(mcmcConf, distrib, initializer, nil)
 

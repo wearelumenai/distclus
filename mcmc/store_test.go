@@ -14,28 +14,28 @@ import (
 	"golang.org/x/exp/rand"
 )
 
-func TestMCMC_getCenters(t *testing.T) {
+func Test_getCenters(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var buffer = core.NewDataBuffer([]core.Elemt{}, -1)
 	var seed = uint64(time.Now().UTC().Unix())
 	var rgen = rand.New(rand.NewSource(seed))
-	var space = real.RealSpace{}
-	var store = mcmc.NewCenterStore(buffer, space, rgen)
+	var space = real.Space{}
+	var store = mcmc.NewCenterStore(rgen)
 
 	for _, elemt := range test.TestVectors {
 		buffer.Push(elemt)
 	}
 
 	var clust3, _ = kmeans.GivenInitializer(3, test.TestVectors, space, rgen)
-	var clust = store.GetCenters(3, clust3)
+	var clust = store.GetCenters(buffer, space, 3, clust3)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust3, clust) {
 		t.Error("Expected same centers")
 	}
 
-	clust = store.GetCenters(4, clust)
+	clust = store.GetCenters(buffer, space, 4, clust)
 	store.SetCenters(clust)
 
 	if len(clust) != 4 {
@@ -53,14 +53,14 @@ func TestMCMC_getCenters(t *testing.T) {
 	}
 
 	var clust4 = clust
-	clust = store.GetCenters(3, clust4)
+	clust = store.GetCenters(buffer, space, 3, clust4)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
-	clust = store.GetCenters(2, clust)
+	clust = store.GetCenters(buffer, space, 2, clust)
 	store.SetCenters(clust)
 
 	for i := 0; i < 2; i++ {
@@ -70,14 +70,14 @@ func TestMCMC_getCenters(t *testing.T) {
 	}
 
 	var clust2 = clust
-	clust = store.GetCenters(3, clust)
+	clust = store.GetCenters(buffer, space, 3, clust)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
-	clust = store.GetCenters(4, clust)
+	clust = store.GetCenters(buffer, space, 4, clust)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust4) {

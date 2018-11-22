@@ -10,27 +10,23 @@ import (
 // CenterStore structure
 type CenterStore struct {
 	centers map[int]core.Clust
-	buffer  *core.DataBuffer
-	space   core.Space
 	rgen    *rand.Rand
 }
 
 // NewCenterStore returns a new center store
-func NewCenterStore(buffer *core.DataBuffer, space core.Space, rgen *rand.Rand) CenterStore {
+func NewCenterStore(rgen *rand.Rand) CenterStore {
 	var store = CenterStore{}
 	store.centers = make(map[int]core.Clust)
-	store.buffer = buffer
-	store.space = space
 	store.rgen = rgen
 	return store
 }
 
 // GetCenters returns input centroids centers
-func (store *CenterStore) GetCenters(k int, clust core.Clust) core.Clust {
+func (store *CenterStore) GetCenters(buffer core.DataBuffer, space core.Space, k int, clust core.Clust) core.Clust {
 	var centers, ok = store.centers[k]
 
 	if !ok {
-		centers = store.genCenters(k, clust)
+		centers = store.genCenters(buffer, space, k, clust)
 	}
 
 	return centers
@@ -41,16 +37,16 @@ func (store *CenterStore) SetCenters(clust core.Clust) {
 	store.centers[len(clust)] = clust
 }
 
-func (store *CenterStore) genCenters(k int, prev core.Clust) core.Clust {
+func (store *CenterStore) genCenters(buffer core.DataBuffer, space core.Space, k int, prev core.Clust) core.Clust {
 	var prevK = len(prev)
 	var clust core.Clust
 
 	switch {
 	case prevK < k:
-		clust = store.addCenter(prevK, prev)
+		clust = store.addCenter(buffer, space, prevK, prev)
 
 	case prevK > k:
-		clust = store.delCenter(prevK, prev)
+		clust = store.delCenter(space, prevK, prev)
 
 	case prevK == k:
 		clust = prev
@@ -59,23 +55,23 @@ func (store *CenterStore) genCenters(k int, prev core.Clust) core.Clust {
 	return clust
 }
 
-func (store *CenterStore) addCenter(prevK int, prev core.Clust) core.Clust {
+func (store *CenterStore) addCenter(buffer core.DataBuffer, space core.Space, prevK int, prev core.Clust) core.Clust {
 	var clust = make(core.Clust, prevK+1)
 	for i := 0; i < prevK; i++ {
-		clust[i] = store.space.Copy(prev[i])
+		clust[i] = space.Copy(prev[i])
 	}
-	clust[prevK] = kmeans.PPIter(prev, store.buffer.Data, store.space, store.rgen)
+	clust[prevK] = kmeans.PPIter(prev, buffer.Data, space, store.rgen)
 	return clust
 }
 
-func (store *CenterStore) delCenter(prevK int, prev core.Clust) core.Clust {
+func (store *CenterStore) delCenter(space core.Space, prevK int, prev core.Clust) core.Clust {
 	var del = store.rgen.Intn(prevK)
 	var clust = make(core.Clust, prevK-1)
 	for i := 0; i < prevK-1; i++ {
 		if i < del {
-			clust[i] = store.space.Copy(prev[i])
+			clust[i] = space.Copy(prev[i])
 		} else {
-			clust[i] = store.space.Copy(prev[i+1])
+			clust[i] = space.Copy(prev[i+1])
 		}
 	}
 	return clust

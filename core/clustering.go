@@ -17,21 +17,6 @@ const (
 	Closed
 )
 
-// OnlineClust interface
-// When a prediction is made, the element can be pushed to the model.
-// A prediction consists in a centroid and a label.
-// The following constraints must be met (otherwise an error is returned) :
-// an element can't be pushed if the algorithm is closed,
-// a prediction can't be done before the algorithm is run,
-// no centroid can be returned before the algorithm is run.
-type OnlineClust interface {
-	Centroids() (Clust, error)
-	Push(elemt Elemt) error
-	Predict(elemt Elemt, push bool) (Elemt, int, error)
-	Run(async bool)
-	Close()
-}
-
 // Clust type is an abbrevation for centroids indexed by labels.
 type Clust []Elemt
 

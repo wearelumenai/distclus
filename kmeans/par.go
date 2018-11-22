@@ -7,12 +7,11 @@ import (
 )
 
 // NewParImpl parallelizes algorithm implementation
-func NewParImpl(conf core.Conf, data []core.Elemt, initializer core.Initializer) (impl Impl) {
-	impl = NewSeqImpl(conf, data, initializer)
-	var strategy = ParStrategy{
+func NewParImpl(conf core.Conf, initializer core.Initializer, data []core.Elemt, _ ...interface{}) (impl Impl) {
+	impl = NewSeqImpl(conf, initializer, data)
+	impl.strategy = ParStrategy{
 		Degree: runtime.NumCPU(),
 	}
-	impl.strategy = strategy
 	return
 }
 

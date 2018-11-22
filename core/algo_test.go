@@ -2,7 +2,7 @@ package core_test
 
 import (
 	"distclus/core"
-	"distclus/internal/test"
+	"errors"
 	"testing"
 	"time"
 )
@@ -17,16 +17,23 @@ type mockImpl struct {
 	count       int
 	async       bool
 	clust       core.Clust
+	error       string
 }
 
-func (impl *mockImpl) Init(conf core.Conf) bool {
+func (impl *mockImpl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
 	impl.initialized = true
-	return impl.clust != nil
+	if impl.clust == nil {
+		err = errors.New("clustering")
+	}
+	return
 }
 
-func (impl *mockImpl) Run(conf core.Conf, space core.Space, closing <-chan bool) {
+func (impl *mockImpl) Run(conf core.Conf, space core.Space, closing <-chan bool) (err error) {
 	var mockConf = conf.(mockConf)
 	impl.running = true
+	if impl.error != "" {
+		panic(impl.error)
+	}
 	for iter, loop := 0, true; iter < mockConf.Iter && loop; iter++ {
 		select {
 
@@ -34,21 +41,23 @@ func (impl *mockImpl) Run(conf core.Conf, space core.Space, closing <-chan bool)
 			loop = false
 			impl.running = false
 
-		default:
 		}
 	}
+	return
 }
 
-func (impl *mockImpl) Push(elemt core.Elemt) {
+func (impl *mockImpl) Push(elemt core.Elemt) error {
 	impl.count++
+	return nil
 }
 
-func (impl *mockImpl) SetAsync() {
+func (impl *mockImpl) SetAsync() error {
 	impl.async = true
+	return nil
 }
 
-func (impl *mockImpl) Centroids() core.Clust {
-	return impl.clust
+func (impl *mockImpl) Centroids() (core.Clust, error) {
+	return impl.clust, nil
 }
 
 type mockSpace struct {
@@ -102,13 +111,31 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 }
 
 func TestError(t *testing.T) {
-	defer test.AssertPanic(t)
-
 	var algo = newAlgo(t)
 	algo.Impl.(*mockImpl).clust = nil
 
-	algo.Run(false)
+	err := algo.Run(false)
+
+	if err == nil {
+		t.Error("no error in wrong cluster")
+	}
 }
+
+// func TestAsyncError(t *testing.T) {
+// 	defer test.AssertPanic(t)
+//
+// 	algo := newAlgo(t)
+//
+// 	impl := algo.Impl.(*mockImpl)
+//
+// 	impl.error = "launch error"
+//
+// 	err := algo.Run(true)
+//
+// 	if err == nil {
+// 		t.Error("no error in wrong cluster")
+// 	}
+// }
 
 func Test_Predict(t *testing.T) {
 
@@ -120,7 +147,11 @@ func Test_Predict(t *testing.T) {
 		t.Error("initialized before running")
 	}
 
-	algo.Run(false)
+	err = algo.Run(false)
+
+	if err != nil {
+		t.Error("error while running prediction")
+	}
 
 	pred, label, err := algo.Predict(nil, false)
 
@@ -152,7 +183,11 @@ func Test_Predict(t *testing.T) {
 		t.Error("element has not been pushed")
 	}
 
-	algo.Close()
+	err = algo.Close()
+
+	if err != nil {
+		t.Error("error while closing the algorithm")
+	}
 
 	_, _, err = algo.Predict(nil, true)
 
@@ -171,7 +206,11 @@ func Test_Scenario_Sync(t *testing.T) {
 		t.Error("centroids exist")
 	}
 
-	algo.Push(nil)
+	err = algo.Push(nil)
+
+	if err != nil {
+		t.Error("error while pushing a nil element")
+	}
 
 	var conf = algo.Conf.(mockConf)
 	var impl = algo.Impl.(*mockImpl)
@@ -218,8 +257,7 @@ func Test_Scenario_Sync(t *testing.T) {
 func Test_Scenario_ASync(t *testing.T) {
 	var algo = newAlgo(t)
 
-	var err error
-	_, err = algo.Centroids()
+	_, err := algo.Centroids()
 
 	if err == nil {
 		t.Error("centroids exist")
@@ -255,7 +293,7 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	algo.Run(true)
 
-	time.Sleep(500. * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	if !impl.async {
 		t.Error("not async after asynchronous execution")

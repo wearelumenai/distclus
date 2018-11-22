@@ -89,3 +89,11 @@ func TestComplexSpace_Copy(t *testing.T) {
 		t.Error("Expected different elements")
 	}
 }
+
+func Test_NewSpace(t *testing.T) {
+	space := complex.NewSpace(nil)
+
+	if &space == nil {
+		t.Error("no space created")
+	}
+}

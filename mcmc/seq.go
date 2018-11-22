@@ -6,8 +6,13 @@ import (
 )
 
 // NewSeqImpl returns a sequantial mcmc implementation
-func NewSeqImpl(conf core.Conf, distrib Distrib, initializer core.Initializer, data []core.Elemt) Impl {
-	return NewImpl(conf.(Conf), distrib, initializer, data)
+func NewSeqImpl(conf core.Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) (impl Impl) {
+	var distrib Distrib
+	if len(args) == 1 {
+		distrib = args[0].(Distrib)
+	}
+	impl = NewImpl(conf.(Conf), distrib, initializer, data)
+	return
 }
 
 // SeqStrategy strategy structure
@@ -15,22 +20,22 @@ type SeqStrategy struct {
 }
 
 // Iterate execute the algorithm
-func (strategy *SeqStrategy) Iterate(clust core.Clust, iter int) (result core.Clust) {
-	var conf = kmeans.Conf{
+func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, clust core.Clust, buffer core.DataBuffer, iter int) (result core.Clust) {
+	var kmeansConf = kmeans.Conf{
 		K:    len(clust),
 		Iter: iter,
-		RGen: Conf.RGen,
+		RGen: conf.RGen,
 	}
-	var km = kmeans.NewSeqKMeans(conf, clust.Initializer, strategy.Buffer.Data)
-
-	km.Run(false)
-	km.Close()
-	result, _ = km.Centroids()
+	var impl = kmeans.NewSeqImpl(kmeansConf, clust.Initializer, buffer.Data)
+	var algo = core.NewAlgo(kmeansConf, &impl, space)
+	algo.Run(false)
+	algo.Close()
+	result, _ = algo.Centroids()
 
 	return
 }
 
 // Loss calculates input centroids
-func (strategy *SeqStrategy) Loss(conf Conf, space core.Space, proposal core.Clust) float64 {
-	return proposal.Loss(strategy.Buffer.Data, space, conf.Norm)
+func (strategy *SeqStrategy) Loss(conf Conf, space core.Space, proposal core.Clust, buffer core.DataBuffer) float64 {
+	return proposal.Loss(buffer.Data, space, conf.Norm)
 }

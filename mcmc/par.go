@@ -8,13 +8,12 @@ import (
 )
 
 // NewParImpl returns a new parallelized algorithm implementation
-func NewParImpl(conf Conf, distrib Distrib, initializer core.Initializer, data []core.Elemt) *MCMC {
-	var mcmc = NewSeqImpl(conf, distrib, initializer, data)
-	var strategy = ParStrategy{}
-	strategy.Buffer = mcmc.data
-	strategy.Degree = runtime.NumCPU()
-	mcmc.strategy = &strategy
-	return mcmc
+func NewParImpl(conf core.Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) (impl Impl) {
+	impl = NewSeqImpl(conf, initializer, data, args...)
+	impl.strategy = &ParStrategy{
+		Degree: runtime.NumCPU(),
+	}
+	return
 }
 
 // ParStrategy defines a parallelized strategy
@@ -34,29 +33,30 @@ type msgMCMC struct {
 }
 
 // Iterate is the iterative execution
-func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, clust core.Clust, iter int) core.Clust {
+func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, buffer core.DataBuffer, iter int) core.Clust {
 	var kmeansConf = kmeans.Conf{
-		K:    len(clust),
+		K:    len(centroids),
 		Iter: iter,
 	}
-	var km = kmeans.NewParImpl(kmeansConf, clust.Initializer, strategy.Buffer.Data)
+	var impl = kmeans.NewParImpl(kmeansConf, centroids.Initializer, buffer.Data)
+	var algo = core.NewAlgo(kmeansConf, &impl, space)
 
-	km.Run(false)
-	km.Close()
+	algo.Run(false)
+	algo.Close()
 
-	var result, _ = km.Centroids()
+	var result, _ = algo.Centroids()
 	return result
 }
 
 // Loss aclculates the loss distance of input centroids
-func (strategy *ParStrategy) Loss(conf Conf, space core.Space, clust core.Clust) float64 {
-	var workers = strategy.startWorkers(conf, space, clust)
+func (strategy *ParStrategy) Loss(conf Conf, space core.Space, clust core.Clust, buffer core.DataBuffer) float64 {
+	var workers = strategy.startWorkers(conf, space, clust, buffer)
 	var aggr = workers.lossAggregate()
 	return aggr.sum
 }
 
-func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, clust core.Clust) workerSupport {
-	var offset = (len(strategy.Buffer.Data)-1)/strategy.Degree + 1
+func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, clust core.Clust, buffer core.DataBuffer) workerSupport {
+	var offset = (len(buffer.Data)-1)/strategy.Degree + 1
 	var workers = workerSupport{}
 	workers.ParStrategy = *strategy
 	workers.out = make(chan msgMCMC, strategy.Degree)
@@ -64,7 +64,7 @@ func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, clust cor
 	workers.wg.Add(strategy.Degree)
 
 	for i := 0; i < strategy.Degree; i++ {
-		var part = core.GetChunk(i, offset, strategy.Buffer.Data)
+		var part = core.GetChunk(i, offset, buffer.Data)
 		go workers.lossMapReduce(conf, space, clust, part)
 	}
 

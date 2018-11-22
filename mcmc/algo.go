@@ -3,6 +3,7 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+	"errors"
 	"math"
 
 	"gonum.org/v1/gonum/stat/distuv"
@@ -10,51 +11,76 @@ import (
 
 // Impl of MCMC
 type Impl struct {
-	centroids core.Cluster
-	buffer    core.Buffer
-	strategy  Strategy
-	uniform   distuv.Uniform
-	distrib   Distrib
-	store     CenterStore
-	iter, acc int
+	centroids   core.Clust
+	buffer      core.DataBuffer
+	strategy    Strategy
+	uniform     distuv.Uniform
+	distrib     Distrib
+	store       CenterStore
+	iter, acc   int
+	initializer core.Initializer
 }
 
 // Strategy specifies strategy methods
 type Strategy interface {
-	Iterate(core.Clust, int) core.Clust
-	Loss(Conf, core.Space, core.Clust) float64
+	Iterate(Conf, core.Space, core.Clust, core.DataBuffer, int) core.Clust
+	Loss(Conf, core.Space, core.Clust, core.DataBuffer) float64
 }
 
 // Init initializes the algorithm
-func (impl *Impl) Init(conf core.Conf) (core.Clust, bool) {
+func (impl *Impl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
 	var mcmcConf = conf.(Conf)
 	SetConfigDefaults(&mcmcConf)
 	Verify(mcmcConf)
 	impl.buffer.Apply()
-	return impl.initializer(mcmcConf.InitK, impl.buffer.Data, mcmcConf.Space, mcmcConf.RGen)
+	var initialized bool
+	centroids, initialized = impl.initializer(mcmcConf.InitK, impl.buffer.Data, space, mcmcConf.RGen)
+	if !initialized {
+		err = errors.New("Failed to initialize")
+	} else {
+		impl.centroids = centroids
+	}
+	return
 }
 
 // NewImpl function
-func NewImpl(conf Conf, space core.Space, distrib Distrib, initializer core.Initializer, data []core.Elemt) (impl Impl) {
+func NewImpl(conf Conf, distrib Distrib, initializer core.Initializer, data []core.Elemt) (impl Impl) {
+	var buffer = core.NewDataBuffer(data, conf.FrameSize)
+	if distrib == nil {
+		distrib = NewMultivT(
+			MultivTConf{
+				Conf: Conf{
+					Dim: 1,
+				},
+			},
+		)
+	}
 	impl = Impl{
-		buffer:      core.NewDataBuffer(data, conf.FrameSize),
+		buffer:      buffer,
 		initializer: initializer,
 		distrib:     distrib,
+		uniform:     distuv.Uniform{Max: 1, Min: 0, Src: conf.RGen},
+		store:       NewCenterStore(conf.RGen),
+		strategy:    &SeqStrategy{},
 	}
-	impl.uniform = distuv.Uniform{Max: 1, Min: 0, Src: conf.RGen}
-	impl.store = NewCenterStore(impl.buffer, space, conf.RGen)
-	impl.strategy = SeqStrategy{Buffer: impl.buffer}
 
 	return
 }
 
+// Centroids returns a copy of impl centroids
+func (impl *Impl) Centroids() (centroids core.Clust, err error) {
+	centroids = make(core.Clust, len(impl.centroids))
+	copy(centroids, impl.centroids)
+	return
+}
+
 // Run executes the algorithm
-func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) {
+func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) (err error) {
 	var mcmcConf = conf.(Conf)
 	var current = proposal{
 		k:       mcmcConf.InitK,
 		centers: impl.centroids,
-		loss:    impl.strategy.Loss(mcmcConf, space, impl.centroids),
+		loss:    impl.strategy.Loss(mcmcConf, space, impl.centroids, impl.buffer),
 		pdf:     impl.proba(impl.centroids, impl.centroids),
 	}
 
@@ -65,9 +91,22 @@ func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) {
 
 		default:
 			current = impl.doIter(mcmcConf, space, current)
-			impl.buffer.Apply()
+			err = impl.buffer.Apply()
 		}
 	}
+	return
+}
+
+// SetAsync changes the status of impl buffer to async
+func (impl *Impl) SetAsync() (err error) {
+	impl.buffer.SetAsync()
+	return
+}
+
+// Push input element in the buffer
+func (impl *Impl) Push(elemt core.Elemt) (err error) {
+	impl.buffer.Push(elemt)
+	return
 }
 
 type proposal struct {
@@ -82,8 +121,8 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal) proposal
 
 	if impl.accept(conf, current, prop) {
 		current = prop
-		algo.Clust = prop.centers
-		impl.store.SetCenters(algo.Clust)
+		impl.centroids = prop.centers
+		impl.store.SetCenters(impl.centroids)
 		impl.acc++
 	}
 
@@ -92,14 +131,14 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal) proposal
 }
 
 func (impl *Impl) propose(conf Conf, space core.Space, current proposal) (prop proposal) {
-	var k = impl.nextK(current.k)
-	var centers = impl.store.GetCenters(prop.k, impl.Clust)
-	centers = impl.strategy.Iterate(centers, 1)
+	var k = impl.nextK(conf, current.k)
+	var centers = impl.store.GetCenters(impl.buffer, space, prop.k, impl.centroids)
+	centers = impl.strategy.Iterate(conf, space, centers, impl.buffer, 1)
 	centers = impl.alter(centers)
 	prop = proposal{
 		k:       k,
 		centers: centers,
-		loss:    impl.strategy.Loss(conf, space, centers),
+		loss:    impl.strategy.Loss(conf, space, centers, impl.buffer),
 		pdf:     impl.proba(centers, centers),
 	}
 	return
@@ -122,8 +161,8 @@ func (impl *Impl) nextK(conf Conf, k int) int {
 		return 1
 	case newK > conf.MaxK:
 		return conf.MaxK
-	case newK > len(impl.data.Data):
-		return len(impl.data.Data)
+	case newK > len(impl.buffer.Data):
+		return len(impl.buffer.Data)
 	default:
 		return newK
 	}

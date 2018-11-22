@@ -10,24 +10,27 @@ import (
 )
 
 func Test_Initialization(t *testing.T) {
-	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 0}
-	var km = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var conf = kmeans.Conf{K: 3, Iter: 0}
+	var impl = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var algo = core.NewAlgo(conf, &impl, space)
 
-	test.DoTestInitialization(t, km)
+	test.DoTestInitialization(t, &algo)
 }
 
 func Test_DefaultConf(t *testing.T) {
-	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 0}
-	var km = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var conf = kmeans.Conf{K: 3, Iter: 0}
+	var impl = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var algo = core.NewAlgo(conf, &impl, space)
 
-	test.DoTestInitialization(t, km)
+	test.DoTestInitialization(t, &algo)
 }
 
 func Test_RunSyncGiven(t *testing.T) {
-	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 0}
-	var km = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var conf = kmeans.Conf{K: 3, Iter: 0}
+	var impl = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var algo = core.NewAlgo(conf, &impl, space)
 
-	test.DoTestRunSyncGiven(t, km)
+	test.DoTestRunSyncGiven(t, &algo)
 }
 
 func rgen() *rand.Rand {
@@ -35,34 +38,38 @@ func rgen() *rand.Rand {
 }
 
 func Test_RunSyncPP(t *testing.T) {
-	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 20, RGen: rgen()}
-	var km = kmeans.NewSeqImpl(conf, kmeans.PPInitializer, []core.Elemt{})
+	var conf = kmeans.Conf{K: 3, Iter: 20, RGen: rgen()}
+	var impl = kmeans.NewSeqImpl(conf, kmeans.PPInitializer, []core.Elemt{})
+	var algo = core.NewAlgo(conf, &impl, space)
 
-	test.DoTestRunSyncPP(t, km)
-	test.DoTestRunSyncCentroids(t, km)
+	test.DoTestRunSyncPP(t, &algo)
+	test.DoTestRunSyncCentroids(t, &algo)
 }
 
 func Test_RunAsync(t *testing.T) {
-	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 1 << 30, RGen: rgen()}
-	var km = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var conf = kmeans.Conf{K: 3, Iter: 1 << 30, RGen: rgen()}
+	var impl = kmeans.NewSeqImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
+	var algo = core.NewAlgo(conf, &impl, space)
 
-	test.DoTestRunAsync(t, km)
-	test.DoTestRunAsyncCentroids(t, km)
+	test.DoTestRunAsync(t, &algo)
+	test.DoTestRunAsyncCentroids(t, &algo)
 }
 
 func Test_Workflow(t *testing.T) {
-	var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 1 << 30, RGen: rgen()}
-	var km = kmeans.NewSeqImpl(conf, kmeans.PPInitializer, []core.Elemt{})
+	var conf = kmeans.Conf{K: 3, Iter: 1 << 30, RGen: rgen()}
+	var impl = kmeans.NewSeqImpl(conf, kmeans.PPInitializer, []core.Elemt{})
+	var algo = core.NewAlgo(conf, &impl, space)
 
-	test.DoTestWorkflow(t, km)
+	test.DoTestWorkflow(t, &algo)
 }
 
 func Test_Empty(t *testing.T) {
 	var builder = func(init core.Initializer) core.OnlineClust {
-		var conf = kmeans.Conf{AlgorithmConf: algoConf, K: 3, Iter: 1, RGen: rgen()}
-		var km = kmeans.NewSeqImpl(conf, init, []core.Elemt{})
+		var conf = kmeans.Conf{K: 3, Iter: 1, RGen: rgen()}
+		var impl = kmeans.NewSeqImpl(conf, init, []core.Elemt{})
+		var algo = core.NewAlgo(conf, &impl, space)
 
-		return km
+		return &algo
 	}
 
 	test.DoTestEmpty(t, builder)

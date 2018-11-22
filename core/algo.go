@@ -8,11 +8,26 @@ import (
 
 // Impl concrete algorithms
 type Impl interface {
-	Init(conf Conf) bool
-	Run(conf Conf, space Space, closing <-chan bool)
-	Push(elemt Elemt)
-	SetAsync()
-	Centroids() Clust
+	Init(conf Conf, space Space) (Clust, error)
+	Run(conf Conf, space Space, closing <-chan bool) error
+	Push(elemt Elemt) error
+	SetAsync() error
+	Centroids() (Clust, error)
+}
+
+// OnlineClust interface
+// When a prediction is made, the element can be pushed to the model.
+// A prediction consists in a centroid and a label.
+// The following constraints must be met (otherwise an error is returned) :
+// an element can't be pushed if the algorithm is closed,
+// a prediction can't be done before the algorithm is run,
+// no centroid can be returned before the algorithm is run.
+type OnlineClust interface {
+	Centroids() (Clust, error)
+	Push(elemt Elemt) error
+	Predict(elemt Elemt, push bool) (Elemt, int, error)
+	Run(async bool) error
+	Close() error
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -43,7 +58,7 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	case Created:
 		err = fmt.Errorf("clustering not started")
 	default:
-		centroids = algo.Impl.Centroids()
+		centroids, err = algo.Impl.Centroids()
 	}
 	return
 }
@@ -54,22 +69,33 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		algo.Impl.Push(elemt)
+		err = algo.Impl.Push(elemt)
 	}
 	return
 }
 
 // Run the algorithm, asynchronously if async is true
-func (algo *Algo) Run(async bool) {
+func (algo *Algo) Run(async bool) (err error) {
 	if async {
-		algo.Impl.SetAsync()
-		go algo.initAndRunAsync()
-	} else {
-		if err := algo.initAndRunSync(); err != nil {
-			panic(err)
+		err = algo.Impl.SetAsync()
+		if err == nil {
+			defer func() {
+				var msg = recover()
+				if msg != nil {
+					err = errors.New(msg.(string))
+				}
+				return
+			}()
+			go algo.initAndRunAsync()
 		}
+	} else {
+		err = algo.initAndRunSync()
 	}
-	algo.status = Running
+	if err == nil {
+		algo.status = Running
+	}
+
+	return
 }
 
 // Local configuration for type casting
@@ -93,24 +119,26 @@ func (algo *Algo) Predict(elemt Elemt, push bool) (pred Elemt, label int, err er
 }
 
 // Close Stops the algorithm
-func (algo *Algo) Close() {
+func (algo *Algo) Close() (err error) {
 	if algo.status == Running {
 		algo.closing <- true
 		<-algo.closed
 	}
 	algo.status = Closed
+	return
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) initAndRunSync() error {
-	var ok = algo.Impl.Init(algo.Conf)
-	if ok {
-		algo.Impl.Run(algo.Conf, algo.Space, algo.closing)
-		algo.closed <- true
-		return nil
+func (algo *Algo) initAndRunSync() (err error) {
+	_, err = algo.Impl.Init(algo.Conf, algo.Space)
+	if err == nil {
+		err = algo.Impl.Run(algo.Conf, algo.Space, algo.closing)
+		if err == nil {
+			algo.closed <- true
+		}
 	}
 
-	return errors.New("Failed to initialize")
+	return
 }
 
 // Initialize the algorithm, if success run it asynchronously otherwise retry

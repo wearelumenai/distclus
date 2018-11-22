@@ -29,3 +29,11 @@ func TestSpace_Copy(t *testing.T) {
 		t.Error("Expected different elements")
 	}
 }
+
+func Test_NewSpace(t *testing.T) {
+	space := series.NewSpace(nil)
+
+	if &space == nil {
+		t.Error("no space created")
+	}
+}

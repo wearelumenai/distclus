@@ -11,6 +11,7 @@ import (
 
 // Conf is the mcmc configuration object
 type Conf struct {
+	Iter               int
 	space              core.Space
 	InitK              int
 	FrameSize          int

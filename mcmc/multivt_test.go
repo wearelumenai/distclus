@@ -1,17 +1,15 @@
-package mcmc
+package mcmc_test
 
 import (
-	"distclus/real"
+	"distclus/core"
+	"distclus/mcmc"
 	"math"
 	"testing"
 
 	"golang.org/x/exp/rand"
 )
 
-var mcmcConf = MCMCConf{
-	AlgorithmConf: core.AlgorithmConf{
-		Space: real.RealSpace{},
-	},
+var mcmcConf = mcmc.Conf{
 	InitK:     3,
 	FrameSize: 8,
 	RGen:      rand.New(rand.NewSource(6305689164243)),
@@ -33,7 +31,7 @@ func TestMultivT_Pdf(t *testing.T) {
 		[]float64{-4.4, -1.9, -2.3},
 	}
 
-	var distrib = NewMultivT(MultivTConf{mcmcConf})
+	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
 	var d0 = math.Exp(distrib.Pdf(mu[0], x[0]))
 
 	if math.Abs(d0-0.319520) > 1e-6 {
@@ -54,7 +52,7 @@ func TestMultivT_Pdf(t *testing.T) {
 }
 
 func TestMultivT_Sample(t *testing.T) {
-	var distrib = NewMultivT(MultivTConf{mcmcConf})
+	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
 
 	// var mu = []float64{1.2, 3.1, 5.8}
 	var mu = []float64{0., 0., 0.}

@@ -18,7 +18,7 @@ var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []flo
 
 func TestWrongElementCount(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	_, ok := kmeans.GivenInitializer(1, nil, real.RealSpace{}, src)
+	_, ok := kmeans.GivenInitializer(1, nil, real.Space{}, src)
 	if ok {
 		t.Error("Expected not check")
 	}
@@ -27,7 +27,7 @@ func TestWrongElementCount(t *testing.T) {
 func TestCheckK(t *testing.T) {
 	defer test.AssertPanic(t)
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	kmeans.GivenInitializer(0, TestPoints, real.RealSpace{}, src)
+	kmeans.GivenInitializer(0, TestPoints, real.Space{}, src)
 }
 
 func TestWeightedChoice(t *testing.T) {
@@ -49,19 +49,19 @@ func TestWeightedChoice(t *testing.T) {
 
 func TestGivenInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.GivenInitializer(4, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.GivenInitializer(4, TestPoints, real.Space{}, src)
 	AssertCentroids(t, TestPoints[:4], clust)
 }
 
 func TestPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.PPInitializer(14, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.PPInitializer(14, TestPoints, real.Space{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 
 func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.RandInitializer(14, TestPoints, real.RealSpace{}, src)
+	var clust, _ = kmeans.RandInitializer(14, TestPoints, real.Space{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 

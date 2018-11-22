@@ -7,8 +7,8 @@ import (
 	"distclus/mcmc"
 	"distclus/real"
 	"distclus/series"
+	"errors"
 	"fmt"
-	"reflect"
 	"strings"
 )
 
@@ -28,29 +28,31 @@ func CreateSpace(name string, conf core.Conf) (space core.Space, err error) {
 	return
 }
 
-// CreateAlgo returns an algorithm by name and configuration
-func CreateAlgo(name string, space string, par bool, data []Elemt, conf Conf, initializer *Initializer) (algo *Algo, err error) {
-	var implFunc func(conf Conf)
+// CreateOC returns an algorithm by name and configuration
+func CreateOC(name string, conf core.Conf, space core.Space, par bool, data []core.Elemt, initializer core.Initializer, args ...interface{}) (algo core.Algo, err error) {
+	var impl core.Impl
 	switch strings.ToLower(name) {
 	case "mcmc":
 		if par {
-			implFunc = mcmc.NewParImpl
+			simpl := mcmc.NewParImpl(conf, initializer, data, args...)
+			impl = &simpl
 		} else {
-			implFunc = mcmc.NewSeqImpl
+			simpl := mcmc.NewSeqImpl(conf, initializer, data, args...)
+			impl = &simpl
 		}
 	case "kmeans":
 		if par {
-			implFunc = kmeans.NewParImpl
+			simpl := kmeans.NewParImpl(conf, initializer, data, args...)
+			impl = &simpl
 		} else {
-			implFunc = kmeans.NewSeqImpl
+			simpl := kmeans.NewSeqImpl(conf, initializer, data, args...)
+			impl = &simpl
 		}
 	default:
-		err = fmt.Errorf("Unknown algorithm. %v expected", reflect.ValueOf(implementationsByName).MapKeys())
+		err = errors.New("Unknown algorithm. MCMC and KMEANS expected")
 	}
-	if implFunc != nil {
-		var algoSpace = CreateSpace(space, conf)
-		var impl = implFunc(conf, data, initializer)
-		algo = NewAlgo(conf, impl, algoSpace)
+	if impl != nil {
+		algo = core.NewAlgo(conf, impl, space)
 	}
 	return
 }

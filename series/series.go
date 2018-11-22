@@ -16,19 +16,10 @@ type Space struct {
 // Series of multi-float dimensions
 type Series [][]float64
 
-type innerConf struct {
-	InnerSpace string
-	Window     int
-	Space      core.Space
-}
-
-func (innerConf innerConf) Verify()           {}
-func (innerConf innerConf) SetDefaultValues() {}
-
 // NewSpace create a new series space
 func NewSpace(conf core.Conf) Space {
 	var innerSpace core.Space
-	var sconf = conf.(innerConf)
+	var sconf = conf.(Conf)
 	switch strings.ToLower(sconf.InnerSpace) {
 	case "complex":
 		innerSpace = complex.NewSpace(conf)
@@ -82,7 +73,7 @@ func fillMatrix(e1, e2 Series, matrix Series) (sum float64) {
 }
 
 // Dist computes euclidean distance between two nodes
-func (space *Space) Dist(elemt1, elemt2 core.Elemt) float64 {
+func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 	var e1 = elemt1.(Series)
 	var e2 = elemt2.(Series)
 
@@ -92,12 +83,12 @@ func (space *Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 }
 
 // Combine computes combination between two nodes
-func (space *Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
+func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
 
 }
 
 // Copy creates a copy of a vector
-func (space *Space) Copy(elemt core.Elemt) core.Elemt {
+func (space Space) Copy(elemt core.Elemt) core.Elemt {
 	var rv = elemt.(Series)
 	var copied = make(Series, len(rv))
 	for i := range copied {

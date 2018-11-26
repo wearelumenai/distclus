@@ -3,14 +3,15 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+
 	"golang.org/x/exp/rand"
 )
 
 type CenterStore struct {
 	centers map[int]core.Clust
-	buffer *core.DataBuffer
-	space core.Space
-	rgen *rand.Rand
+	buffer  *core.DataBuffer
+	space   core.Space
+	rgen    *rand.Rand
 }
 
 func NewCenterStore(buffer *core.DataBuffer, space core.Space, rgen *rand.Rand) CenterStore {

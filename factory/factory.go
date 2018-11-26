@@ -29,7 +29,7 @@ func CreateSpace(name string, conf core.Conf) (space core.Space, err error) {
 }
 
 // CreateOC returns an algorithm by name and configuration
-func CreateOC(name string, conf core.Conf, space core.Space, par bool, data []core.Elemt, initializer core.Initializer, args ...interface{}) (algo core.Algo, err error) {
+func CreateOC(name string, conf core.Conf, space core.Space, par bool, data []core.Elemt, initializer core.Initializer, args ...interface{}) (algo core.OnlineClust, err error) {
 	var impl core.Impl
 	switch strings.ToLower(name) {
 	case "mcmc":
@@ -52,7 +52,8 @@ func CreateOC(name string, conf core.Conf, space core.Space, par bool, data []co
 		err = errors.New("Unknown algorithm. MCMC and KMEANS expected")
 	}
 	if impl != nil {
-		algo = core.NewAlgo(conf, impl, space)
+		var newAlgo = core.NewAlgo(conf, impl, space)
+		algo = &newAlgo
 	}
 	return
 }

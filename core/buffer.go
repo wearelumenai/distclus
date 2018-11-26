@@ -4,6 +4,8 @@ package core
 type Buffer interface {
 	Push(elemt Elemt) error
 	SetAsync() error
+	Data() []Elemt
+	Apply() error
 }
 
 // DataBuffer that stores data.
@@ -12,7 +14,7 @@ type Buffer interface {
 // Staged data are stored when apply() is called.
 type DataBuffer struct {
 	pipe     chan Elemt
-	Data     []Elemt
+	data     []Elemt
 	async    bool
 	strategy bufferSizeStrategy
 }
@@ -22,8 +24,8 @@ const pipeSize = 2000
 
 // NewDataBuffer creates a fixed size buffer if given size > 0.
 // Otherwise creates an infinite size buffer.
-func NewDataBuffer(data []Elemt, size int) (buf DataBuffer) {
-	buf = DataBuffer{
+func NewDataBuffer(data []Elemt, size int) Buffer {
+	var db = DataBuffer{
 		pipe:  make(chan Elemt, pipeSize),
 		async: false,
 	}
@@ -31,24 +33,24 @@ func NewDataBuffer(data []Elemt, size int) (buf DataBuffer) {
 	switch {
 	case size > len(data):
 		// fixed size buffer, less data than buffer size
-		buf.strategy = &fixedSizeStrategy{size, len(data)}
-		buf.Data = make([]Elemt, len(data), size)
-		copy(buf.Data[:len(data)], data)
+		db.strategy = &fixedSizeStrategy{size, len(data)}
+		db.data = make([]Elemt, len(data), size)
+		copy(db.data[:len(data)], data)
 
 	case size > 0:
 		// fixed size buffer, more data than buffer size
-		buf.strategy = &fixedSizeStrategy{size, size}
-		buf.Data = make([]Elemt, size)
-		copy(buf.Data, data[len(data)-size:])
+		db.strategy = &fixedSizeStrategy{size, size}
+		db.data = make([]Elemt, size)
+		copy(db.data, data[len(data)-size:])
 
 	default:
 		// infinite buffer
-		buf.strategy = &infiniteSizeStrategy{}
-		buf.Data = make([]Elemt, len(data))
-		copy(buf.Data, data)
+		db.strategy = &infiniteSizeStrategy{}
+		db.data = make([]Elemt, len(data))
+		copy(db.data, data)
 	}
 
-	return
+	return &db
 }
 
 // Push stores or stages an element depending on synchronous / asynchronous mode.
@@ -56,9 +58,14 @@ func (b *DataBuffer) Push(elmt Elemt) (err error) {
 	if b.async {
 		b.pipe <- elmt
 	} else {
-		b.Data = b.strategy.push(b.Data, elmt)
+		b.data = b.strategy.push(b.data, elmt)
 	}
 	return
+}
+
+// Data returns buffer data
+func (b *DataBuffer) Data() (data []Elemt) {
+	return b.data
 }
 
 // SetAsync set asynchronous execution status to true
@@ -83,7 +90,7 @@ func (b *DataBuffer) applyNext() (loop bool) {
 	select {
 	case elmt, ok := <-b.pipe:
 		if ok {
-			b.Data = b.strategy.push(b.Data, elmt)
+			b.data = b.strategy.push(b.data, elmt)
 		}
 		loop = ok
 	default:

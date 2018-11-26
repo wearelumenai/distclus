@@ -6,15 +6,6 @@ import (
 	"time"
 )
 
-// Impl concrete algorithms
-type Impl interface {
-	Init(conf Conf, space Space) (Clust, error)
-	Run(conf Conf, space Space, closing <-chan bool) error
-	Push(elemt Elemt) error
-	SetAsync() error
-	Centroids() (Clust, error)
-}
-
 // OnlineClust interface
 // When a prediction is made, the element can be pushed to the model.
 // A prediction consists in a centroid and a label.
@@ -79,13 +70,6 @@ func (algo *Algo) Run(async bool) (err error) {
 	if async {
 		err = algo.Impl.SetAsync()
 		if err == nil {
-			defer func() {
-				var msg = recover()
-				if msg != nil {
-					err = errors.New(msg.(string))
-				}
-				return
-			}()
 			go algo.initAndRunAsync()
 		}
 	} else {
@@ -96,11 +80,6 @@ func (algo *Algo) Run(async bool) (err error) {
 	}
 
 	return
-}
-
-// Local configuration for type casting
-type spaceConf struct {
-	Space
 }
 
 // Predict the cluster for a new observation
@@ -130,7 +109,7 @@ func (algo *Algo) Close() (err error) {
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) initAndRunSync() (err error) {
-	_, err = algo.Impl.Init(algo.Conf, algo.Space)
+	err = algo.Impl.Init(algo.Conf, algo.Space)
 	if err == nil {
 		err = algo.Impl.Run(algo.Conf, algo.Space, algo.closing)
 		if err == nil {

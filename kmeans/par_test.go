@@ -10,7 +10,7 @@ import (
 
 var space = real.Space{}
 
-func TestKMeans_ParPredictGiven(t *testing.T) {
+func Test_ParPredictGiven(t *testing.T) {
 	var conf = kmeans.Conf{K: 3, Iter: 0}
 	var impl = kmeans.NewParImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
 	var algo = core.NewAlgo(conf, &impl, space)
@@ -18,7 +18,7 @@ func TestKMeans_ParPredictGiven(t *testing.T) {
 	test.DoTestRunSyncGiven(t, &algo)
 }
 
-func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
+func Test_ParRunSyncPP(t *testing.T) {
 	var conf = kmeans.Conf{K: 3, Iter: 20, RGen: rgen()}
 	var impl = kmeans.NewParImpl(conf, kmeans.PPInitializer, []core.Elemt{})
 	var algo = core.NewAlgo(conf, &impl, space)
@@ -27,7 +27,7 @@ func TestKMeans_ParRunSyncKMeansPP(t *testing.T) {
 	test.DoTestRunSyncCentroids(t, &algo)
 }
 
-func TestKMeans_ParRunAsync(t *testing.T) {
+func Test_ParRunAsync(t *testing.T) {
 	var conf = kmeans.Conf{K: 3, Iter: 1 << 30, RGen: rgen()}
 	var impl = kmeans.NewParImpl(conf, kmeans.GivenInitializer, []core.Elemt{})
 	var algo = core.NewAlgo(conf, &impl, space)

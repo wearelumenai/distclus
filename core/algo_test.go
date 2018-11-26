@@ -20,7 +20,7 @@ type mockImpl struct {
 	error       string
 }
 
-func (impl *mockImpl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
+func (impl *mockImpl) Init(conf core.Conf, space core.Space) (err error) {
 	impl.initialized = true
 	if impl.clust == nil {
 		err = errors.New("clustering")

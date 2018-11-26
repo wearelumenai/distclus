@@ -3,7 +3,6 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"errors"
 	"math"
 
 	"gonum.org/v1/gonum/stat/distuv"
@@ -12,7 +11,7 @@ import (
 // Impl of MCMC
 type Impl struct {
 	centroids   core.Clust
-	buffer      core.DataBuffer
+	buffer      core.Buffer
 	strategy    Strategy
 	uniform     distuv.Uniform
 	distrib     Distrib
@@ -23,23 +22,17 @@ type Impl struct {
 
 // Strategy specifies strategy methods
 type Strategy interface {
-	Iterate(Conf, core.Space, core.Clust, core.DataBuffer, int) core.Clust
-	Loss(Conf, core.Space, core.Clust, core.DataBuffer) float64
+	Iterate(Conf, core.Space, core.Clust, core.Buffer, int) core.Clust
+	Loss(Conf, core.Space, core.Clust, core.Buffer) float64
 }
 
 // Init initializes the algorithm
-func (impl *Impl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
+func (impl *Impl) Init(conf core.Conf, space core.Space) (err error) {
 	var mcmcConf = conf.(Conf)
 	SetConfigDefaults(&mcmcConf)
 	Verify(mcmcConf)
 	impl.buffer.Apply()
-	var initialized bool
-	centroids, initialized = impl.initializer(mcmcConf.InitK, impl.buffer.Data, space, mcmcConf.RGen)
-	if !initialized {
-		err = errors.New("Failed to initialize")
-	} else {
-		impl.centroids = centroids
-	}
+	impl.centroids, err = impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 	return
 }
 
@@ -161,8 +154,8 @@ func (impl *Impl) nextK(conf Conf, k int) int {
 		return 1
 	case newK > conf.MaxK:
 		return conf.MaxK
-	case newK > len(impl.buffer.Data):
-		return len(impl.buffer.Data)
+	case newK > len(impl.buffer.Data()):
+		return len(impl.buffer.Data())
 	default:
 		return newK
 	}

@@ -14,8 +14,8 @@ type SeqStrategy struct {
 }
 
 // Iterate processes input cluster
-func (strategy *SeqStrategy) Iterate(space core.Space, centroids core.Clust, buffer core.DataBuffer) core.Clust {
-	var result, _ = centroids.AssignDBA(buffer.Data, space)
+func (strategy *SeqStrategy) Iterate(space core.Space, centroids core.Clust, buffer core.Buffer) core.Clust {
+	var result, _ = centroids.AssignDBA(buffer.Data(), space)
 	return strategy.buildResult(centroids, result)
 }
 

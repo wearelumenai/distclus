@@ -40,7 +40,7 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	algo.Close()
 }
 
-// DoTestRunSyncKMeansPP Algorithm must be configured with KMeansPP with 3 centers
+// DoTestRunSyncPP Algorithm must be configured with PP with 3 centers
 func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
 	var actual = clust.AssignAll(TestVectors, real.Space{})

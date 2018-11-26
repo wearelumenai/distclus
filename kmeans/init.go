@@ -2,52 +2,63 @@ package kmeans
 
 import (
 	"distclus/core"
+	"errors"
+	"strings"
 
 	"golang.org/x/exp/rand"
 )
 
+var initializersByNames = map[string]core.Initializer{
+	"given": GivenInitializer,
+	"pp":    PPInitializer,
+	"rand":  RandInitializer,
+}
+
+// CreateInitializer creates an initializer with a name
+func CreateInitializer(name string) core.Initializer {
+	return initializersByNames[strings.ToLower(name)]
+}
+
 // Checks if clustering initialization is possible.
-func check(k int, elemts []core.Elemt) bool {
+func check(k int, elemts []core.Elemt) (err error) {
 	if k < 1 {
-		panic("K is lower than 1")
+		err = errors.New("K is lower than 1")
+	} else if len(elemts) < k {
+		err = errors.New("Less elements than k")
 	}
 
-	if len(elemts) < k {
-		return false
-	}
-
-	return true
+	return
 }
 
 // GivenInitializer initializes a clustering algorithm with the k first testPoints.
-func GivenInitializer(k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) (core.Clust, bool) {
-	var ok = check(k, elemts)
-	var clust = make(core.Clust, k)
+func GivenInitializer(k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) (centroids core.Clust, err error) {
+	err = check(k, elemts)
+	centroids = make(core.Clust, k)
 
-	if ok {
+	if err == nil {
 		for i := 0; i < k; i++ {
-			clust[i] = space.Copy(elemts[i])
+			centroids[i] = space.Copy(elemts[i])
 		}
 	}
 
-	return clust, ok
+	return
 }
 
 // PPInitializer initializes a clustering algorithm with kmeans++
-func PPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool) {
-	var ok = check(k, elemts)
-	var clust = make(core.Clust, k)
+func PPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (centroids core.Clust, err error) {
+	err = check(k, elemts)
+	centroids = make(core.Clust, k)
 
-	if ok {
+	if err == nil {
 		var draw = src.Intn(len(elemts))
-		clust[0] = elemts[draw]
+		centroids[0] = elemts[draw]
 
 		for i := 1; i < k; i++ {
-			clust[i] = PPIter(clust[:i], elemts, space, src)
+			centroids[i] = PPIter(centroids[:i], elemts, space, src)
 		}
 	}
 
-	return clust, ok
+	return
 }
 
 // PPIter runs a kmeans++ iteration : draw an element the does not belong to clust
@@ -64,11 +75,11 @@ func PPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.R
 }
 
 // RandInitializer initializes a clustering with random testPoints
-func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Clust, bool) {
-	var ok = check(k, elemts)
-	var clust = make(core.Clust, k)
+func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (centroids core.Clust, err error) {
+	err = check(k, elemts)
+	centroids = make(core.Clust, k)
 
-	if ok {
+	if err == nil {
 		var chosen = make(map[int]int)
 		var i int
 
@@ -77,14 +88,14 @@ func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Ran
 			var _, found = chosen[choice]
 
 			if !found {
-				clust[i] = space.Copy(elemts[choice])
+				centroids[i] = space.Copy(elemts[choice])
 				chosen[choice] = i
 				i++
 			}
 		}
 	}
 
-	return clust, ok
+	return
 }
 
 // WeightedChoice returns random index given corresponding weights

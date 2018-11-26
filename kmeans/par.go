@@ -32,14 +32,14 @@ type msg struct {
 }
 
 // Iterate processes input cluster
-func (strategy ParStrategy) Iterate(space core.Space, centroids core.Clust, buffer core.DataBuffer) core.Clust {
+func (strategy ParStrategy) Iterate(space core.Space, centroids core.Clust, buffer core.Buffer) core.Clust {
 	var workers = strategy.startWorkers(space, centroids, buffer)
 	var aggr = workers.assignAggregate(space)
 	return strategy.buildResult(centroids, aggr)
 }
 
-func (strategy ParStrategy) startWorkers(space core.Space, centroids core.Clust, buffer core.DataBuffer) (workers workerSupport) {
-	var offset = (len(buffer.Data)-1)/strategy.Degree + 1
+func (strategy ParStrategy) startWorkers(space core.Space, centroids core.Clust, buffer core.Buffer) (workers workerSupport) {
+	var offset = (len(buffer.Data())-1)/strategy.Degree + 1
 	workers = workerSupport{
 		ParStrategy: strategy,
 		out:         make(chan msg, strategy.Degree),
@@ -48,7 +48,7 @@ func (strategy ParStrategy) startWorkers(space core.Space, centroids core.Clust,
 	workers.wg.Add(strategy.Degree)
 
 	for i := 0; i < strategy.Degree; i++ {
-		var part = core.GetChunk(i, offset, buffer.Data)
+		var part = core.GetChunk(i, offset, buffer.Data())
 		go workers.assignMapReduce(space, centroids, part)
 	}
 

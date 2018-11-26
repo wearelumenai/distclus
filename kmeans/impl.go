@@ -2,45 +2,37 @@ package kmeans
 
 import (
 	"distclus/core"
-	"errors"
 )
 
 // Impl algorithm abstract implementation
 type Impl struct {
 	strategy    Strategy
-	buffer      core.DataBuffer
+	buffer      core.Buffer
 	centroids   core.Clust
 	initializer core.Initializer
 }
 
 // Strategy Abstract Impl strategy to be implemented by concrete algorithms
 type Strategy interface {
-	Iterate(space core.Space, centroids core.Clust, buffer core.DataBuffer) core.Clust
+	Iterate(space core.Space, centroids core.Clust, buffer core.Buffer) core.Clust
 }
 
 // NewImpl returns a kmeans implementation
 func NewImpl(conf Conf, initializer core.Initializer, data []core.Elemt) (impl Impl) {
-	impl = Impl{
+	SetConfigDefaults(&conf)
+	Verify(conf)
+	return Impl{
 		buffer:      core.NewDataBuffer(data, conf.FrameSize),
 		strategy:    &SeqStrategy{},
 		initializer: initializer,
 	}
-	return
 }
 
 // Init Algorithm
-func (impl *Impl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
+func (impl *Impl) Init(conf core.Conf, space core.Space) (err error) {
 	var kmeansConf = conf.(Conf)
-	SetConfigDefaults(&kmeansConf)
-	Verify(kmeansConf)
 	impl.buffer.Apply()
-	var initialized bool
-	centroids, initialized = impl.initializer(kmeansConf.K, impl.buffer.Data, space, kmeansConf.RGen)
-	if !initialized {
-		err = errors.New("Failed to initialize")
-	} else {
-		impl.centroids = centroids
-	}
+	impl.centroids, err = impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
 	return
 }
 
@@ -54,8 +46,8 @@ func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) (er
 			loop = false
 
 		default:
-			impl.strategy.Iterate(space, impl.centroids, impl.buffer)
-			impl.buffer.Apply()
+			impl.centroids = impl.strategy.Iterate(space, impl.centroids, impl.buffer)
+			err = impl.buffer.Apply()
 		}
 	}
 	return
@@ -69,13 +61,11 @@ func (impl *Impl) Centroids() (centroids core.Clust, err error) {
 }
 
 // Push input element in the buffer
-func (impl *Impl) Push(elemt core.Elemt) (err error) {
-	impl.buffer.Push(elemt)
-	return
+func (impl *Impl) Push(elemt core.Elemt) error {
+	return impl.buffer.Push(elemt)
 }
 
 // SetAsync changes the status of impl buffer to async
-func (impl *Impl) SetAsync() (err error) {
-	impl.buffer.SetAsync()
-	return
+func (impl *Impl) SetAsync() error {
+	return impl.buffer.SetAsync()
 }

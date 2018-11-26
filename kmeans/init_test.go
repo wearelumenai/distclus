@@ -2,7 +2,6 @@ package kmeans_test
 
 import (
 	"distclus/core"
-	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/real"
 	"reflect"
@@ -16,18 +15,54 @@ var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []flo
 	[]float64{6.}, []float64{-10.}, []float64{0.}, []float64{-7.}, []float64{3.}, []float64{5.},
 	[]float64{-5.}, []float64{-8.}, []float64{9.}}
 
+func TestInitializers(t *testing.T) {
+	k := 1
+	space := real.Space{}
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+
+	initializers := map[string]bool{
+		"GiveN":   true,
+		"given":   true,
+		"pp":      true,
+		"rand":    true,
+		"unknown": false,
+	}
+	for name, test := range initializers {
+		initializer := kmeans.CreateInitializer(name)
+		if test {
+			if initializer == nil {
+				t.Error("miss an initializer")
+			}
+			centroids, err := initializer(k, TestPoints, space, src)
+			if centroids == nil {
+				t.Error("initializer does not return a centroid")
+			}
+			if err != nil {
+				t.Error("an error has been raised")
+			}
+		} else {
+			if initializer != nil {
+				t.Error("found an initializer")
+			}
+		}
+	}
+}
+
 func TestWrongElementCount(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	_, ok := kmeans.GivenInitializer(1, nil, real.Space{}, src)
-	if ok {
+	_, err := kmeans.GivenInitializer(1, nil, real.Space{}, src)
+	if err == nil {
 		t.Error("Expected not check")
 	}
 }
 
 func TestCheckK(t *testing.T) {
-	defer test.AssertPanic(t)
+	// defer test.AssertPanic(t)
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	kmeans.GivenInitializer(0, TestPoints, real.Space{}, src)
+	_, err := kmeans.GivenInitializer(0, TestPoints, real.Space{}, src)
+	if err == nil {
+		t.Error("initialization without errors")
+	}
 }
 
 func TestWeightedChoice(t *testing.T) {

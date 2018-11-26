@@ -21,7 +21,7 @@ const (
 type Clust []Elemt
 
 // Initializer function initializes k centroids from the given elements.
-type Initializer func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, success bool)
+type Initializer func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, err error)
 
 // AssignDBA returns centroids and cardinalities in each clusters.
 func (c *Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
@@ -109,6 +109,6 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 }
 
 // Initializer that always returns the centroids
-func (c *Clust) Initializer(int, []Elemt, Space, *rand.Rand) (Clust, bool) {
-	return *c, true
+func (c *Clust) Initializer(int, []Elemt, Space, *rand.Rand) (centroids Clust, err error) {
+	return *c, nil
 }

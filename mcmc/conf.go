@@ -47,7 +47,7 @@ func (conf *Conf) Lambda() float64 {
 	if conf.lamb == 0 {
 		var r = conf.R
 
-		if r == 0 {
+		if r == 0 { // lambda = (d+2)sqrt(log T)/(2sqrt(T)r^2)
 			r = 1
 		}
 

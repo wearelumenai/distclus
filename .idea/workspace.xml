@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="72270e75-9da3-4339-a4af-0d961d5d12cd" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/mcmc/store.go" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/mcmc/store.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/algo.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/algo.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/buffer.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/buffer.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/buffer_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/buffer_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/clustering.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/clustering.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/conf.go" beforeDir="false" afterPath="$PROJECT_DIR$/core/conf.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/factory/factory.go" beforeDir="false" afterPath="$PROJECT_DIR$/factory/factory.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kmeans/algo.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/kmeans/init.go" beforeDir="false" afterPath="$PROJECT_DIR$/kmeans/init.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kmeans/init_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/kmeans/init_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kmeans/par.go" beforeDir="false" afterPath="$PROJECT_DIR$/kmeans/par.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kmeans/par_test.go" beforeDir="false" afterPath="$PROJECT_DIR$/kmeans/par_test.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/kmeans/seq.go" beforeDir="false" afterPath="$PROJECT_DIR$/kmeans/seq.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mcmc/algo.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/mcmc/conf.go" beforeDir="false" afterPath="$PROJECT_DIR$/mcmc/conf.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mcmc/par.go" beforeDir="false" afterPath="$PROJECT_DIR$/mcmc/par.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mcmc/seq.go" beforeDir="false" afterPath="$PROJECT_DIR$/mcmc/seq.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/mcmc/store.go" beforeDir="false" afterPath="$PROJECT_DIR$/mcmc/store.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/algo.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/conf.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/conf_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/distrib.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/multivt.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/multivt_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/par.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/par_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/seq.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/seq_test.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/store.go" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/streaming/store_test.go" beforeDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/core/algo_test.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="120">
+              <caret line="13" column="22" lean-forward="true" selection-start-line="13" selection-start-column="22" selection-end-line="13" selection-end-column="22" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/core/impl.go">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="60">
+              <caret line="4" column="4" selection-start-line="4" selection-start-column="4" selection-end-line="4" selection-end-column="4" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/core/buffer.go">
+          <provider selected="true" editor-type-id="text-editor" />
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="GOROOT" path="/usr/local/go" />
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectFrameBounds">
+    <option name="x" value="260" />
+    <option name="y" value="71" />
+    <option name="width" value="1400" />
+    <option name="height" value="1000" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="distclus" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distclus" type="47feb1d3:ProjectViewModuleNode" />
+            </path>
+            <path>
+              <item name="distclus" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distclus" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="distclus" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="distclus" type="b2602c69:ProjectViewProjectNode" />
+              <item name="distclus" type="47feb1d3:ProjectViewModuleNode" />
+              <item name="distclus" type="462c0819:PsiDirectoryNode" />
+              <item name="core" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="go.gopath.indexing.explicitly.defined" value="true" />
+    <property name="go.sdk.automatically.set" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="260" y="71" width="1400" height="1000" extended-state="0" />
+    <editor active="true" />
+    <layout>
+      <window_info id="Favorites" side_tool="true" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.2496318" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Database Changes" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="right" id="Database" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/core/algo_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="120">
+          <caret line="13" column="22" lean-forward="true" selection-start-line="13" selection-start-column="22" selection-end-line="13" selection-end-column="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/impl.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="60">
+          <caret line="4" column="4" selection-start-line="4" selection-start-column="4" selection-end-line="4" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/core/buffer.go">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+  </component>
+</project>

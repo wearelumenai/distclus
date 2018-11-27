@@ -1,12 +1,13 @@
 package main
 
 import (
-	"distclus/kmeans"
-	"testing"
-	"time"
 	"distclus/core"
+	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/real"
+	"testing"
+	"time"
+
 	"golang.org/x/exp/rand"
 )
 
@@ -18,26 +19,26 @@ func BenchmarkRun(b *testing.B) {
 
 func b1(log func(args ...interface{})) {
 	var data []core.Elemt
-	var distrib mcmc.MCMCDistrib
+	var distrib mcmc.Distrib
 	var initializer = kmeans.RandInitializer
 	var seed = int(time.Now().UTC().Unix())
-	var mcmcConf = mcmc.MCMCConf{
-	}
-	mcmcConf.Space = real.RealSpace{}
+	var conf = mcmc.Conf{}
+	var space = real.Space{}
 	in := "cas.csv"
-	data, mcmcConf.Dim = parseFloatCsv(&in)
-	mcmcConf.FrameSize = 15000
-	mcmcConf.RGen = rand.New(rand.NewSource(uint64(seed)))
-	mcmcConf.McmcIter = 200
-	mcmcConf.B = 1
-	mcmcConf.Amp = 1
-	mcmcConf.R = .1
-	mcmcConf.InitIter = 0
-	mcmcConf.InitK = 1
-	mcmcConf.Norm = 2
-	mcmcConf.Nu = 3
-	distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
-	var algo = mcmc.NewParMCMC(mcmcConf, distrib, initializer, nil)
+	data, conf.Dim = parseFloatCsv(&in)
+	conf.FrameSize = 15000
+	conf.RGen = rand.New(rand.NewSource(uint64(seed)))
+	conf.McmcIter = 200
+	conf.B = 1
+	conf.Amp = 1
+	conf.R = .1
+	conf.InitIter = 0
+	conf.InitK = 1
+	conf.Norm = 2
+	conf.Nu = 3
+	distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: conf})
+	var impl = mcmc.NewParImpl(conf, initializer, nil, distrib)
+	var algo = core.NewAlgo(conf, &impl, space)
 
 	algo.Run(true)
 
@@ -54,8 +55,8 @@ func b1(log func(args ...interface{})) {
 	var centers, _ = algo.Centroids()
 	var labels = make([]int, len(centers))
 	for i := range data {
-		var _, l, _ = centers.Assign(data[i], mcmcConf.Space)
-		labels[l] += 1
+		var _, l, _ = centers.Assign(data[i], space)
+		labels[l]++
 	}
 
 	log(labels)

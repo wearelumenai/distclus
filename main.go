@@ -64,13 +64,11 @@ func main() {
 
 func runMcmc() {
 	var data []core.Elemt
-	var distrib mcmc.MCMCDistrib
+	var distrib mcmc.Distrib
 	var initializer = parseInitializer(*mcmcInitializer)
 
-	var mcmcConf = mcmc.MCMCConf{
-		AlgorithmConf: core.AlgorithmConf{
-			Space: real.RealSpace{},
-		},
+	var space core.Space
+	var conf = mcmc.Conf{
 		InitK:     *mcmcInitK,
 		FrameSize: *mcmcFrameSize,
 		B:         *mcmcB,
@@ -83,21 +81,22 @@ func runMcmc() {
 	}
 
 	if *seed > -1 {
-		mcmcConf.RGen = rand.New(rand.NewSource(uint64(*seed)))
+		conf.RGen = rand.New(rand.NewSource(uint64(*seed)))
 	}
 
 	switch *dtype {
 	case "real":
-		mcmcConf.Space = real.RealSpace{}
-		data, mcmcConf.Dim = parseFloatCsv(fdata)
+		space = real.Space{}
+		data, conf.Dim = parseFloatCsv(fdata)
 		// because the configuration is copied it must not be modified after object initialization
-		if mcmcConf.FrameSize < 1 {
-			mcmcConf.FrameSize = len(data)
+		if conf.FrameSize < 1 {
+			conf.FrameSize = len(data)
 		}
-		distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
+		distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: conf})
 	}
 
-	var algo = mcmc.NewParMCMC(mcmcConf, distrib, initializer, nil)
+	var impl = mcmc.NewParImpl(conf, initializer, nil, distrib)
+	var algo = core.NewAlgo(conf, &impl, space)
 
 	log.Println(fmt.Sprintf("Add data to algo model : %v obs.", len(data)))
 	for _, elt := range data {
@@ -111,13 +110,13 @@ func runMcmc() {
 	var labels = make([]int, len(data))
 	var abstract = make([]int, len(centers))
 	for i := range labels {
-		_, labels[i], _ = centers.Assign(data[i], mcmcConf.Space)
-		abstract[labels[i]] += 1
+		_, labels[i], _ = centers.Assign(data[i], space)
+		abstract[labels[i]]++
 	}
 
 	log.Println(fmt.Sprintf("Cluster cards : %v", abstract))
-	log.Println(fmt.Sprintf("Loss : %v", centers.Loss(data, mcmcConf.Space, mcmcConf.Norm)))
-	log.Println(fmt.Sprintf("Acceptation ratio : %v", algo.AcceptRatio()))
+	log.Println(fmt.Sprintf("Loss : %v", centers.Loss(data, space, conf.Norm)))
+	log.Println(fmt.Sprintf("Acceptation ratio : %v", impl.AcceptRatio()))
 
 	printLabels(labels, olabels)
 	printCenters(centers, ocenters)
@@ -172,7 +171,7 @@ func parseInitializer(init string) core.Initializer {
 
 	switch init {
 	case "random":
-		initializer = kmeans.KMeansPPInitializer
+		initializer = kmeans.PPInitializer
 	case "kmeans++":
 		initializer = kmeans.RandInitializer
 	}

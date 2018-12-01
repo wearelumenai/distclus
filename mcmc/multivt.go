@@ -51,8 +51,8 @@ func (m MultivT) Sample(mu core.Elemt) core.Elemt {
 	var cmu = mu.([]float64)
 	var tau = m.Tau()
 
-	for i := range z {
-		z[i] = cmu[i] + z[i]*g*tau
+	for i, v := range z {
+		z[i] = cmu[i] + v*g*tau
 	}
 
 	return z
@@ -64,8 +64,8 @@ func (m MultivT) Pdf(mu, x core.Elemt) float64 {
 	var cx = x.([]float64)
 	var nk = 0.
 
-	for i := range cmu {
-		f := cmu[i] - cx[i]
+	for i, v := range cmu {
+		f := v - cx[i]
 		nk += f * f
 	}
 

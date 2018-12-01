@@ -20,44 +20,49 @@ type mockImpl struct {
 	error       string
 }
 
-func (impl *mockImpl) Init(conf core.Conf, space core.Space) (err error) {
+func (impl *mockImpl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
+	centroids = impl.clust
 	impl.initialized = true
-	if impl.clust == nil {
+	if len(centroids) == 1 {
 		err = errors.New("clustering")
 	}
 	return
 }
 
-func (impl *mockImpl) Run(conf core.Conf, space core.Space, closing <-chan bool) (err error) {
+func (impl *mockImpl) Run(conf core.Conf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var mockConf = conf.(mockConf)
 	impl.running = true
 	if impl.error != "" {
-		panic(impl.error)
+		err = errors.New(impl.error)
 	}
 	for iter, loop := 0, true; iter < mockConf.Iter && loop; iter++ {
 		select {
-
 		case <-closing:
 			loop = false
 			impl.running = false
-
+		default:
+			notifier(impl.clust)
 		}
 	}
 	return
 }
 
+func (impl *mockImpl) errorResult() error {
+	if impl.error == "" {
+		return nil
+	} else {
+		return errors.New(impl.error)
+	}
+}
+
 func (impl *mockImpl) Push(elemt core.Elemt) error {
 	impl.count++
-	return nil
+	return impl.errorResult()
 }
 
 func (impl *mockImpl) SetAsync() error {
 	impl.async = true
-	return nil
-}
-
-func (impl *mockImpl) Centroids() (core.Clust, error) {
-	return impl.clust, nil
+	return impl.errorResult()
 }
 
 type mockSpace struct {
@@ -80,7 +85,9 @@ func (m mockSpace) Copy(e core.Elemt) core.Elemt {
 
 func newAlgo(t *testing.T) (algo core.Algo) {
 	algo = core.NewAlgo(
-		mockConf{},
+		mockConf{
+			Iter: 1,
+		},
 		&mockImpl{
 			clust: make(core.Clust, 10),
 		},
@@ -88,14 +95,11 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 	)
 
 	// initialization
-	var conf = algo.Conf.(mockConf)
+	// var conf = algo.Conf.(mockConf)
 	var impl = algo.Impl.(*mockImpl)
 
 	if impl.initialized {
 		t.Error("initialized before starting")
-	}
-	if conf.Iter != 0 {
-		t.Error("iterated before starting")
 	}
 	if impl.running {
 		t.Error("running before starting")
@@ -112,7 +116,8 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 
 func TestError(t *testing.T) {
 	var algo = newAlgo(t)
-	algo.Impl.(*mockImpl).clust = nil
+	var impl = algo.Impl.(*mockImpl)
+	impl.clust = impl.clust[0:1]
 
 	err := algo.Run(false)
 
@@ -121,21 +126,41 @@ func TestError(t *testing.T) {
 	}
 }
 
-// func TestAsyncError(t *testing.T) {
-// 	defer test.AssertPanic(t)
-//
-// 	algo := newAlgo(t)
-//
-// 	impl := algo.Impl.(*mockImpl)
-//
-// 	impl.error = "launch error"
-//
-// 	err := algo.Run(true)
-//
-// 	if err == nil {
-// 		t.Error("no error in wrong cluster")
-// 	}
-// }
+func TestAsyncError(t *testing.T) {
+	algo := newAlgo(t)
+
+	impl := algo.Impl.(*mockImpl)
+
+	impl.error = "launch error"
+
+	err := algo.Run(true)
+
+	if err == nil {
+		t.Error("no error in wrong cluster")
+	}
+}
+
+func TestCallback(t *testing.T) {
+	algo := newAlgo(t)
+
+	var iter = algo.Conf.(mockConf).Iter
+
+	var clusters = make(chan core.Clust, iter)
+
+	var notifier = core.Notifier{
+		Callback: func(centroids core.Clust) { clusters <- centroids },
+	}
+
+	err := algo.ARun(false, notifier)
+
+	if len(clusters) != iter {
+		t.Error("Centroids received:", len(clusters))
+	}
+
+	if err != nil {
+		t.Error("Callback error", err)
+	}
+}
 
 func Test_Predict(t *testing.T) {
 
@@ -212,7 +237,7 @@ func Test_Scenario_Sync(t *testing.T) {
 		t.Error("error while pushing a nil element")
 	}
 
-	var conf = algo.Conf.(mockConf)
+	// var conf = algo.Conf.(mockConf)
 	var impl = algo.Impl.(*mockImpl)
 	var space = algo.Space.(mockSpace)
 
@@ -224,9 +249,6 @@ func Test_Scenario_Sync(t *testing.T) {
 	}
 	if impl.initialized {
 		t.Error("initialized before starting")
-	}
-	if conf.Iter != 0 {
-		t.Error("iterated before starting")
 	}
 	if impl.running {
 		t.Error("running before starting")
@@ -265,7 +287,7 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	algo.Push(nil)
 
-	var conf = algo.Conf.(mockConf)
+	// var conf = algo.Conf.(mockConf)
 	var impl = algo.Impl.(*mockImpl)
 	var space = algo.Space.(mockSpace)
 
@@ -277,9 +299,6 @@ func Test_Scenario_ASync(t *testing.T) {
 	}
 	if impl.initialized {
 		t.Error("initialized before starting")
-	}
-	if conf.Iter != 0 {
-		t.Error("iterated before starting")
 	}
 	if impl.running {
 		t.Error("running before starting")
@@ -293,7 +312,7 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	algo.Run(true)
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	if !impl.async {
 		t.Error("not async after asynchronous execution")

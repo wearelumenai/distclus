@@ -1,7 +1,6 @@
 package mcmc
 
 import (
-	"distclus/core"
 	"fmt"
 	"math"
 	"time"
@@ -11,8 +10,8 @@ import (
 
 // Conf is the mcmc configuration object
 type Conf struct {
+	Par                bool
 	Iter               int
-	space              core.Space
 	InitK              int
 	FrameSize          int
 	RGen               *rand.Rand
@@ -69,6 +68,12 @@ func SetConfigDefaults(conf *Conf) {
 	if conf.MaxK == 0 {
 		conf.MaxK = 16
 	}
+	// if conf.Dim == 0 {
+	// 	conf.Dim = 1
+	// }
+	// if conf.Nu == 0 {
+	// 	conf.Nu = 1
+	// }
 }
 
 // Verify configuration parameters

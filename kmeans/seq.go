@@ -5,8 +5,8 @@ import (
 )
 
 // NewSeqImpl returns a sequential algorithm execution
-func NewSeqImpl(conf core.Conf, initializer core.Initializer, data []core.Elemt, _ ...interface{}) Impl {
-	return NewImpl(conf.(Conf), initializer, data)
+func NewSeqImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) Impl {
+	return NewImpl(conf, initializer, data)
 }
 
 // SeqStrategy defines strategy for sequential execution

@@ -1,7 +1,6 @@
 package kmeans
 
 import (
-	"distclus/core"
 	"fmt"
 	"time"
 
@@ -10,7 +9,7 @@ import (
 
 // Conf of KMeans
 type Conf struct {
-	space     core.Space
+	Par       bool
 	K         int
 	Iter      int
 	FrameSize int

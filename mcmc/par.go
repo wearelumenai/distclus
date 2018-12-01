@@ -8,8 +8,8 @@ import (
 )
 
 // NewParImpl returns a new parallelized algorithm implementation
-func NewParImpl(conf core.Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) (impl Impl) {
-	impl = NewSeqImpl(conf, initializer, data, args...)
+func NewParImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
+	impl = NewSeqImpl(conf, initializer, data, distrib)
 	impl.strategy = &ParStrategy{
 		Degree: runtime.NumCPU(),
 	}
@@ -23,11 +23,11 @@ type ParStrategy struct {
 
 type workerSupport struct {
 	ParStrategy
-	out chan msgMCMC
+	out chan msg
 	wg  *sync.WaitGroup
 }
 
-type msgMCMC struct {
+type msg struct {
 	sum  float64
 	card int
 }
@@ -37,35 +37,36 @@ func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core
 	var kmeansConf = kmeans.Conf{
 		K:    len(centroids),
 		Iter: iter,
+		Par:  true,
 	}
-	var impl = kmeans.NewParImpl(kmeansConf, centroids.Initializer, buffer.Data())
-	var algo = core.NewAlgo(kmeansConf, &impl, space)
+	var algo = kmeans.NewAlgo(kmeansConf, space, buffer.Data(), centroids.Initializer)
 
 	algo.Run(false)
 	algo.Close()
 
 	var result, _ = algo.Centroids()
+
 	return result
 }
 
 // Loss aclculates the loss distance of input centroids
-func (strategy *ParStrategy) Loss(conf Conf, space core.Space, clust core.Clust, buffer core.Buffer) float64 {
-	var workers = strategy.startWorkers(conf, space, clust, buffer)
+func (strategy *ParStrategy) Loss(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer) float64 {
+	var workers = strategy.startWorkers(conf, space, centroids, buffer)
 	var aggr = workers.lossAggregate()
 	return aggr.sum
 }
 
-func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, clust core.Clust, buffer core.Buffer) workerSupport {
+func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer) workerSupport {
 	var offset = (len(buffer.Data())-1)/strategy.Degree + 1
 	var workers = workerSupport{}
 	workers.ParStrategy = *strategy
-	workers.out = make(chan msgMCMC, strategy.Degree)
+	workers.out = make(chan msg, strategy.Degree)
 	workers.wg = &sync.WaitGroup{}
 	workers.wg.Add(strategy.Degree)
 
 	for i := 0; i < strategy.Degree; i++ {
 		var part = core.GetChunk(i, offset, buffer.Data())
-		go workers.lossMapReduce(conf, space, clust, part)
+		go workers.lossMapReduce(conf, space, centroids, part)
 	}
 
 	workers.wg.Wait()
@@ -74,18 +75,18 @@ func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, clust cor
 	return workers
 }
 
-func (strategy *workerSupport) lossMapReduce(conf Conf, space core.Space, clust core.Clust, elemts []core.Elemt) {
+func (strategy *workerSupport) lossMapReduce(conf Conf, space core.Space, centroids core.Clust, elemts []core.Elemt) {
 	defer strategy.wg.Done()
 
-	var reduced msgMCMC
-	reduced.sum = clust.Loss(elemts, space, conf.Norm)
+	var reduced msg
+	reduced.sum = centroids.Loss(elemts, space, conf.Norm)
 	reduced.card = len(elemts)
 
 	strategy.out <- reduced
 }
 
-func (strategy *workerSupport) lossAggregate() msgMCMC {
-	var aggregate msgMCMC
+func (strategy *workerSupport) lossAggregate() msg {
+	var aggregate msg
 	for agg := range strategy.out {
 		aggregate.sum += agg.sum
 		aggregate.card += agg.card

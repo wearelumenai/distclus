@@ -101,7 +101,7 @@ func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Ran
 // WeightedChoice returns random index given corresponding weights
 func WeightedChoice(weights []float64, rand *rand.Rand) int {
 	var sum float64
-	var idx = 0
+	var idx int
 
 	for _, x := range weights {
 		sum += x
@@ -112,6 +112,5 @@ func WeightedChoice(weights []float64, rand *rand.Rand) int {
 		cursor -= weights[idx]
 		idx++
 	}
-
 	return idx - 1
 }

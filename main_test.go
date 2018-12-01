@@ -37,7 +37,7 @@ func b1(log func(args ...interface{})) {
 	conf.Norm = 2
 	conf.Nu = 3
 	distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: conf})
-	var impl = mcmc.NewParImpl(conf, initializer, nil, distrib)
+	var impl = mcmc.NewParImpl(&conf, initializer, nil, distrib)
 	var algo = core.NewAlgo(conf, &impl, space)
 
 	algo.Run(true)

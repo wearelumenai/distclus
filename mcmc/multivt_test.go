@@ -31,7 +31,7 @@ func TestMultivT_Pdf(t *testing.T) {
 		[]float64{-4.4, -1.9, -2.3},
 	}
 
-	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
+	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: mcmcConf})
 	var d0 = math.Exp(distrib.Pdf(mu[0], x[0]))
 
 	if math.Abs(d0-0.319520) > 1e-6 {
@@ -52,7 +52,7 @@ func TestMultivT_Pdf(t *testing.T) {
 }
 
 func TestMultivT_Sample(t *testing.T) {
-	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{mcmcConf})
+	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: mcmcConf})
 
 	// var mu = []float64{1.2, 3.1, 5.8}
 	var mu = []float64{0., 0., 0.}

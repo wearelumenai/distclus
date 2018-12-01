@@ -8,7 +8,6 @@ import (
 type Impl struct {
 	strategy    Strategy
 	buffer      core.Buffer
-	centroids   core.Clust
 	initializer core.Initializer
 }
 
@@ -18,9 +17,9 @@ type Strategy interface {
 }
 
 // NewImpl returns a kmeans implementation
-func NewImpl(conf Conf, initializer core.Initializer, data []core.Elemt) (impl Impl) {
-	SetConfigDefaults(&conf)
-	Verify(conf)
+func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt) (impl Impl) {
+	SetConfigDefaults(conf)
+	Verify(*conf)
 	return Impl{
 		buffer:      core.NewDataBuffer(data, conf.FrameSize),
 		strategy:    &SeqStrategy{},
@@ -29,15 +28,14 @@ func NewImpl(conf Conf, initializer core.Initializer, data []core.Elemt) (impl I
 }
 
 // Init Algorithm
-func (impl *Impl) Init(conf core.Conf, space core.Space) (err error) {
+func (impl *Impl) Init(conf core.Conf, space core.Space) (core.Clust, error) {
 	var kmeansConf = conf.(Conf)
 	impl.buffer.Apply()
-	impl.centroids, err = impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
-	return
+	return impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
 }
 
 // Run the algorithm until signal received on closing channel or iteration number is reached
-func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) (err error) {
+func (impl *Impl) Run(conf core.Conf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var kmeansConf = conf.(Conf)
 	for iter, loop := 0, true; iter < kmeansConf.Iter && loop; iter++ {
 		select {
@@ -46,17 +44,11 @@ func (impl *Impl) Run(conf core.Conf, space core.Space, closing <-chan bool) (er
 			loop = false
 
 		default:
-			impl.centroids = impl.strategy.Iterate(space, impl.centroids, impl.buffer)
+			centroids = impl.strategy.Iterate(space, centroids, impl.buffer)
+			notifier(centroids)
 			err = impl.buffer.Apply()
 		}
 	}
-	return
-}
-
-// Centroids returns a copy of impl centroids
-func (impl *Impl) Centroids() (centroids core.Clust, err error) {
-	centroids = make(core.Clust, len(impl.centroids))
-	copy(centroids, impl.centroids)
 	return
 }
 

@@ -16,7 +16,7 @@ import (
 func Test_ParPredict_Given(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var impl = mcmc.NewParImpl(conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
+	var impl = mcmc.NewParImpl(&conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
 	var algo = core.NewAlgo(conf, &impl, space)
 	test.DoTestRunSyncGiven(t, &algo)
 }
@@ -26,7 +26,7 @@ func Test_ParPredictPP(t *testing.T) {
 	conf.ProbaK = []float64{1, 8, 1}
 	var seed = uint64(187232592652256543)
 	conf.RGen = rand.New(rand.NewSource(seed))
-	var impl = mcmc.NewParImpl(conf, kmeans.PPInitializer, []core.Elemt{}, distrib)
+	var impl = mcmc.NewParImpl(&conf, kmeans.PPInitializer, []core.Elemt{}, distrib)
 	var algo = core.NewAlgo(conf, &impl, space)
 	test.DoTestRunSyncPP(t, &algo)
 }
@@ -35,7 +35,7 @@ func Test_ParRunAsync(t *testing.T) {
 	var conf = mcmcConf
 	conf.ProbaK = []float64{1, 8, 1}
 	conf.McmcIter = 1 << 30
-	var impl = mcmc.NewParImpl(conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
+	var impl = mcmc.NewParImpl(&conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
 	var algo = core.NewAlgo(conf, &impl, space)
 
 	test.DoTestRunAsync(t, &algo)
@@ -44,7 +44,7 @@ func Test_ParRunAsync(t *testing.T) {
 func TestParStrategy_Loss(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
-	var impl = mcmc.NewParImpl(conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
+	var impl = mcmc.NewParImpl(&conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
 	var algo = core.NewAlgo(conf, &impl, real.Space{})
 
 	test.PushAndRunSync(&algo)

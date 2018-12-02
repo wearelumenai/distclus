@@ -54,8 +54,8 @@ func TestParStrategy_Loss(t *testing.T) {
 	strategy.Degree = runtime.NumCPU()
 
 	var clust, _ = algo.Centroids()
-	var l1 = strategy.Loss(conf, algo.Space, clust, buffer)
-	var l2 = clust.Loss(test.TestVectors, algo.Space, conf.Norm)
+	var l1 = strategy.Loss(conf, algo.Space(), clust, buffer)
+	var l2 = clust.Loss(test.TestVectors, algo.Space(), conf.Norm)
 
 	if math.Abs(l1-l2) > 1e-6 {
 		t.Error("Expected", l2, "got", l1)

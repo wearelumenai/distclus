@@ -68,12 +68,6 @@ func SetConfigDefaults(conf *Conf) {
 	if conf.MaxK == 0 {
 		conf.MaxK = 16
 	}
-	// if conf.Dim == 0 {
-	// 	conf.Dim = 1
-	// }
-	// if conf.Nu == 0 {
-	// 	conf.Nu = 1
-	// }
 }
 
 // Verify configuration parameters

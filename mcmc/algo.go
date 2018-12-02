@@ -27,5 +27,5 @@ func NewAlgo(conf core.Conf, space core.Space, data []core.Elemt, initializer co
 
 // AcceptRatio returns ratio between acc and iter
 func (algo *Algo) AcceptRatio() float64 {
-	return algo.Algo.Impl.(*Impl).AcceptRatio()
+	return algo.Impl().(*Impl).AcceptRatio()
 }

@@ -96,7 +96,7 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 
 	// initialization
 	// var conf = algo.Conf.(mockConf)
-	var impl = algo.Impl.(*mockImpl)
+	var impl = algo.Impl().(*mockImpl)
 
 	if impl.initialized {
 		t.Error("initialized before starting")
@@ -116,7 +116,7 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 
 func TestError(t *testing.T) {
 	var algo = newAlgo(t)
-	var impl = algo.Impl.(*mockImpl)
+	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
 	err := algo.Run(false)
@@ -129,7 +129,7 @@ func TestError(t *testing.T) {
 func TestAsyncError(t *testing.T) {
 	algo := newAlgo(t)
 
-	impl := algo.Impl.(*mockImpl)
+	impl := algo.Impl().(*mockImpl)
 
 	impl.error = "launch error"
 
@@ -143,7 +143,7 @@ func TestAsyncError(t *testing.T) {
 func TestCallback(t *testing.T) {
 	algo := newAlgo(t)
 
-	var iter = algo.Conf.(mockConf).Iter
+	var iter = algo.Conf().(mockConf).Iter
 
 	var clusters = make(chan core.Clust, iter)
 
@@ -189,7 +189,7 @@ func Test_Predict(t *testing.T) {
 	if label != 0 {
 		t.Error("wrong label")
 	}
-	if algo.Impl.(*mockImpl).count != 0 {
+	if algo.Impl().(*mockImpl).count != 0 {
 		t.Error("element has been pushed")
 	}
 
@@ -204,7 +204,7 @@ func Test_Predict(t *testing.T) {
 	if label != 0 {
 		t.Error("wrong label")
 	}
-	if algo.Impl.(*mockImpl).count != 1 {
+	if algo.Impl().(*mockImpl).count != 1 {
 		t.Error("element has not been pushed")
 	}
 
@@ -238,8 +238,8 @@ func Test_Scenario_Sync(t *testing.T) {
 	}
 
 	// var conf = algo.Conf.(mockConf)
-	var impl = algo.Impl.(*mockImpl)
-	var space = algo.Space.(mockSpace)
+	var impl = algo.Impl().(*mockImpl)
+	var space = algo.Space().(mockSpace)
 
 	if space.combine != 0 {
 		t.Error("combine has been done")
@@ -288,8 +288,8 @@ func Test_Scenario_ASync(t *testing.T) {
 	algo.Push(nil)
 
 	// var conf = algo.Conf.(mockConf)
-	var impl = algo.Impl.(*mockImpl)
-	var space = algo.Space.(mockSpace)
+	var impl = algo.Impl().(*mockImpl)
+	var space = algo.Space().(mockSpace)
 
 	if space.combine != 0 {
 		t.Error("combine has been done")
@@ -342,5 +342,53 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	if !impl.running {
 		t.Error("running")
+	}
+}
+
+func Test_SwitchConf(t *testing.T) {
+	var algo = newAlgo(t)
+	var err = algo.SetConf(algo.Conf())
+
+	if err != nil {
+		t.Error("Algo is running")
+	}
+
+	algo.Run(false)
+	err = algo.SetConf(algo.Conf())
+
+	if err == nil {
+		t.Error("Algo is not running")
+	}
+
+	algo.Close()
+
+	err = algo.SetConf(algo.Conf())
+
+	if err != nil {
+		t.Error("Algo is running")
+	}
+}
+
+func Test_SwitchSpace(t *testing.T) {
+	var algo = newAlgo(t)
+	var err = algo.SetSpace(algo.Space())
+
+	if err != nil {
+		t.Error("Algo is running")
+	}
+
+	algo.Run(false)
+	err = algo.SetSpace(algo.Space())
+
+	if err == nil {
+		t.Error("Algo is not running")
+	}
+
+	algo.Close()
+
+	err = algo.SetSpace(algo.Space())
+
+	if err != nil {
+		t.Error("Algo is running")
 	}
 }

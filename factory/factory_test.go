@@ -38,20 +38,14 @@ var spaces = map[string]core.Conf{
 
 func Test_CreateSpace(t *testing.T) {
 	for name, conf := range spaces {
-		var space, err = factory.CreateSpace(name, conf)
+		var space = factory.CreateSpace(name, conf)
 		if conf != nil {
 			if space == nil {
 				t.Error("space not created")
 			}
-			if err != nil {
-				t.Error("an error has been thrown")
-			}
 		} else {
 			if space != nil {
 				t.Error("space has been created")
-			}
-			if err == nil {
-				t.Error("an error has not been thrown")
 			}
 		}
 	}
@@ -60,15 +54,15 @@ func Test_CreateSpace(t *testing.T) {
 func Test_CreateOC(t *testing.T) {
 	for oc, conf := range ocs {
 		for space, spaceConf := range spaces {
-			algoSpace, _ := factory.CreateSpace(space, spaceConf)
+			algoSpace := factory.CreateSpace(space, spaceConf)
 			if algoSpace != nil {
-				var _, err = factory.CreateOC(oc, conf, algoSpace, nil, nil)
+				var algo = factory.CreateOC(oc, conf, algoSpace, nil, nil)
 				if conf != nil {
-					if err != nil {
+					if algo == nil {
 						t.Error("an error has been thrown")
 					}
 				} else {
-					if err == nil {
+					if algo != nil {
 						t.Error("an error has not been thrown")
 					}
 				}

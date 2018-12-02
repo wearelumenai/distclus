@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 )
 
@@ -21,27 +20,31 @@ type OnlineClust interface {
 	Run(async bool) error
 	ARun(async bool, notifier Notifier) error
 	Close() error
+	SetConf(Conf) error
+	SetSpace(Space) error
+	Conf() Conf
+	Space() Space
+	Impl() Impl
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
 type Algo struct {
-	Conf           Conf
-	Impl           Impl
-	Space          Space
+	conf           Conf
+	impl           Impl
+	space          Space
 	centroids      Clust
 	status         ClustStatus
 	closing        chan bool
 	closed         chan bool
-	mutex          sync.Mutex
 	lastUpdateTime int64
 }
 
 // NewAlgo creates a new algorithm instance
 func NewAlgo(conf Conf, impl Impl, space Space) Algo {
 	return Algo{
-		Conf:    conf,
-		Impl:    impl,
-		Space:   space,
+		conf:    conf,
+		impl:    impl,
+		space:   space,
 		status:  Created,
 		closing: make(chan bool, 1),
 		closed:  make(chan bool, 1),
@@ -65,7 +68,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	case Closed:
 		err = errors.New("clustering ended")
 	default:
-		err = algo.Impl.Push(elemt)
+		err = algo.impl.Push(elemt)
 	}
 	return
 }
@@ -73,7 +76,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 // ARun executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
 func (algo *Algo) ARun(async bool, notifier Notifier) (err error) {
 	if async {
-		err = algo.Impl.SetAsync()
+		err = algo.impl.SetAsync()
 		if err == nil {
 			go algo.initAndRunAsync(notifier)
 		}
@@ -92,13 +95,48 @@ func (algo *Algo) Run(async bool) (err error) {
 	return algo.ARun(async, Notifier{})
 }
 
+// SetConf switches of configuration
+func (algo *Algo) SetConf(conf Conf) (err error) {
+	if algo.status == Running {
+		err = errors.New("Impossible to switch configuration while running")
+	} else {
+		algo.conf = conf
+	}
+	return
+}
+
+// SetSpace switches of space
+func (algo *Algo) SetSpace(space Space) (err error) {
+	if algo.status == Running {
+		err = errors.New("Impossible to switch configuration while running")
+	} else {
+		algo.space = space
+	}
+	return
+}
+
+// Conf returns configuration
+func (algo Algo) Conf() Conf {
+	return algo.conf
+}
+
+// Impl returns impl
+func (algo Algo) Impl() Impl {
+	return algo.impl
+}
+
+// Space returns space
+func (algo Algo) Space() Space {
+	return algo.space
+}
+
 // Predict the cluster for a new observation
 func (algo *Algo) Predict(elemt Elemt, push bool) (pred Elemt, label int, err error) {
 	var clust Clust
 	clust, err = algo.Centroids()
 
 	if err == nil {
-		pred, label, _ = clust.Assign(elemt, algo.Space)
+		pred, label, _ = clust.Assign(elemt, algo.space)
 		if push {
 			err = algo.Push(elemt)
 		}
@@ -129,12 +167,12 @@ func (algo *Algo) updateCentroids(notifier Notifier) func(Clust) {
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) initAndRunSync(notifier Notifier) (err error) {
-	algo.centroids, err = algo.Impl.Init(algo.Conf, algo.Space)
+	algo.centroids, err = algo.impl.Init(algo.conf, algo.space)
 	if err == nil {
 		// go algo.updateCentroids(callback, cchan, ttc)
-		err = algo.Impl.Run(
-			algo.Conf,
-			algo.Space,
+		err = algo.impl.Run(
+			algo.conf,
+			algo.space,
 			algo.centroids,
 			algo.updateCentroids(notifier),
 			algo.closing,

@@ -51,7 +51,7 @@ func Test_AlgoAcceptRatio(t *testing.T) {
 	algo.Run(false)
 
 	var acceptRatio = algo.AcceptRatio()
-	var implAcceptRatio = algo.Algo.Impl.(*mcmc.Impl).AcceptRatio()
+	var implAcceptRatio = algo.Impl().(*mcmc.Impl).AcceptRatio()
 
 	if acceptRatio != implAcceptRatio {
 		t.Error("Wrong routing of acceptratio method", acceptRatio, implAcceptRatio)

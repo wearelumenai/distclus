@@ -77,7 +77,7 @@ func DoTestRunSyncCentroids(t *testing.T, km *core.Algo) {
 func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	RunAsyncAndPush(algo)
 
-	time.Sleep(700 * time.Millisecond)
+	time.Sleep(1000 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs, true)
 

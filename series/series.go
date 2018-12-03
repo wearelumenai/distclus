@@ -32,8 +32,8 @@ func NewSpace(conf core.Conf) Space {
 	}
 }
 
-func getMatrix(elemt1, elemt2 core.Elemt) (matrix Series) {
-	var realSpace = real.Space{}
+func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix Series) {
+	var innerSpace = space.innerSpace
 
 	var e1 = elemt1.(Series)
 	var e2 = elemt2.(Series)
@@ -43,7 +43,7 @@ func getMatrix(elemt1, elemt2 core.Elemt) (matrix Series) {
 	for i1, el1 := range e1 {
 		matrix[i1] = make([]float64, len(e2))
 		for i2, el2 := range e2 {
-			matrix[i1][i2] = realSpace.Dist(el1, el2)
+			matrix[i1][i2] = innerSpace.Dist(el1, el2)
 		}
 	}
 
@@ -77,7 +77,7 @@ func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 	var e1 = elemt1.(Series)
 	var e2 = elemt2.(Series)
 
-	var matrix = getMatrix(elemt1, elemt2)
+	var matrix = space.getMatrix(elemt1, elemt2)
 
 	return fillMatrix(e1, e2, matrix)
 }

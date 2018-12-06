@@ -27,6 +27,22 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt) (impl 
 	}
 }
 
+// Reset returns a new impl with input context
+func (impl *Impl) Reset(conf *core.Conf, data []core.Elemt) (res core.Impl, err error) {
+	var kmeansConf = (*conf).(Conf)
+	var _impl Impl
+	if data == nil {
+		data = impl.buffer.Data()
+	}
+	if kmeansConf.Par {
+		_impl = NewParImpl(&kmeansConf, impl.initializer, data)
+	} else {
+		_impl = NewSeqImpl(&kmeansConf, impl.initializer, data)
+	}
+	res = &_impl
+	return
+}
+
 // Init Algorithm
 func (impl *Impl) Init(conf core.Conf, space core.Space) (core.Clust, error) {
 	var kmeansConf = conf.(Conf)

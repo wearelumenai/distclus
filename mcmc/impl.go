@@ -32,6 +32,22 @@ func (impl *Impl) Init(conf core.Conf, space core.Space) (core.Clust, error) {
 	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 }
 
+// Reset this implementation
+func (impl *Impl) Reset(conf *core.Conf, data []core.Elemt) (res core.Impl, err error) {
+	var mcmcConf = (*conf).(Conf)
+	if data == nil {
+		data = impl.buffer.Data()
+	}
+	var _impl Impl
+	if mcmcConf.Par {
+		_impl = NewParImpl(&mcmcConf, impl.initializer, data, impl.distrib)
+	} else {
+		_impl = NewSeqImpl(&mcmcConf, impl.initializer, data, impl.distrib)
+	}
+	res = &_impl
+	return
+}
+
 // NewImpl function
 func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
 	SetConfigDefaults(conf)

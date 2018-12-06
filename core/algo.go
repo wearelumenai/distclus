@@ -25,6 +25,8 @@ type OnlineClust interface {
 	Conf() Conf
 	Space() Space
 	Impl() Impl
+	Reset(Conf, []Elemt) error
+	Fit([]Elemt) error
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -49,6 +51,26 @@ func NewAlgo(conf Conf, impl Impl, space Space) Algo {
 		closing: make(chan bool, 1),
 		closed:  make(chan bool, 1),
 	}
+}
+
+// Fit applies fit algorithm execution
+func (algo *Algo) Fit(data []Elemt) (err error) {
+	err = algo.Reset(algo.conf, data)
+	if err == nil {
+		err = algo.Run(false)
+	}
+	if err == nil {
+		err = algo.Close()
+	}
+	return
+}
+
+// Reset implementation
+func (algo *Algo) Reset(conf Conf, data []Elemt) error {
+	algo.conf = conf
+	var impl, err = algo.impl.Reset(&conf, data)
+	algo.impl = impl
+	return err
 }
 
 // Centroids Get the centroids currently found by the algorithm
@@ -169,12 +191,12 @@ func (algo *Algo) updateCentroids(notifier Notifier) func(Clust) {
 func (algo *Algo) initAndRunSync(notifier Notifier) (err error) {
 	algo.centroids, err = algo.impl.Init(algo.conf, algo.space)
 	if err == nil {
-		// go algo.updateCentroids(callback, cchan, ttc)
+		var updater = algo.updateCentroids(notifier)
 		err = algo.impl.Run(
 			algo.conf,
 			algo.space,
 			algo.centroids,
-			algo.updateCentroids(notifier),
+			updater,
 			algo.closing,
 		)
 		if err == nil {

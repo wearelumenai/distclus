@@ -174,6 +174,25 @@ func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) 
 	}
 }
 
+// DoTestReset tests algo.Reset
+func DoTestReset(t *testing.T, algo core.OnlineClust, confToUse core.Conf) {
+	conf1 := algo.Conf()
+
+	algo.Reset(conf1, nil)
+
+	conf2 := algo.Conf()
+
+	AssertEqual(t, conf1, conf2)
+
+	conf1 = confToUse
+
+	algo.Reset(conf1, nil)
+
+	conf1 = algo.Conf()
+
+	AssertNotEqual(t, conf1, conf2)
+}
+
 // PushAndRunAsync test
 func PushAndRunAsync(algorithm core.OnlineClust) {
 	for _, elemt := range TestVectors {
@@ -224,6 +243,18 @@ func AssertEqual(t *testing.T, expected core.Elemt, actual core.Elemt) {
 	if !reflect.DeepEqual(expected, actual) {
 		t.Error("Expected same elements")
 	}
+}
+
+// AssertFalse test
+func AssertFalse(t *testing.T, value bool) {
+	if value {
+		t.Error("False expected")
+	}
+}
+
+// AssertTrue test
+func AssertTrue(t *testing.T, value bool) {
+	AssertFalse(t, !value)
 }
 
 // AssertNotEqual test

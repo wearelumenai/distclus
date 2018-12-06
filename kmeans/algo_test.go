@@ -2,6 +2,7 @@ package kmeans_test
 
 import (
 	"distclus/core"
+	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/real"
 	"testing"
@@ -28,4 +29,15 @@ func Test_NewParAlgo(t *testing.T) {
 		data,
 		initializer,
 	)
+}
+
+func Test_Reset(t *testing.T) {
+	algo := kmeans.NewAlgo(
+		conf,
+		real.Space{},
+		data,
+		initializer,
+	)
+
+	test.DoTestReset(t, &algo, kmeans.Conf{K: 1})
 }

@@ -6,4 +6,5 @@ type Impl interface {
 	Run(conf Conf, space Space, centroids Clust, notifier func(Clust), closing <-chan bool) error
 	Push(elemt Elemt) error
 	SetAsync() error
+	Reset(*Conf, []Elemt) (Impl, error)
 }

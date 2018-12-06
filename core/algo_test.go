@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"distclus/core"
+	"distclus/internal/test"
 	"errors"
 	"testing"
 	"time"
@@ -53,6 +54,10 @@ func (impl *mockImpl) errorResult() error {
 	} else {
 		return errors.New(impl.error)
 	}
+}
+
+func (impl *mockImpl) Reset(*core.Conf, []core.Elemt) (core.Impl, error) {
+	return impl, impl.errorResult()
 }
 
 func (impl *mockImpl) Push(elemt core.Elemt) error {
@@ -287,7 +292,6 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	algo.Push(nil)
 
-	// var conf = algo.Conf.(mockConf)
 	var impl = algo.Impl().(*mockImpl)
 	var space = algo.Space().(mockSpace)
 
@@ -312,7 +316,7 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	algo.Run(true)
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	if !impl.async {
 		t.Error("not async after asynchronous execution")
@@ -349,46 +353,54 @@ func Test_SwitchConf(t *testing.T) {
 	var algo = newAlgo(t)
 	var err = algo.SetConf(algo.Conf())
 
-	if err != nil {
-		t.Error("Algo is running")
-	}
+	test.AssertNoError(t, err)
 
 	algo.Run(false)
 	err = algo.SetConf(algo.Conf())
 
-	if err == nil {
-		t.Error("Algo is not running")
-	}
+	test.AssertError(t, err)
 
 	algo.Close()
 
 	err = algo.SetConf(algo.Conf())
 
-	if err != nil {
-		t.Error("Algo is running")
-	}
+	test.AssertNoError(t, err)
 }
 
 func Test_SwitchSpace(t *testing.T) {
 	var algo = newAlgo(t)
 	var err = algo.SetSpace(algo.Space())
 
-	if err != nil {
-		t.Error("Algo is running")
-	}
+	test.AssertNoError(t, err)
 
 	algo.Run(false)
 	err = algo.SetSpace(algo.Space())
 
-	if err == nil {
-		t.Error("Algo is not running")
-	}
+	test.AssertError(t, err)
 
 	algo.Close()
 
 	err = algo.SetSpace(algo.Space())
 
-	if err != nil {
-		t.Error("Algo is running")
-	}
+	test.AssertNoError(t, err)
+}
+
+func Test_Fit(t *testing.T) {
+	algo := newAlgo(t)
+
+	err := algo.Fit(nil)
+
+	test.AssertNoError(t, err)
+
+	algo.Impl().(*mockImpl).error = "error"
+
+	err = algo.Fit(nil)
+
+	test.AssertError(t, err)
+}
+
+func Test_Reset(t *testing.T) {
+	algo := newAlgo(t)
+
+	test.DoTestReset(t, &algo, mockConf{})
 }

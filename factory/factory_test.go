@@ -6,6 +6,7 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/series"
+	"strings"
 
 	"golang.org/x/exp/rand"
 
@@ -16,7 +17,7 @@ var mcmcConf = mcmc.Conf{
 	InitK:     3,
 	FrameSize: 8,
 	RGen:      rand.New(rand.NewSource(6305689164243)),
-	Dim:       3, B: 100, Amp: 1,
+	B:         100, Amp: 1,
 	Norm: 2, Nu: 3, McmcIter: 20,
 	InitIter: 1,
 }
@@ -50,12 +51,24 @@ func Test_CreateSpace(t *testing.T) {
 	}
 }
 
+func getData(space string) (data []core.Elemt) {
+	data = make([]core.Elemt, 1)
+	switch strings.ToLower(space) {
+	case "real":
+		data[0] = []float64{0.}
+	case "series":
+		data[0] = [][]float64{{0.}}
+	}
+	return
+}
+
 func Test_CreateOC(t *testing.T) {
 	for oc, conf := range ocs {
 		for space, spaceConf := range spaces {
 			algoSpace := factory.CreateSpace(space, spaceConf)
 			if algoSpace != nil {
-				var algo = factory.CreateOC(oc, conf, algoSpace, nil, nil)
+				data := getData(space)
+				var algo = factory.CreateOC(oc, conf, algoSpace, data, nil)
 				if conf != nil {
 					if algo == nil {
 						t.Error("an error has been thrown")

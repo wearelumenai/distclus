@@ -1,7 +1,6 @@
 package factory
 
 import (
-	"distclus/complex"
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
@@ -15,8 +14,6 @@ func CreateSpace(name string, conf core.Conf) (space core.Space) {
 	switch strings.ToLower(name) {
 	case "real":
 		space = real.NewSpace(conf)
-	case "complex":
-		space = complex.NewSpace(conf)
 	case "series":
 		space = series.NewSpace(conf)
 	}

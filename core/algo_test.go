@@ -88,6 +88,10 @@ func (m mockSpace) Copy(e core.Elemt) core.Elemt {
 	return e
 }
 
+func (m mockSpace) Dim(e []core.Elemt) int {
+	return 0
+}
+
 func newAlgo(t *testing.T) (algo core.Algo) {
 	algo = core.NewAlgo(
 		mockConf{

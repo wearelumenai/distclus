@@ -31,7 +31,6 @@ var ocs = map[string]core.Conf{
 var spaces = map[string]core.Conf{
 	"Real":    series.Conf{},
 	"real":    series.Conf{},
-	"complex": series.Conf{},
 	"series":  series.Conf{},
 	"unknown": nil,
 }

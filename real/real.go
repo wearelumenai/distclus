@@ -45,3 +45,12 @@ func (space Space) Copy(elemt core.Elemt) core.Elemt {
 	copy(crv, rv)
 	return crv
 }
+
+// Dim returns input data dimension
+func (space Space) Dim(data []core.Elemt) (dim int) {
+	if len(data) > 0 {
+		elemts := data[0].([]float64)
+		dim = len(elemts)
+	}
+	return
+}

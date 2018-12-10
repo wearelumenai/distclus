@@ -1,6 +1,8 @@
 package real_test
 
 import (
+	"distclus/core"
+	"distclus/internal/test"
 	"distclus/real"
 	"math"
 	"testing"
@@ -96,4 +98,21 @@ func Test_NewSpace(t *testing.T) {
 	if &space == nil {
 		t.Error("no space created")
 	}
+}
+
+func Test_Dim(t *testing.T) {
+	space := real.NewSpace(nil)
+
+	data := make([]core.Elemt, 1)
+	data[0] = []float64{}
+
+	dim := space.Dim(data)
+
+	test.AssertEqual(t, dim, 0)
+
+	data[0] = []float64{1., 2., 3.}
+
+	dim = space.Dim(data)
+
+	test.AssertEqual(t, dim, 3)
 }

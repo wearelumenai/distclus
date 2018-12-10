@@ -18,7 +18,7 @@ jobs:
     ####   /go/src/github.com/circleci/go-tool
     ####   /go/src/bitbucket.org/circleci/go-tool
     # working_directory: /go/src/bitbucket.org/{{ORG_NAME}}/{{REPO_NAME}}
-    working_directory: /go/src/{{REPO_NAME}}
+    working_directory: /go/src/distclus
     steps:
       - checkout
 

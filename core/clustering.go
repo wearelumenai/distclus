@@ -112,8 +112,3 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 func (c *Clust) Initializer(int, []Elemt, Space, *rand.Rand) (centroids Clust, err error) {
 	return *c, nil
 }
-
-// Copy copies this clust
-func (c Clust) Copy() Clust {
-	return c
-}

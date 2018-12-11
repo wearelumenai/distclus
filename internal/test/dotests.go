@@ -46,9 +46,9 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var actual = clust.AssignAll(TestVectors, real.Space{})
 
 	var expected = make([][]int, 3)
-	_, i0, _ := algo.Predict(TestVectors[0], false)
-	_, i1, _ := algo.Predict(TestVectors[1], false)
-	_, i2, _ := algo.Predict(TestVectors[2], false)
+	_, i0, _ := algo.Predict(TestVectors[0])
+	_, i1, _ := algo.Predict(TestVectors[1])
+	_, i2, _ := algo.Predict(TestVectors[2])
 	expected[i0] = []int{0, 3, 4}
 	expected[i1] = []int{1, 5}
 	expected[i2] = []int{2, 6, 7}
@@ -60,9 +60,9 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 
 // DoTestRunSyncCentroids Algorithm must be configured with 3 centers
 func DoTestRunSyncCentroids(t *testing.T, km *core.Algo) {
-	c0, _, _ := km.Predict(TestVectors[0], false)
-	c1, _, _ := km.Predict(TestVectors[1], false)
-	c2, _, _ := km.Predict(TestVectors[2], false)
+	c0, _, _ := km.Predict(TestVectors[0])
+	c1, _, _ := km.Predict(TestVectors[1])
+	c2, _, _ := km.Predict(TestVectors[2])
 	var actual = core.Clust{c0, c1, c2}
 	var expected = core.Clust{
 		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
@@ -79,23 +79,24 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 
 	time.Sleep(1000 * time.Millisecond)
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
-	var c, _, _ = algo.Predict(obs, true)
+	var c, _, _ = algo.Predict(obs)
+	algo.Push(obs)
 
 	time.Sleep(1000 * time.Millisecond)
 	algo.Close()
 
-	var cn, _, _ = algo.Predict(obs, false)
+	var cn, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
 
-	var c0, _, _ = algo.Predict(TestVectors[1], false)
+	var c0, _, _ = algo.Predict(TestVectors[1])
 	AssertEqual(t, c0, cn)
 }
 
 // DoTestRunAsyncCentroids test
 func DoTestRunAsyncCentroids(t *testing.T, km *core.Algo) {
-	c0, _, _ := km.Predict(TestVectors[0], false)
-	c1, _, _ := km.Predict(TestVectors[1], false)
-	c2, _, _ := km.Predict(TestVectors[2], false)
+	c0, _, _ := km.Predict(TestVectors[0])
+	c1, _, _ := km.Predict(TestVectors[1])
+	c2, _, _ := km.Predict(TestVectors[2])
 	var actual = core.Clust{c0, c1, c2}
 	var expected = core.Clust{
 		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
@@ -124,10 +125,13 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	err = algo.Push(TestVectors[5])
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[5], true)
+	_, _, err = algo.Predict(TestVectors[5])
+	if err == nil {
+		err = algo.Push(TestVectors[5])
+	}
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[5], false)
+	_, _, err = algo.Predict(TestVectors[5])
 	AssertNoError(t, err)
 }
 
@@ -137,7 +141,9 @@ func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
 	err = algo.Push(TestVectors[3])
 	AssertNoError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[4], true)
+	_, _, err = algo.Predict(TestVectors[4])
+	algo.Push(TestVectors[4])
+
 	AssertNoError(t, err)
 }
 
@@ -152,7 +158,7 @@ func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
 	_, err = algo.Centroids()
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[3], false)
+	_, _, err = algo.Predict(TestVectors[3])
 	AssertError(t, err)
 }
 

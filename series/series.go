@@ -97,7 +97,7 @@ func (space Space) getInterpolatedMatrix(elemt1, elemt2 core.Elemt) (matrix [][]
 
 	if len1 > len2 {
 		rows = e2
-		cols = allocate(e1, int(math.Min(float64(len2), len1+space.window)))
+		cols = allocate(e1, int(math.Min(float64(len2), float64(len1+space.window))))
 	} else if len2 > len1 {
 		rows = e1
 		cols = allocate(e2, len1)

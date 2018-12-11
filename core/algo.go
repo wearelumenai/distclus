@@ -16,17 +16,14 @@ import (
 type OnlineClust interface {
 	Centroids() (Clust, error)
 	Push(elemt Elemt) error
-	Predict(elemt Elemt, push bool) (Elemt, int, error)
+	Predict(elemt Elemt) (Elemt, int, error)
 	Run(async bool) error
-	ARun(async bool, notifier Notifier) error
 	Close() error
 	SetConf(Conf) error
 	SetSpace(Space) error
+	Reset(Conf, []Elemt) error
 	Conf() Conf
 	Space() Space
-	Impl() Impl
-	Reset(Conf, []Elemt) error
-	Fit([]Elemt) error
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -79,7 +76,10 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	case Created:
 		err = fmt.Errorf("clustering not started")
 	default:
-		centroids = algo.centroids.Copy()
+		centroids = make(Clust, len(algo.centroids))
+		for index, centroid := range algo.centroids {
+			centroids[index] = algo.space.Copy(centroid)
+		}
 	}
 	return
 }
@@ -95,26 +95,21 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	return
 }
 
-// ARun executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
-func (algo *Algo) ARun(async bool, notifier Notifier) (err error) {
+// Run executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
+func (algo *Algo) Run(async bool) (err error) {
 	if async {
 		err = algo.impl.SetAsync()
 		if err == nil {
-			go algo.initAndRunAsync(notifier)
+			go algo.initAndRunAsync()
 		}
 	} else {
-		err = algo.initAndRunSync(notifier)
+		err = algo.initAndRunSync()
 	}
 	if err == nil {
 		algo.status = Running
 	}
 
 	return
-}
-
-// Run the algorithm, asynchronously if async is true
-func (algo *Algo) Run(async bool) (err error) {
-	return algo.ARun(async, Notifier{})
 }
 
 // SetConf switches of configuration
@@ -153,15 +148,12 @@ func (algo Algo) Space() Space {
 }
 
 // Predict the cluster for a new observation
-func (algo *Algo) Predict(elemt Elemt, push bool) (pred Elemt, label int, err error) {
+func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, err error) {
 	var clust Clust
 	clust, err = algo.Centroids()
 
 	if err == nil {
 		pred, label, _ = clust.Assign(elemt, algo.space)
-		if push {
-			err = algo.Push(elemt)
-		}
 	}
 
 	return
@@ -177,26 +169,19 @@ func (algo *Algo) Close() (err error) {
 	return
 }
 
-func (algo *Algo) updateCentroids(notifier Notifier) func(Clust) {
-	return func(centroids Clust) {
-		algo.centroids = centroids
-		if notifier.Callback != nil && (algo.lastUpdateTime == 0 || (notifier.TTC <= time.Now().UnixNano()-int64(algo.lastUpdateTime))) {
-			algo.lastUpdateTime = time.Now().UnixNano()
-			notifier.Callback(centroids)
-		}
-	}
+func (algo *Algo) updateCentroids(centroids Clust) {
+	algo.centroids = centroids
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) initAndRunSync(notifier Notifier) (err error) {
+func (algo *Algo) initAndRunSync() (err error) {
 	algo.centroids, err = algo.impl.Init(algo.conf, algo.space)
 	if err == nil {
-		var updater = algo.updateCentroids(notifier)
 		err = algo.impl.Run(
 			algo.conf,
 			algo.space,
 			algo.centroids,
-			updater,
+			algo.updateCentroids,
 			algo.closing,
 		)
 		if err == nil {
@@ -208,10 +193,10 @@ func (algo *Algo) initAndRunSync(notifier Notifier) (err error) {
 }
 
 // Initialize the algorithm, if success run it asynchronously otherwise retry
-func (algo *Algo) initAndRunAsync(notifier Notifier) (err error) {
-	if err = algo.initAndRunSync(notifier); err != nil {
+func (algo *Algo) initAndRunAsync() (err error) {
+	if err = algo.initAndRunSync(); err != nil {
 		time.Sleep(300 * time.Millisecond)
-		err = algo.initAndRunAsync(notifier)
+		err = algo.initAndRunAsync()
 	}
 	return
 }

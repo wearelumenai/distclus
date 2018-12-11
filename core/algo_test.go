@@ -149,33 +149,11 @@ func TestAsyncError(t *testing.T) {
 	}
 }
 
-func TestCallback(t *testing.T) {
-	algo := newAlgo(t)
-
-	var iter = algo.Conf().(mockConf).Iter
-
-	var clusters = make(chan core.Clust, iter)
-
-	var notifier = core.Notifier{
-		Callback: func(centroids core.Clust) { clusters <- centroids },
-	}
-
-	err := algo.ARun(false, notifier)
-
-	if len(clusters) != iter {
-		t.Error("Centroids received:", len(clusters))
-	}
-
-	if err != nil {
-		t.Error("Callback error", err)
-	}
-}
-
 func Test_Predict(t *testing.T) {
 
 	var algo = newAlgo(t)
 
-	_, _, err := algo.Predict(nil, false)
+	_, _, err := algo.Predict(nil)
 
 	if err == nil {
 		t.Error("initialized before running")
@@ -187,7 +165,7 @@ func Test_Predict(t *testing.T) {
 		t.Error("error while running prediction")
 	}
 
-	pred, label, err := algo.Predict(nil, false)
+	pred, label, err := algo.Predict(nil)
 
 	if err != nil {
 		t.Error("Error after initialization")
@@ -202,7 +180,8 @@ func Test_Predict(t *testing.T) {
 		t.Error("element has been pushed")
 	}
 
-	pred, label, err = algo.Predict(nil, true)
+	pred, label, err = algo.Predict(nil)
+	algo.Push(nil)
 
 	if err != nil {
 		t.Error("Error after prediction")
@@ -223,7 +202,10 @@ func Test_Predict(t *testing.T) {
 		t.Error("error while closing the algorithm")
 	}
 
-	_, _, err = algo.Predict(nil, true)
+	_, _, err = algo.Predict(nil)
+	if err == nil {
+		err = algo.Push(nil)
+	}
 
 	if err == nil {
 		t.Error("Missing error after close and prediction")

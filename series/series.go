@@ -46,21 +46,40 @@ func interpolate(in [][]float64, out [][]float64) {
 		if index == 0 || index == (lenout-1) {
 			out[index] = in[index]
 		} else {
-			pos = (float64)(index * lenin / lenout)
+			pos = float64(index * lenin / lenout)
 			var ceil = math.Ceil(pos)
 			var p = pos - ceil
-			iindex := (int)(ceil)
+			iindex := int(ceil)
 			i0 := in[iindex]
 			i1 := in[iindex+1]
 			for ii, ii0 := range i0 {
 				ii1 := i1[ii]
-				out[index][ii] = (float64)((ii0 + ii1) * p)
+				out[index][ii] = float64((ii0 + ii1) * p)
 			}
 		}
 	}
 }
 
 func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
+	var e1 = elemt1.([][]float64)
+	var e2 = elemt2.([][]float64)
+
+	cols := len(e1)
+	rows := len(e2)
+
+	matrix = make([][]float64, cols)
+
+	for col := range matrix {
+		matrix[col] = make([]float64, rows)
+		for row := range matrix {
+			matrix[col][row] = space.innerSpace.Dist(e1[col], e2[row])
+		}
+	}
+
+	return
+}
+
+func (space Space) getInterpolatedMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
 	var innerSpace = space.innerSpace
 
 	var e1 = elemt1.([][]float64)
@@ -69,7 +88,7 @@ func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
 	len1 := len(e1)
 	len2 := len(e2)
 
-	size := (int)(math.Min((float64)(len1), (float64)(len2)))
+	size := int(math.Min(float64(len1), float64(len2)))
 
 	matrix = make([][]float64, size)
 
@@ -78,7 +97,7 @@ func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
 
 	if len1 > len2 {
 		rows = e2
-		cols = allocate(e1, len2)
+		cols = allocate(e1, int(math.Min(float64(len2), len1+space.window)))
 	} else if len2 > len1 {
 		rows = e1
 		cols = allocate(e2, len1)
@@ -104,39 +123,51 @@ func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
 	return matrix
 }
 
-func dtw(matrix [][]float64) float64 {
+func (space Space) dtw(matrix [][]float64) float64 {
+
+	cols := len(matrix)
+	rows := len(matrix[0])
+
+	DTW := make([][]float64, cols+1)
+
+	w := math.Max(float64(space.window), math.Abs(float64(cols-rows)))
+
+	Inf := math.Inf(0)
 
 	for i := range matrix {
-		matrix[0][i] = -1
-		matrix[i][0] = -1
+		for j := range matrix {
+			matrix[i][j] = Inf
+		}
 	}
 	matrix[0][0] = 0
 
 	for i := range matrix[1:] {
-		for j := range matrix[i][1:] {
-			insertion := matrix[i-1][j]
-			deletion := matrix[i][j-1]
-			match := matrix[i-1][j-1]
-			matrix[i][j] += math.Min(math.Min(insertion, deletion), match)
+		DTW[i] = make([]float64, rows+1)
+		for j := int(math.Max(1, float64(i)-w)); j < int(math.Min(float64(rows), float64(i)+w)); j++ {
+			cost := matrix[i][j]
+			insertion := DTW[i-1][j]
+			deletion := DTW[i][j-1]
+			match := DTW[i-1][j-1]
+			DTW[i][j] = cost + math.Min(math.Min(insertion, deletion), match)
 		}
 	}
 
-	return matrix[len(matrix)][len(matrix)]
+	return DTW[rows-1][cols-1]
 }
 
 // Dist computes euclidean distance between two nodes
 func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
-	var matrix = space.getMatrix(elemt1, elemt2)
+	var matrix = space.getInterpolatedMatrix(elemt1, elemt2)
 
-	return dtw(matrix)
+	return space.dtw(matrix)
 }
 
 // Combine computes combination between two nodes
 func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
-	var matrix = space.getMatrix(elemt1, elemt2)
+	var matrix = space.getInterpolatedMatrix(elemt1, elemt2)
 	for i := range matrix {
 		for j := range matrix {
-			matrix[i][j] *= (float64)(weight1 + weight2)
+			matrix[i][j] *= float64(weight1 + weight2)
 		}
 	}
 }

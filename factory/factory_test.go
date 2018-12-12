@@ -22,14 +22,14 @@ var mcmcConf = mcmc.Conf{
 	InitIter: 1,
 }
 
-var ocs = map[string]core.Conf{
+var ocs = map[string]core.ImplConf{
 	"MCMC":    mcmcConf,
 	"mcmc":    mcmcConf,
 	"kmeans":  kmeans.Conf{K: 1, Iter: 1},
 	"unknown": nil,
 }
 
-var spaces = map[string]core.Conf{
+var spaces = map[string]core.SpaceConf{
 	"Real":    series.Conf{},
 	"real":    series.Conf{},
 	"series":  series.Conf{},
@@ -63,13 +63,14 @@ func getData(space string) (data []core.Elemt) {
 }
 
 func Test_CreateOC(t *testing.T) {
-	for oc, conf := range ocs {
+	for oc, implConf := range ocs {
 		for space, spaceConf := range spaces {
 			algoSpace := factory.CreateSpace(space, spaceConf)
 			if algoSpace != nil {
 				data := getData(space)
+				conf := core.Conf{ImplConf: implConf, SpaceConf: spaceConf}
 				var algo = factory.CreateOC(oc, conf, algoSpace, data, nil)
-				if conf != nil {
+				if implConf != nil {
 					if algo == nil {
 						t.Error("an error has been thrown")
 					}

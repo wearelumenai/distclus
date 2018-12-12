@@ -28,7 +28,7 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt) (impl 
 }
 
 // Reset returns a new impl with input context
-func (impl *Impl) Reset(conf *core.Conf, data []core.Elemt) (res core.Impl, err error) {
+func (impl *Impl) Reset(conf *core.ImplConf, data []core.Elemt) (res core.Impl, err error) {
 	var kmeansConf = (*conf).(Conf)
 	var _impl Impl
 	if data == nil {
@@ -44,14 +44,14 @@ func (impl *Impl) Reset(conf *core.Conf, data []core.Elemt) (res core.Impl, err 
 }
 
 // Init Algorithm
-func (impl *Impl) Init(conf core.Conf, space core.Space) (core.Clust, error) {
+func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var kmeansConf = conf.(Conf)
 	impl.buffer.Apply()
 	return impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
 }
 
 // Run the algorithm until signal received on closing channel or iteration number is reached
-func (impl *Impl) Run(conf core.Conf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
+func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var kmeansConf = conf.(Conf)
 	for iter, loop := 0, true; iter < kmeansConf.Iter && loop; iter++ {
 		select {

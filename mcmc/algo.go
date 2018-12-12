@@ -9,7 +9,7 @@ type Algo struct {
 
 // NewAlgo creates a new kmeans algo
 func NewAlgo(conf core.Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) Algo {
-	var mcmcConf = conf.(Conf)
+	var mcmcConf = conf.ImplConf.(Conf)
 	if mcmcConf.Dim == 0 {
 		mcmcConf.Dim = space.Dim(data)
 	}
@@ -24,7 +24,8 @@ func NewAlgo(conf core.Conf, space core.Space, data []core.Elemt, initializer co
 		implFunc = NewSeqImpl
 	}
 	var impl = implFunc(&mcmcConf, initializer, data, distrib)
-	var algo = core.NewAlgo(mcmcConf, &impl, space)
+	conf.ImplConf = mcmcConf
+	var algo = core.NewAlgo(conf, &impl, space)
 	return Algo{Algo: &algo}
 }
 

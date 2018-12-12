@@ -11,13 +11,16 @@ import (
 	"golang.org/x/exp/rand"
 )
 
-var conf = mcmc.Conf{
-	InitK:     3,
-	FrameSize: 8,
-	RGen:      rand.New(rand.NewSource(6305689164243)),
-	B:         100, Amp: 1,
-	Norm: 2, Nu: 3, McmcIter: 20,
-	InitIter: 1,
+var conf = core.Conf{
+	ImplConf: mcmc.Conf{
+		InitK:     3,
+		FrameSize: 8,
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         100, Amp: 1,
+		Norm: 2, Nu: 3, McmcIter: 20,
+		InitIter: 1,
+	},
+	SpaceConf: nil,
 }
 var data = []core.Elemt{
 	[]float64{1., 3.4, 5.4},
@@ -38,7 +41,8 @@ func Test_NewSeqAlgo(t *testing.T) {
 }
 
 func Test_NewParAlgo(t *testing.T) {
-	conf.Par = true
+	mcmcConf := conf.ImplConf.(mcmc.Conf)
+	mcmcConf.Par = true
 	mcmc.NewAlgo(
 		conf,
 		real.Space{},
@@ -62,7 +66,6 @@ func Test_AlgoAcceptRatio(t *testing.T) {
 }
 
 func Test_Reset(t *testing.T) {
-	conf.Dim = 0
 	algo := mcmc.NewAlgo(
 		conf,
 		real.Space{},
@@ -71,5 +74,5 @@ func Test_Reset(t *testing.T) {
 		distrib,
 	)
 
-	test.DoTestReset(t, &algo, mcmc.Conf{InitK: 1, MaxK: 1})
+	test.DoTestReset(t, &algo, core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1}, SpaceConf: nil})
 }

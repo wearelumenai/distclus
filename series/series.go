@@ -14,7 +14,7 @@ type Space struct {
 }
 
 // NewSpace create a new series space
-func NewSpace(conf core.Conf) Space {
+func NewSpace(conf core.SpaceConf) Space {
 	var innerSpace core.Space
 	var sconf = conf.(Conf)
 	switch strings.ToLower(sconf.InnerSpace) {

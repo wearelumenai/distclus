@@ -26,15 +26,15 @@ type Strategy interface {
 }
 
 // Init initializes the algorithm
-func (impl *Impl) Init(conf core.Conf, space core.Space) (core.Clust, error) {
+func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var mcmcConf = conf.(Conf)
 	impl.buffer.Apply()
 	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 }
 
 // Reset this implementation
-func (impl *Impl) Reset(conf *core.Conf, data []core.Elemt) (res core.Impl, err error) {
-	var mcmcConf = (*conf).(Conf)
+func (impl *Impl) Reset(conf *core.ImplConf, data []core.Elemt) (res core.Impl, err error) {
+	mcmcConf := (*conf).(Conf)
 	if data == nil {
 		data = impl.buffer.Data()
 	}
@@ -69,7 +69,7 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distri
 }
 
 // Run executes the algorithm
-func (impl *Impl) Run(conf core.Conf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
+func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var mcmcConf = conf.(Conf)
 	var current = proposal{
 		k:       mcmcConf.InitK,

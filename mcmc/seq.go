@@ -16,10 +16,13 @@ type SeqStrategy struct {
 
 // Iterate execute the algorithm
 func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer, iter int) (result core.Clust) {
-	var kmeansConf = kmeans.Conf{
-		K:    len(centroids),
-		Iter: iter,
-		RGen: conf.RGen,
+	var kmeansConf = core.Conf{
+		ImplConf: kmeans.Conf{
+			K:    len(centroids),
+			Iter: iter,
+			RGen: conf.RGen,
+		},
+		SpaceConf: nil,
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, buffer.Data(), centroids.Initializer)
 	algo.Run(false)

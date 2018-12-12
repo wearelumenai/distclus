@@ -10,7 +10,7 @@ import (
 )
 
 // CreateSpace create a new space
-func CreateSpace(name string, conf core.Conf) (space core.Space) {
+func CreateSpace(name string, conf core.SpaceConf) (space core.Space) {
 	switch strings.ToLower(name) {
 	case "real":
 		space = real.NewSpace(conf)

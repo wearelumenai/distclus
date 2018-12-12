@@ -1,4 +1,7 @@
 package core
 
-// Conf is the specific algorithm user configuration
-type Conf interface{}
+// Conf specific to algo/space configuration
+type Conf struct {
+	ImplConf  ImplConf
+	SpaceConf SpaceConf
+}

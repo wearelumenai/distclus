@@ -34,10 +34,12 @@ type msg struct {
 
 // Iterate is the iterative execution
 func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer, iter int) core.Clust {
-	var kmeansConf = kmeans.Conf{
-		K:    len(centroids),
-		Iter: iter,
-		Par:  true,
+	var kmeansConf = core.Conf{
+		ImplConf: kmeans.Conf{
+			K:    len(centroids),
+			Iter: iter,
+		},
+		SpaceConf: nil,
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, buffer.Data(), centroids.Initializer)
 

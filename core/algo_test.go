@@ -21,7 +21,7 @@ type mockImpl struct {
 	error       string
 }
 
-func (impl *mockImpl) Init(conf core.Conf, space core.Space) (centroids core.Clust, err error) {
+func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core.Clust, err error) {
 	centroids = impl.clust
 	impl.initialized = true
 	if len(centroids) == 1 {
@@ -30,7 +30,7 @@ func (impl *mockImpl) Init(conf core.Conf, space core.Space) (centroids core.Clu
 	return
 }
 
-func (impl *mockImpl) Run(conf core.Conf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
+func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var mockConf = conf.(mockConf)
 	impl.running = true
 	if impl.error != "" {
@@ -56,7 +56,7 @@ func (impl *mockImpl) errorResult() error {
 	}
 }
 
-func (impl *mockImpl) Reset(*core.Conf, []core.Elemt) (core.Impl, error) {
+func (impl *mockImpl) Reset(*core.ImplConf, []core.Elemt) (core.Impl, error) {
 	return impl, impl.errorResult()
 }
 
@@ -94,8 +94,11 @@ func (m mockSpace) Dim(e []core.Elemt) int {
 
 func newAlgo(t *testing.T) (algo core.Algo) {
 	algo = core.NewAlgo(
-		mockConf{
-			Iter: 1,
+		core.Conf{
+			mockConf{
+				Iter: 1,
+			},
+			nil,
 		},
 		&mockImpl{
 			clust: make(core.Clust, 10),
@@ -371,22 +374,8 @@ func Test_SwitchSpace(t *testing.T) {
 	test.AssertNoError(t, err)
 }
 
-func Test_Fit(t *testing.T) {
-	algo := newAlgo(t)
-
-	err := algo.Fit(nil)
-
-	test.AssertNoError(t, err)
-
-	algo.Impl().(*mockImpl).error = "error"
-
-	err = algo.Fit(nil)
-
-	test.AssertError(t, err)
-}
-
 func Test_Reset(t *testing.T) {
 	algo := newAlgo(t)
 
-	test.DoTestReset(t, &algo, mockConf{})
+	test.DoTestReset(t, &algo, core.Conf{mockConf{}, nil})
 }

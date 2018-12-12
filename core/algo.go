@@ -38,6 +38,9 @@ type Algo struct {
 	lastUpdateTime int64
 }
 
+// AlgoConf algorithm configuration
+type AlgoConf interface{}
+
 // NewAlgo creates a new algorithm instance
 func NewAlgo(conf Conf, impl Impl, space Space) Algo {
 	return Algo{
@@ -50,22 +53,10 @@ func NewAlgo(conf Conf, impl Impl, space Space) Algo {
 	}
 }
 
-// Fit applies fit algorithm execution
-func (algo *Algo) Fit(data []Elemt) (err error) {
-	err = algo.Reset(algo.conf, data)
-	if err == nil {
-		err = algo.Run(false)
-	}
-	if err == nil {
-		err = algo.Close()
-	}
-	return
-}
-
 // Reset implementation
 func (algo *Algo) Reset(conf Conf, data []Elemt) error {
 	algo.conf = conf
-	var impl, err = algo.impl.Reset(&conf, data)
+	var impl, err = algo.impl.Reset(&conf.ImplConf, data)
 	algo.impl = impl
 	return err
 }
@@ -175,10 +166,10 @@ func (algo *Algo) updateCentroids(centroids Clust) {
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) initAndRunSync() (err error) {
-	algo.centroids, err = algo.impl.Init(algo.conf, algo.space)
+	algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
 	if err == nil {
 		err = algo.impl.Run(
-			algo.conf,
+			algo.conf.ImplConf,
 			algo.space,
 			algo.centroids,
 			algo.updateCentroids,

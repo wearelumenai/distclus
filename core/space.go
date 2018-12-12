@@ -10,3 +10,6 @@ type Space interface {
 	Copy(elemt Elemt) Elemt
 	Dim(data []Elemt) int
 }
+
+// SpaceConf is a space configuration interface
+type SpaceConf interface{}

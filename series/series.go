@@ -122,7 +122,7 @@ func (space Space) path(elemt1, elemt2 core.Elemt) (path []float64) {
 			var insertion = matrix[colIndex-1][rowIndex]
 			var deletion = matrix[colIndex][rowIndex-1]
 			var match = matrix[colIndex-1][rowIndex-1]
-			var dist = Dist(cols[0], rows[0])
+			var dist = Dist(cols[colIndex], rows[rowIndex])
 			var cost = dist + math.Min(insertion, math.Min(deletion, match))
 			matrix[colIndex][rowIndex] = cost
 			path = append(path, cost)

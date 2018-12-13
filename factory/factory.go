@@ -22,13 +22,14 @@ func CreateSpace(name string, conf core.SpaceConf) (space core.Space) {
 }
 
 // CreateOC returns an algorithm by name and configuration
-func CreateOC(name string, conf core.Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) (oc core.OnlineClust) {
+func CreateOC(name string, space string, conf core.Conf, data []core.Elemt, initializer core.Initializer, args ...interface{}) (oc core.OnlineClust) {
 	var algo interface{}
+	var finalSpace = CreateSpace(space, conf.SpaceConf)
 	switch strings.ToLower(name) {
 	case "mcmc":
-		algo = mcmc.NewAlgo(conf, space, data, initializer, args...)
+		algo = mcmc.NewAlgo(conf, finalSpace, data, initializer, args...)
 	case "kmeans":
-		algo = kmeans.NewAlgo(conf, space, data, initializer, args...)
+		algo = kmeans.NewAlgo(conf, finalSpace, data, initializer, args...)
 	}
 	if algo != nil {
 		oc = algo.(core.OnlineClust)

@@ -69,7 +69,7 @@ func Test_CreateOC(t *testing.T) {
 			if algoSpace != nil {
 				data := getData(space)
 				conf := core.Conf{ImplConf: implConf, SpaceConf: spaceConf}
-				var algo = factory.CreateOC(oc, conf, algoSpace, data, nil)
+				var algo = factory.CreateOC(oc, space, conf, data, nil)
 				if implConf != nil {
 					if algo == nil {
 						t.Error("an error has been thrown")

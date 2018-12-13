@@ -143,9 +143,15 @@ func TestAsyncError(t *testing.T) {
 
 	impl := algo.Impl().(*mockImpl)
 
+	err := algo.Run(true)
+
+	if err != nil {
+		t.Error("error during async execution")
+	}
+
 	impl.error = "launch error"
 
-	err := algo.Run(true)
+	err = algo.Run(true)
 
 	if err == nil {
 		t.Error("no error in wrong cluster")

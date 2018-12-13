@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-var conf = core.Conf{kmeans.Conf{K: 1}, nil}
+var conf = core.Conf{ImplConf: kmeans.Conf{K: 1}, SpaceConf: nil}
 var data = []core.Elemt{}
 var initializer = kmeans.GivenInitializer
 
@@ -40,5 +40,14 @@ func Test_Reset(t *testing.T) {
 		initializer,
 	)
 
-	test.DoTestReset(t, &algo, core.Conf{kmeans.Conf{K: 1}, nil})
+	test.DoTestReset(t, &algo, core.Conf{ImplConf: kmeans.Conf{K: 1}, SpaceConf: nil})
+
+	algo = kmeans.NewAlgo(
+		core.Conf{ImplConf: kmeans.Conf{Par: true, K: 1}, SpaceConf: nil},
+		real.Space{},
+		data,
+		initializer,
+	)
+
+	test.DoTestReset(t, &algo, core.Conf{ImplConf: kmeans.Conf{Par: true, K: 1}, SpaceConf: nil})
 }

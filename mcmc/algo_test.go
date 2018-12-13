@@ -75,4 +75,14 @@ func Test_Reset(t *testing.T) {
 	)
 
 	test.DoTestReset(t, &algo, core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1}, SpaceConf: nil})
+
+	algo = mcmc.NewAlgo(
+		core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1, Par: true}, SpaceConf: nil},
+		real.Space{},
+		data,
+		initializer,
+		distrib,
+	)
+
+	test.DoTestReset(t, &algo, core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1, Par: true}, SpaceConf: nil})
 }

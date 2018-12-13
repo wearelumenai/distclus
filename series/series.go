@@ -18,8 +18,6 @@ func NewSpace(conf core.SpaceConf) Space {
 	var innerSpace core.Space
 	var sconf = conf.(Conf)
 	switch strings.ToLower(sconf.InnerSpace) {
-	case "real":
-		innerSpace = real.NewSpace(conf)
 	default:
 		innerSpace = real.NewSpace(conf)
 	}
@@ -38,26 +36,25 @@ func allocate(in [][]float64, dim int) (out [][]float64) {
 	return
 }
 
-func interpolate(in [][]float64, out [][]float64) {
-	lenout := len(out)
+func interpolate(in [][]float64, dim int) (out [][]float64) {
+	out = make([][]float64, dim, dim)
 	lenin := len(in)
 	var pos float64
-	for index := range out {
-		if index == 0 || index == (lenout-1) {
-			out[index] = in[index]
-		} else {
-			pos = float64(index * lenin / lenout)
-			var ceil = math.Ceil(pos)
-			var p = pos - ceil
-			iindex := int(ceil)
-			i0 := in[iindex]
-			i1 := in[iindex+1]
-			for ii, ii0 := range i0 {
-				ii1 := i1[ii]
-				out[index][ii] = float64((ii0 + ii1) * p)
-			}
+	copy(out[0], in[0])
+	copy(out[dim-1], in[lenin-1])
+	for index := range out[1 : dim-1] {
+		pos = float64(index * lenin / dim)
+		var ceil = math.Ceil(pos)
+		var p = pos - ceil
+		iindex := int(ceil)
+		i0 := in[iindex]
+		i1 := in[iindex+1]
+		for ii, ii0 := range i0 {
+			ii1 := i1[ii]
+			out[index][ii] = float64((ii0 + ii1) * p)
 		}
 	}
+	return
 }
 
 func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
@@ -79,97 +76,78 @@ func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
 	return
 }
 
-func (space Space) getInterpolatedMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
-	var innerSpace = space.innerSpace
-
+func (space Space) path(elemt1, elemt2 core.Elemt) (path []float64) {
 	var e1 = elemt1.([][]float64)
 	var e2 = elemt2.([][]float64)
 
 	len1 := len(e1)
 	len2 := len(e2)
 
-	size := int(math.Min(float64(len1), float64(len2)))
+	var cols = e1
+	var rows = e2
 
-	matrix = make([][]float64, size)
+	var w = space.window
 
-	var rows [][]float64
-	var cols [][]float64
-
-	if len1 > len2 {
+	if len1 > (len2 + w) {
+		cols = interpolate(e1, len2+w)
 		rows = e2
-		cols = allocate(e1, int(math.Min(float64(len2), float64(len1+space.window))))
-	} else if len2 > len1 {
+	} else if len2 > (len1 + w) {
+		cols = interpolate(e2, len1+w)
 		rows = e1
-		cols = allocate(e2, len1)
-	} else {
-		rows = e1
-		cols = e2
 	}
 
-	for rowIndex, rowVal := range rows {
-		matrix[rowIndex] = make([]float64, size)
-		for colIndex, colVal := range cols {
-			matrix[rowIndex][colIndex] = space.innerSpace.Dist(rowVal, colVal)
-		}
-	}
+	// initialize the matrix
+	var matrix = make([][]float64, len(cols)+1)
 
-	for i1, el1 := range e1 {
-		matrix[i1] = make([]float64, len(e2))
-		for i2, el2 := range e2 {
-			matrix[i1][i2] = innerSpace.Dist(el1, el2)
-		}
-	}
+	var inf = math.Inf(0)
 
-	return matrix
-}
-
-func (space Space) dtw(matrix [][]float64) float64 {
-
-	cols := len(matrix)
-	rows := len(matrix[0])
-
-	DTW := make([][]float64, cols+1)
-
-	w := math.Max(float64(space.window), math.Abs(float64(cols-rows)))
-
-	Inf := math.Inf(0)
-
-	for i := range matrix {
-		for j := range matrix {
-			matrix[i][j] = Inf
+	for colIndex := range matrix {
+		matrix[colIndex] = make([]float64, len(rows)+1)
+		for rowIndex := range matrix[colIndex] {
+			matrix[colIndex][rowIndex] = inf
 		}
 	}
 	matrix[0][0] = 0
 
-	for i := range matrix[1:] {
-		DTW[i] = make([]float64, rows+1)
-		for j := int(math.Max(1, float64(i)-w)); j < int(math.Min(float64(rows), float64(i)+w)); j++ {
-			cost := matrix[i][j]
-			insertion := DTW[i-1][j]
-			deletion := DTW[i][j-1]
-			match := DTW[i-1][j-1]
-			DTW[i][j] = cost + math.Min(math.Min(insertion, deletion), match)
+	var Dist = space.innerSpace.Dist
+
+	var lenCols = len(matrix)
+	var lenRows = len(matrix[0])
+	w = int(math.Max(float64(w), math.Abs(float64(lenCols-lenRows))))
+
+	// path = make([]float64, 0, lenRows+w)
+
+	for colIndex := range matrix[1:] {
+		for rowIndex := int(math.Max(1, float64(colIndex-w))); rowIndex < int(math.Min(float64(lenRows), float64(colIndex+w))); rowIndex++ {
+			var insertion = matrix[colIndex-1][rowIndex]
+			var deletion = matrix[colIndex][rowIndex-1]
+			var match = matrix[colIndex-1][rowIndex-1]
+			var dist = Dist(cols[0], rows[0])
+			var cost = dist + math.Min(insertion, math.Min(deletion, match))
+			matrix[colIndex][rowIndex] = cost
+			path = append(path, cost)
 		}
 	}
 
-	return DTW[rows-1][cols-1]
+	return
 }
 
 // Dist computes euclidean distance between two nodes
-func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
-	var matrix = space.getInterpolatedMatrix(elemt1, elemt2)
+func (space Space) Dist(elemt1, elemt2 core.Elemt) (sum float64) {
+	var path = space.path(elemt1, elemt2)
 
-	return space.dtw(matrix)
+	for _, dist := range path {
+		sum += dist
+	}
+
+	return
 }
 
 // Combine computes combination between two nodes
 func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
-	var matrix = space.getInterpolatedMatrix(elemt1, elemt2)
-	for i := range matrix {
-		for j := range matrix {
-			matrix[i][j] *= float64(weight1 + weight2)
-		}
-	}
+	var Combine = space.innerSpace.Combine
+
+	Combine(elemt1, weight1, elemt2, weight2)
 }
 
 // Copy creates a copy of a vector

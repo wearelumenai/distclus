@@ -32,7 +32,7 @@ func Test_ParRunSyncPP(t *testing.T) {
 func Test_ParRunAsync(t *testing.T) {
 	var conf = kmeans.Conf{K: 3, Iter: 1 << 30, RGen: rgen()}
 	var impl = kmeans.NewParImpl(&conf, kmeans.GivenInitializer, []core.Elemt{})
-	var algo = core.NewAlgo(core.Conf{conf, nil}, &impl, space)
+	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, space)
 
 	test.DoTestRunAsync(t, &algo)
 	test.DoTestRunAsyncCentroids(t, &algo)

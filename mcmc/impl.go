@@ -53,9 +53,6 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distri
 	SetConfigDefaults(conf)
 	Verify(*conf)
 	var buffer = core.NewDataBuffer(data, conf.FrameSize)
-	if distrib == nil {
-		distrib = NewMultivT(MultivTConf{*conf})
-	}
 	impl = Impl{
 		buffer:      buffer,
 		initializer: initializer,
@@ -68,6 +65,16 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distri
 	return
 }
 
+func (impl Impl) getDistrib(conf Conf, space core.Space) Distrib {
+	if impl.distrib == nil {
+		if conf.Dim == 0 {
+			conf.Dim = space.Dim(impl.buffer.Data())
+		}
+		impl.distrib = NewMultivT(MultivTConf{conf})
+	}
+	return impl.distrib
+}
+
 // Run executes the algorithm
 func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var mcmcConf = conf.(Conf)
@@ -75,7 +82,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		k:       mcmcConf.InitK,
 		centers: centroids,
 		loss:    impl.strategy.Loss(mcmcConf, space, centroids, impl.buffer),
-		pdf:     impl.proba(centroids, centroids),
+		pdf:     impl.proba(mcmcConf, space, centroids, centroids),
 	}
 
 	for i, loop := 0, true; i < mcmcConf.McmcIter && loop; i++ {
@@ -127,12 +134,12 @@ func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroi
 	var k = impl.nextK(conf, current.k)
 	var centers = impl.store.GetCenters(impl.buffer, space, k, centroids)
 	centers = impl.strategy.Iterate(conf, space, centers, impl.buffer, 1)
-	var alteredCenters = impl.alter(centers)
+	var alteredCenters = impl.alter(conf, space, centers)
 	return proposal{
 		k:       k,
 		centers: alteredCenters,
 		loss:    impl.strategy.Loss(conf, space, alteredCenters, impl.buffer),
-		pdf:     impl.proba(alteredCenters, centers),
+		pdf:     impl.proba(conf, space, alteredCenters, centers),
 	}
 }
 
@@ -160,20 +167,20 @@ func (impl *Impl) nextK(conf Conf, k int) int {
 	}
 }
 
-func (impl *Impl) alter(clust core.Clust) core.Clust {
+func (impl *Impl) alter(conf Conf, space core.Space, clust core.Clust) core.Clust {
 	var result = make(core.Clust, len(clust))
 
 	for i, c := range clust {
-		result[i] = impl.distrib.Sample(c)
+		result[i] = impl.getDistrib(conf, space).Sample(c)
 	}
 
 	return result
 }
 
-func (impl *Impl) proba(x, mu core.Clust) (p float64) {
+func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust) (p float64) {
 	p = 0.
 	for i, v := range x {
-		p += impl.distrib.Pdf(mu[i], v)
+		p += impl.getDistrib(conf, space).Pdf(mu[i], v)
 	}
 	return p
 }

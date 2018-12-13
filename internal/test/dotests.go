@@ -78,11 +78,35 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	RunAsyncAndPush(algo)
 
 	time.Sleep(1000 * time.Millisecond)
+
+	// var centroids1, _ = algo.Centroids()
+	//
+	// for _, elemt := range TestVectors {
+	// 	algo.Push(elemt)
+	// }
+	//
+	// time.Sleep(1000 * time.Millisecond)
+	//
+	// var centroids2, _ = algo.Centroids()
+	//
+	// for _, elemt := range TestVectors {
+	// 	algo.Push(elemt)
+	// }
+	//
+	// time.Sleep(1000 * time.Millisecond)
+	//
+	// var centroids3, _ = algo.Centroids()
+	//
+	// AssertNotEqual(t, centroids1, centroids2)
+	// AssertNotEqual(t, centroids2, centroids3)
+	// AssertNotEqual(t, centroids1, centroids3)
+
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs)
 	algo.Push(obs)
 
 	time.Sleep(1000 * time.Millisecond)
+
 	algo.Close()
 
 	var cn, _, _ = algo.Predict(obs)

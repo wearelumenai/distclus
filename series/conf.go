@@ -1,7 +1,9 @@
 package series
 
+import "distclus/core"
+
 // Conf defines series configuration
 type Conf struct {
-	InnerSpace string
+	InnerSpace core.Space
 	Window     int
 }

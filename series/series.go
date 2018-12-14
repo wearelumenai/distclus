@@ -2,9 +2,7 @@ package series
 
 import (
 	"distclus/core"
-	"distclus/real"
 	"math"
-	"strings"
 )
 
 // Space for processing reals of reals ([][]float64)
@@ -15,15 +13,10 @@ type Space struct {
 
 // NewSpace create a new series space
 func NewSpace(conf core.SpaceConf) Space {
-	var innerSpace core.Space
 	var sconf = conf.(Conf)
-	switch strings.ToLower(sconf.InnerSpace) {
-	default:
-		innerSpace = real.NewSpace(conf)
-	}
 	return Space{
 		window:     sconf.Window,
-		innerSpace: innerSpace,
+		innerSpace: sconf.InnerSpace,
 	}
 }
 

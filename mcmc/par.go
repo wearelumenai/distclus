@@ -33,7 +33,7 @@ type msg struct {
 }
 
 // Iterate is the iterative execution
-func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer, iter int) core.Clust {
+func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) core.Clust {
 	var kmeansConf = core.Conf{
 		ImplConf: kmeans.Conf{
 			K:    len(centroids),
@@ -41,7 +41,7 @@ func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core
 		},
 		SpaceConf: nil,
 	}
-	var algo = kmeans.NewAlgo(kmeansConf, space, buffer.Data(), centroids.Initializer)
+	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 
 	algo.Run(false)
 	algo.Close()
@@ -52,14 +52,14 @@ func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core
 }
 
 // Loss aclculates the loss distance of input centroids
-func (strategy *ParStrategy) Loss(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer) float64 {
-	var workers = strategy.startWorkers(conf, space, centroids, buffer)
+func (strategy *ParStrategy) Loss(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt) float64 {
+	var workers = strategy.startWorkers(conf, space, centroids, data)
 	var aggr = workers.lossAggregate()
 	return aggr.sum
 }
 
-func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer) workerSupport {
-	var offset = (len(buffer.Data())-1)/strategy.Degree + 1
+func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt) workerSupport {
+	var offset = (len(data)-1)/strategy.Degree + 1
 	var workers = workerSupport{}
 	workers.ParStrategy = *strategy
 	workers.out = make(chan msg, strategy.Degree)
@@ -67,7 +67,7 @@ func (strategy *ParStrategy) startWorkers(conf Conf, space core.Space, centroids
 	workers.wg.Add(strategy.Degree)
 
 	for i := 0; i < strategy.Degree; i++ {
-		var part = core.GetChunk(i, offset, buffer.Data())
+		var part = core.GetChunk(i, offset, data)
 		go workers.lossMapReduce(conf, space, centroids, part)
 	}
 

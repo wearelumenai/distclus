@@ -27,15 +27,17 @@ func Test_getCenters(t *testing.T) {
 		buffer.Push(elemt)
 	}
 
+	var data = buffer.Data()
+
 	var clust3, _ = kmeans.GivenInitializer(3, test.TestVectors, space, rgen)
-	var clust = store.GetCenters(buffer, space, 3, clust3)
+	var clust = store.GetCenters(data, space, 3, clust3)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust3, clust) {
 		t.Error("Expected same centers")
 	}
 
-	clust = store.GetCenters(buffer, space, 4, clust)
+	clust = store.GetCenters(data, space, 4, clust)
 	store.SetCenters(clust)
 
 	if len(clust) != 4 {
@@ -53,14 +55,14 @@ func Test_getCenters(t *testing.T) {
 	}
 
 	var clust4 = clust
-	clust = store.GetCenters(buffer, space, 3, clust4)
+	clust = store.GetCenters(data, space, 3, clust4)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
-	clust = store.GetCenters(buffer, space, 2, clust)
+	clust = store.GetCenters(data, space, 2, clust)
 	store.SetCenters(clust)
 
 	for i := 0; i < 2; i++ {
@@ -70,14 +72,14 @@ func Test_getCenters(t *testing.T) {
 	}
 
 	var clust2 = clust
-	clust = store.GetCenters(buffer, space, 3, clust)
+	clust = store.GetCenters(data, space, 3, clust)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust3) {
 		t.Error("Expected same centers")
 	}
 
-	clust = store.GetCenters(buffer, space, 4, clust)
+	clust = store.GetCenters(data, space, 4, clust)
 	store.SetCenters(clust)
 
 	if !reflect.DeepEqual(clust, clust4) {

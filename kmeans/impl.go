@@ -13,7 +13,7 @@ type Impl struct {
 
 // Strategy Abstract Impl strategy to be implemented by concrete algorithms
 type Strategy interface {
-	Iterate(space core.Space, centroids core.Clust, buffer core.Buffer) core.Clust
+	Iterate(space core.Space, centroids core.Clust, data []core.Elemt) core.Clust
 }
 
 // NewImpl returns a kmeans implementation
@@ -44,7 +44,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 			loop = false
 
 		default:
-			centroids = impl.strategy.Iterate(space, centroids, impl.buffer)
+			centroids = impl.strategy.Iterate(space, centroids, impl.buffer.Data())
 			notifier(centroids)
 			err = impl.buffer.Apply()
 		}

@@ -54,8 +54,9 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	case Created:
 		err = fmt.Errorf("clustering not started")
 	default:
-		centroids = make(Clust, len(algo.centroids))
-		for index, centroid := range algo.centroids {
+		var algoCentroids = algo.centroids
+		centroids = make(Clust, len(algoCentroids))
+		for index, centroid := range algoCentroids {
 			centroids[index] = algo.space.Copy(centroid)
 		}
 	}
@@ -86,7 +87,6 @@ func (algo *Algo) Run(async bool) (err error) {
 	if err == nil {
 		algo.status = Running
 	}
-
 	return
 }
 

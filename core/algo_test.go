@@ -153,6 +153,16 @@ func TestAsyncError(t *testing.T) {
 	}
 }
 
+func Test_Conf(t *testing.T) {
+	var algo = newAlgo(t)
+
+	var conf = algo.Conf()
+
+	if &conf == nil {
+		t.Error("conf is nil")
+	}
+}
+
 func Test_Predict(t *testing.T) {
 
 	var algo = newAlgo(t)

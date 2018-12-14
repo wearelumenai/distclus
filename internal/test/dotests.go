@@ -265,7 +265,9 @@ func AssertFalse(t *testing.T, value bool) {
 
 // AssertTrue test
 func AssertTrue(t *testing.T, value bool) {
-	AssertFalse(t, !value)
+	if !value {
+		t.Error("True expected")
+	}
 }
 
 // AssertNotEqual test

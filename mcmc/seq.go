@@ -15,7 +15,7 @@ type SeqStrategy struct {
 }
 
 // Iterate execute the algorithm
-func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, buffer core.Buffer, iter int) (result core.Clust) {
+func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) (result core.Clust) {
 	var kmeansConf = core.Conf{
 		ImplConf: kmeans.Conf{
 			K:    len(centroids),
@@ -24,7 +24,7 @@ func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core
 		},
 		SpaceConf: nil,
 	}
-	var algo = kmeans.NewAlgo(kmeansConf, space, buffer.Data(), centroids.Initializer)
+	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 	algo.Run(false)
 	algo.Close()
 	result, _ = algo.Centroids()
@@ -33,6 +33,6 @@ func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core
 }
 
 // Loss calculates input centroids
-func (strategy *SeqStrategy) Loss(conf Conf, space core.Space, proposal core.Clust, buffer core.Buffer) float64 {
-	return proposal.Loss(buffer.Data(), space, conf.Norm)
+func (strategy *SeqStrategy) Loss(conf Conf, space core.Space, proposal core.Clust, data []core.Elemt) float64 {
+	return proposal.Loss(data, space, conf.Norm)
 }

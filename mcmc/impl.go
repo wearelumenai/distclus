@@ -21,8 +21,8 @@ type Impl struct {
 
 // Strategy specifies strategy methods
 type Strategy interface {
-	Iterate(Conf, core.Space, core.Clust, core.Buffer, int) core.Clust
-	Loss(Conf, core.Space, core.Clust, core.Buffer) float64
+	Iterate(Conf, core.Space, core.Clust, []core.Elemt, int) core.Clust
+	Loss(Conf, core.Space, core.Clust, []core.Elemt) float64
 }
 
 // Init initializes the algorithm
@@ -49,23 +49,24 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distri
 	return
 }
 
-func (impl Impl) getDistrib(conf Conf, space core.Space) Distrib {
+func (impl *Impl) initRun(conf Conf, space core.Space, data []core.Elemt) {
 	if impl.distrib == nil {
 		if conf.Dim == 0 {
-			conf.Dim = space.Dim(impl.buffer.Data())
+			conf.Dim = space.Dim(data)
 		}
 		impl.distrib = NewMultivT(MultivTConf{conf})
 	}
-	return impl.distrib
 }
 
 // Run executes the algorithm
 func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var mcmcConf = conf.(Conf)
+	var data = impl.buffer.Data()
+	impl.initRun(mcmcConf, space, data)
 	var current = proposal{
 		k:       mcmcConf.InitK,
 		centers: centroids,
-		loss:    impl.strategy.Loss(mcmcConf, space, centroids, impl.buffer),
+		loss:    impl.strategy.Loss(mcmcConf, space, centroids, data),
 		pdf:     impl.proba(mcmcConf, space, centroids, centroids),
 	}
 
@@ -75,7 +76,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 			loop = false
 
 		default:
-			current, centroids = impl.doIter(mcmcConf, space, current, centroids)
+			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data)
 			notifier(centroids)
 			err = impl.buffer.Apply()
 		}
@@ -100,8 +101,8 @@ type proposal struct {
 	pdf     float64
 }
 
-func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroids core.Clust) (proposal, core.Clust) {
-	var prop = impl.propose(conf, space, current, centroids)
+func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt) (proposal, core.Clust) {
+	var prop = impl.propose(conf, space, current, centroids, data)
 
 	if impl.accept(conf, current, prop) {
 		current = prop
@@ -114,15 +115,15 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroid
 	return current, centroids
 }
 
-func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroids core.Clust) proposal {
-	var k = impl.nextK(conf, current.k)
-	var centers = impl.store.GetCenters(impl.buffer, space, k, centroids)
-	centers = impl.strategy.Iterate(conf, space, centers, impl.buffer, 1)
+func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt) proposal {
+	var k = impl.nextK(conf, current.k, data)
+	var centers = impl.store.GetCenters(data, space, k, centroids)
+	centers = impl.strategy.Iterate(conf, space, centers, data, 1)
 	var alteredCenters = impl.alter(conf, space, centers)
 	return proposal{
 		k:       k,
 		centers: alteredCenters,
-		loss:    impl.strategy.Loss(conf, space, alteredCenters, impl.buffer),
+		loss:    impl.strategy.Loss(conf, space, alteredCenters, data),
 		pdf:     impl.proba(conf, space, alteredCenters, centers),
 	}
 }
@@ -136,7 +137,7 @@ func (impl *Impl) accept(conf Conf, current proposal, prop proposal) bool {
 	return impl.uniform.Rand() < rho
 }
 
-func (impl *Impl) nextK(conf Conf, k int) int {
+func (impl *Impl) nextK(conf Conf, k int, data []core.Elemt) int {
 	var newK = k + []int{-1, 0, 1}[kmeans.WeightedChoice(conf.ProbaK, conf.RGen)]
 
 	switch {
@@ -144,8 +145,8 @@ func (impl *Impl) nextK(conf Conf, k int) int {
 		return 1
 	case newK > conf.MaxK:
 		return conf.MaxK
-	case newK > len(impl.buffer.Data()):
-		return len(impl.buffer.Data())
+	case newK > len(data):
+		return len(data)
 	default:
 		return newK
 	}
@@ -155,7 +156,7 @@ func (impl *Impl) alter(conf Conf, space core.Space, clust core.Clust) core.Clus
 	var result = make(core.Clust, len(clust))
 
 	for i, c := range clust {
-		result[i] = impl.getDistrib(conf, space).Sample(c)
+		result[i] = impl.distrib.Sample(c)
 	}
 
 	return result
@@ -164,7 +165,7 @@ func (impl *Impl) alter(conf Conf, space core.Space, clust core.Clust) core.Clus
 func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust) (p float64) {
 	p = 0.
 	for i, v := range x {
-		p += impl.getDistrib(conf, space).Pdf(mu[i], v)
+		p += impl.distrib.Pdf(mu[i], v)
 	}
 	return p
 }

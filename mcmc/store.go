@@ -22,11 +22,11 @@ func NewCenterStore(rgen *rand.Rand) CenterStore {
 }
 
 // GetCenters returns input centroids centers
-func (store *CenterStore) GetCenters(buffer core.Buffer, space core.Space, k int, clust core.Clust) core.Clust {
+func (store *CenterStore) GetCenters(data []core.Elemt, space core.Space, k int, clust core.Clust) core.Clust {
 	var centers, ok = store.centers[k]
 
 	if !ok {
-		centers = store.genCenters(buffer, space, k, clust)
+		centers = store.genCenters(data, space, k, clust)
 	}
 
 	return centers
@@ -37,12 +37,12 @@ func (store *CenterStore) SetCenters(clust core.Clust) {
 	store.centers[len(clust)] = clust
 }
 
-func (store *CenterStore) genCenters(buffer core.Buffer, space core.Space, k int, prev core.Clust) (clust core.Clust) {
+func (store *CenterStore) genCenters(data []core.Elemt, space core.Space, k int, prev core.Clust) (clust core.Clust) {
 	var prevK = len(prev)
 
 	switch {
 	case prevK < k:
-		clust = store.addCenter(buffer, space, prevK, prev)
+		clust = store.addCenter(data, space, prevK, prev)
 
 	case prevK > k:
 		clust = store.delCenter(space, prevK, prev)
@@ -54,12 +54,12 @@ func (store *CenterStore) genCenters(buffer core.Buffer, space core.Space, k int
 	return
 }
 
-func (store *CenterStore) addCenter(buffer core.Buffer, space core.Space, prevK int, prev core.Clust) (clust core.Clust) {
+func (store *CenterStore) addCenter(data []core.Elemt, space core.Space, prevK int, prev core.Clust) (clust core.Clust) {
 	clust = make(core.Clust, prevK+1)
 	for i := 0; i < prevK; i++ {
 		clust[i] = space.Copy(prev[i])
 	}
-	clust[prevK] = kmeans.PPIter(prev, buffer.Data(), space, store.rgen)
+	clust[prevK] = kmeans.PPIter(prev, data, space, store.rgen)
 	return
 }
 

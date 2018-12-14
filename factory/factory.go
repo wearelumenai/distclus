@@ -4,16 +4,16 @@ import (
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
 	"distclus/series"
+	"distclus/vectors"
 	"strings"
 )
 
 // CreateSpace create a new space
 func CreateSpace(name string, conf core.SpaceConf) (space core.Space) {
 	switch strings.ToLower(name) {
-	case "real":
-		space = real.NewSpace(conf)
+	case "vectors":
+		space = vectors.NewSpace(conf)
 	case "series":
 		space = series.NewSpace(conf)
 	}

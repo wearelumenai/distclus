@@ -2,7 +2,7 @@ package test
 
 import (
 	"distclus/core"
-	"distclus/real"
+	"distclus/vectors"
 	"math"
 	"reflect"
 	"testing"
@@ -32,7 +32,7 @@ func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
 // DoTestRunSyncGiven Algorithm must be configured with GivenInitializer with 3 centers
 func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.AssignAll(TestVectors, real.Space{})
+	var actual = clust.AssignAll(TestVectors, vectors.Space{})
 
 	var expected = [][]int{{0, 3, 4}, {1, 5}, {2, 6, 7}}
 	AssertAssignation(t, expected, actual)
@@ -43,7 +43,7 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 // DoTestRunSyncPP Algorithm must be configured with PP with 3 centers
 func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.AssignAll(TestVectors, real.Space{})
+	var actual = clust.AssignAll(TestVectors, vectors.Space{})
 
 	var expected = make([][]int, 3)
 	_, i0, _ := algo.Predict(TestVectors[0])

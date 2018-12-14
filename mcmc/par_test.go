@@ -5,7 +5,7 @@ import (
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
+	"distclus/vectors"
 	"math"
 	"runtime"
 	"testing"
@@ -45,7 +45,7 @@ func TestParStrategy_Loss(t *testing.T) {
 	var conf = mcmcConf
 	conf.McmcIter = 0
 	var impl = mcmc.NewParImpl(&conf, kmeans.GivenInitializer, []core.Elemt{}, distrib)
-	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, real.Space{})
+	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, vectors.Space{})
 
 	test.PushAndRunSync(&algo)
 

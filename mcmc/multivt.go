@@ -14,7 +14,7 @@ type MultivTConf struct {
 	Conf
 }
 
-// MultivT Real(float64[]) distribution wrapping StudentsT of Gonum
+// MultivT Vectors(float64[]) distribution wrapping StudentsT of Gonum
 type MultivT struct {
 	MultivTConf
 	normal *distmv.Normal

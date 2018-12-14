@@ -3,7 +3,7 @@ package kmeans_test
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"distclus/real"
+	"distclus/vectors"
 	"reflect"
 	"testing"
 	"time"
@@ -17,7 +17,7 @@ var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []flo
 
 func TestInitializers(t *testing.T) {
 	k := 1
-	space := real.Space{}
+	space := vectors.Space{}
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 
 	initializers := map[string]bool{
@@ -50,7 +50,7 @@ func TestInitializers(t *testing.T) {
 
 func TestWrongElementCount(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	_, err := kmeans.GivenInitializer(1, nil, real.Space{}, src)
+	_, err := kmeans.GivenInitializer(1, nil, vectors.Space{}, src)
 	if err == nil {
 		t.Error("Expected not check")
 	}
@@ -59,7 +59,7 @@ func TestWrongElementCount(t *testing.T) {
 func TestCheckK(t *testing.T) {
 	// defer test.AssertPanic(t)
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	_, err := kmeans.GivenInitializer(0, TestPoints, real.Space{}, src)
+	_, err := kmeans.GivenInitializer(0, TestPoints, vectors.Space{}, src)
 	if err == nil {
 		t.Error("initialization without errors")
 	}
@@ -84,19 +84,19 @@ func TestWeightedChoice(t *testing.T) {
 
 func TestGivenInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.GivenInitializer(4, TestPoints, real.Space{}, src)
+	var clust, _ = kmeans.GivenInitializer(4, TestPoints, vectors.Space{}, src)
 	AssertCentroids(t, TestPoints[:4], clust)
 }
 
 func TestPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.PPInitializer(14, TestPoints, real.Space{}, src)
+	var clust, _ = kmeans.PPInitializer(14, TestPoints, vectors.Space{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 
 func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.RandInitializer(14, TestPoints, real.Space{}, src)
+	var clust, _ = kmeans.RandInitializer(14, TestPoints, vectors.Space{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 

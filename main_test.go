@@ -4,7 +4,7 @@ import (
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
+	"distclus/vectors"
 	"testing"
 	"time"
 
@@ -23,7 +23,7 @@ func b1(log func(args ...interface{})) {
 	var initializer = kmeans.RandInitializer
 	var seed = int(time.Now().UTC().Unix())
 	var conf = mcmc.Conf{}
-	var space = real.Space{}
+	var space = vectors.Space{}
 	in := "cas.csv"
 	data, conf.Dim = parseFloatCsv(&in)
 	conf.FrameSize = 15000

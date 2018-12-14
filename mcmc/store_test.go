@@ -5,7 +5,7 @@ import (
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
+	"distclus/vectors"
 	"reflect"
 	"testing"
 	"time"
@@ -20,7 +20,7 @@ func Test_getCenters(t *testing.T) {
 	var buffer = core.NewDataBuffer([]core.Elemt{}, -1)
 	var seed = uint64(time.Now().UTC().Unix())
 	var rgen = rand.New(rand.NewSource(seed))
-	var space = real.Space{}
+	var space = vectors.Space{}
 	var store = mcmc.NewCenterStore(rgen)
 
 	for _, elemt := range test.TestVectors {

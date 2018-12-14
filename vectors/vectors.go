@@ -1,11 +1,11 @@
-package real
+package vectors
 
 import (
 	"distclus/core"
 	"math"
 )
 
-// Space for reals ([]float64)
+// Space for vectors ([]float64)
 type Space struct{}
 
 // NewSpace creates a new Space

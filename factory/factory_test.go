@@ -30,8 +30,8 @@ var ocs = map[string]core.ImplConf{
 }
 
 var spaces = map[string]core.SpaceConf{
-	"Real":    series.Conf{},
-	"real":    series.Conf{},
+	"Vectors": series.Conf{},
+	"vectors": series.Conf{},
 	"series":  series.Conf{},
 	"unknown": nil,
 }
@@ -54,7 +54,7 @@ func Test_CreateSpace(t *testing.T) {
 func getData(space string) (data []core.Elemt) {
 	data = make([]core.Elemt, 1)
 	switch strings.ToLower(space) {
-	case "real":
+	case "vectors":
 		data[0] = []float64{0.}
 	case "series":
 		data[0] = [][]float64{{0.}}

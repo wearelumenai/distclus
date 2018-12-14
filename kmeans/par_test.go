@@ -4,11 +4,11 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"distclus/kmeans"
-	"distclus/real"
+	"distclus/vectors"
 	"testing"
 )
 
-var space = real.Space{}
+var space = vectors.Space{}
 
 func Test_ParPredictGiven(t *testing.T) {
 	kmeansConf := kmeans.Conf{K: 3, Iter: 0}

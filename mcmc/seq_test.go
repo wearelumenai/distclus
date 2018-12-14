@@ -5,7 +5,7 @@ import (
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
+	"distclus/vectors"
 	"testing"
 
 	"golang.org/x/exp/rand"
@@ -21,7 +21,7 @@ var _mcmcConf = mcmc.Conf{
 }
 
 var distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: _mcmcConf})
-var space = real.Space{}
+var space = vectors.Space{}
 
 func Test_Initialization(t *testing.T) {
 	var conf = _mcmcConf

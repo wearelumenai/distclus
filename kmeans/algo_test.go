@@ -3,7 +3,7 @@ package kmeans_test
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"distclus/real"
+	"distclus/vectors"
 	"testing"
 )
 
@@ -14,7 +14,7 @@ var initializer = kmeans.GivenInitializer
 func Test_NewSeqAlgo(t *testing.T) {
 	kmeans.NewAlgo(
 		conf,
-		real.Space{},
+		vectors.Space{},
 		data,
 		initializer,
 	)
@@ -25,7 +25,7 @@ func Test_NewParAlgo(t *testing.T) {
 	kmeansConf.Par = true
 	kmeans.NewAlgo(
 		conf,
-		real.Space{},
+		vectors.Space{},
 		data,
 		initializer,
 	)

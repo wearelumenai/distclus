@@ -4,7 +4,7 @@ import (
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
+	"distclus/vectors"
 	"testing"
 
 	"golang.org/x/exp/rand"
@@ -31,7 +31,7 @@ var initializer = kmeans.GivenInitializer
 func Test_NewSeqAlgo(t *testing.T) {
 	var algo = mcmc.NewAlgo(
 		conf,
-		real.Space{},
+		vectors.Space{},
 		data,
 		initializer,
 		distrib,
@@ -44,7 +44,7 @@ func Test_NewParAlgo(t *testing.T) {
 	mcmcConf.Par = true
 	mcmc.NewAlgo(
 		conf,
-		real.Space{},
+		vectors.Space{},
 		data,
 		initializer,
 		distrib,
@@ -52,7 +52,7 @@ func Test_NewParAlgo(t *testing.T) {
 }
 
 func Test_AlgoAcceptRatio(t *testing.T) {
-	var algo = mcmc.NewAlgo(conf, real.Space{}, data, initializer)
+	var algo = mcmc.NewAlgo(conf, vectors.Space{}, data, initializer)
 
 	algo.Run(false)
 

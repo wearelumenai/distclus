@@ -33,7 +33,7 @@ oc.Fit()
 Where
 
 - conf: algorithm configuration
-- space: space name among "real", "series", etc.
+- space: space name among "vectors", "series", etc.
 - name: an algorithm name (among kmeans, mcmc, etc.)
 - conf: configuration algorithm
 - space: space interface dedicated to process distance between data and centroids
@@ -54,6 +54,6 @@ According to a configuration and a space interface, the OnlineClust interface ex
 
 ### Space
 
-1. create a folder named with your space name. I.e, `real/` for the real space.
-2. implement the interface `core.Space`. I.e., `real.Space`
+1. create a folder named with your space name. I.e, `vectors/` for the vectors space.
+2. implement the interface `core.Space`. I.e., `vectors.Space`
 3. add this implementation in the `factory.CreateSpace` function in `factory/factory.go`

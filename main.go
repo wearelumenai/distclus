@@ -4,7 +4,7 @@ import (
 	"distclus/core"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/real"
+	"distclus/vectors"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -19,8 +19,8 @@ import (
 var (
 	app = kingpin.New("core", "Go clustering")
 
-	dtype = app.Flag("type", "Data type(real).").
-		Short('t').Default("real").Enum("real")
+	dtype = app.Flag("type", "Data type(vectors).").
+		Short('t').Default("vectors").Enum("vectors")
 	norm = app.Flag("norm", "Distance normalisation coefficient.").
 		Short('n').Default("2").Float()
 	seed = app.Flag("seed", "Seed for random initializer(time by default ~ -1).").
@@ -85,8 +85,8 @@ func runMcmc() {
 	}
 
 	switch *dtype {
-	case "real":
-		space = real.Space{}
+	case "vectors":
+		space = vectors.Space{}
 		data, conf.Dim = parseFloatCsv(fdata)
 		// because the configuration is copied it must not be modified after object initialization
 		if conf.FrameSize < 1 {

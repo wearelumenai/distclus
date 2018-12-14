@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-// Space for processing reals of reals ([][]float64)
+// Space for processing vectors of vectors ([][]float64)
 type Space struct {
 	window     int
 	innerSpace core.Space

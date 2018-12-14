@@ -19,11 +19,6 @@ type OnlineClust interface {
 	Predict(elemt Elemt) (Elemt, int, error)
 	Run(async bool) error
 	Close() error
-	SetConf(Conf) error
-	SetSpace(Space) error
-	Reset(Conf, []Elemt) error
-	Conf() Conf
-	Space() Space
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -51,14 +46,6 @@ func NewAlgo(conf Conf, impl Impl, space Space) Algo {
 		closing: make(chan bool, 1),
 		closed:  make(chan bool, 1),
 	}
-}
-
-// Reset implementation
-func (algo *Algo) Reset(conf Conf, data []Elemt) error {
-	algo.conf = conf
-	var impl, err = algo.impl.Reset(&conf.ImplConf, data)
-	algo.impl = impl
-	return err
 }
 
 // Centroids Get the centroids currently found by the algorithm
@@ -100,26 +87,6 @@ func (algo *Algo) Run(async bool) (err error) {
 		algo.status = Running
 	}
 
-	return
-}
-
-// SetConf switches of configuration
-func (algo *Algo) SetConf(conf Conf) (err error) {
-	if algo.status == Running {
-		err = errors.New("Impossible to switch configuration while running")
-	} else {
-		algo.conf = conf
-	}
-	return
-}
-
-// SetSpace switches of space
-func (algo *Algo) SetSpace(space Space) (err error) {
-	if algo.status == Running {
-		err = errors.New("Impossible to switch configuration while running")
-	} else {
-		algo.space = space
-	}
 	return
 }
 

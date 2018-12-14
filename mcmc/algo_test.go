@@ -2,7 +2,6 @@ package mcmc_test
 
 import (
 	"distclus/core"
-	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/real"
@@ -63,26 +62,4 @@ func Test_AlgoAcceptRatio(t *testing.T) {
 	if acceptRatio != implAcceptRatio {
 		t.Error("Wrong routing of acceptratio method", acceptRatio, implAcceptRatio)
 	}
-}
-
-func Test_Reset(t *testing.T) {
-	algo := mcmc.NewAlgo(
-		conf,
-		real.Space{},
-		data,
-		initializer,
-		distrib,
-	)
-
-	test.DoTestReset(t, &algo, core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1}, SpaceConf: nil})
-
-	algo = mcmc.NewAlgo(
-		core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1, Par: true}, SpaceConf: nil},
-		real.Space{},
-		data,
-		initializer,
-		distrib,
-	)
-
-	test.DoTestReset(t, &algo, core.Conf{ImplConf: mcmc.Conf{InitK: 1, MaxK: 1, Par: true}, SpaceConf: nil})
 }

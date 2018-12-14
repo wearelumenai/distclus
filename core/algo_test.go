@@ -2,7 +2,6 @@ package core_test
 
 import (
 	"distclus/core"
-	"distclus/internal/test"
 	"errors"
 	"testing"
 	"time"
@@ -54,10 +53,6 @@ func (impl *mockImpl) errorResult() error {
 	} else {
 		return errors.New(impl.error)
 	}
-}
-
-func (impl *mockImpl) Reset(*core.ImplConf, []core.Elemt) (core.Impl, error) {
-	return impl, impl.errorResult()
 }
 
 func (impl *mockImpl) Push(elemt core.Elemt) error {
@@ -342,46 +337,4 @@ func Test_Scenario_ASync(t *testing.T) {
 	if !impl.running {
 		t.Error("running")
 	}
-}
-
-func Test_SwitchConf(t *testing.T) {
-	var algo = newAlgo(t)
-	var err = algo.SetConf(algo.Conf())
-
-	test.AssertNoError(t, err)
-
-	algo.Run(false)
-	err = algo.SetConf(algo.Conf())
-
-	test.AssertError(t, err)
-
-	algo.Close()
-
-	err = algo.SetConf(algo.Conf())
-
-	test.AssertNoError(t, err)
-}
-
-func Test_SwitchSpace(t *testing.T) {
-	var algo = newAlgo(t)
-	var err = algo.SetSpace(algo.Space())
-
-	test.AssertNoError(t, err)
-
-	algo.Run(false)
-	err = algo.SetSpace(algo.Space())
-
-	test.AssertError(t, err)
-
-	algo.Close()
-
-	err = algo.SetSpace(algo.Space())
-
-	test.AssertNoError(t, err)
-}
-
-func Test_Reset(t *testing.T) {
-	algo := newAlgo(t)
-
-	test.DoTestReset(t, &algo, core.Conf{mockConf{}, nil})
 }

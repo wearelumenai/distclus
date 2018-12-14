@@ -65,8 +65,20 @@ func SetConfigDefaults(conf *Conf) {
 	if len(conf.ProbaK) == 0 {
 		conf.ProbaK = []float64{1, 0, 9}
 	}
+	if conf.Norm == 0 {
+		conf.Norm = 2
+	}
 	if conf.MaxK == 0 {
 		conf.MaxK = 16
+	}
+	if conf.B == 0 {
+		conf.B = 1
+	}
+	if conf.Nu == 0 {
+		conf.Nu = 3
+	}
+	if conf.Iter == 0 {
+		conf.Iter = 1
 	}
 }
 
@@ -74,6 +86,10 @@ func SetConfigDefaults(conf *Conf) {
 func Verify(conf Conf) {
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
+	}
+
+	if conf.FrameSize == 0 {
+		panic(fmt.Sprintf("Illegal value for FrameSize: %v", conf.FrameSize))
 	}
 
 	if conf.InitK > conf.MaxK && conf.MaxK != 0 {

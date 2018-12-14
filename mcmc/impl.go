@@ -49,12 +49,12 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distri
 	return
 }
 
-func (impl *Impl) initRun(conf Conf, space core.Space, data []core.Elemt) {
+func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
 	if impl.distrib == nil {
 		if conf.Dim == 0 {
 			conf.Dim = space.Dim(data)
 		}
-		impl.distrib = NewMultivT(MultivTConf{conf})
+		impl.distrib = NewMultivT(MultivTConf{*conf})
 	}
 }
 
@@ -62,7 +62,7 @@ func (impl *Impl) initRun(conf Conf, space core.Space, data []core.Elemt) {
 func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
 	var mcmcConf = conf.(Conf)
 	var data = impl.buffer.Data()
-	impl.initRun(mcmcConf, space, data)
+	impl.initRun(&mcmcConf, space, data)
 	var current = proposal{
 		k:       mcmcConf.InitK,
 		centers: centroids,
@@ -76,6 +76,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 			loop = false
 
 		default:
+			data = impl.buffer.Data()
 			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data)
 			notifier(centroids)
 			err = impl.buffer.Apply()

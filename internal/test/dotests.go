@@ -26,7 +26,6 @@ func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
 	var actual = PushAndRunSync(algo)
 	var expected = TestVectors[:3]
 	AssertCentroids(t, expected, actual)
-	algo.Close()
 }
 
 // DoTestRunSyncGiven Algorithm must be configured with GivenInitializer with 3 centers
@@ -36,8 +35,6 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 
 	var expected = [][]int{{0, 3, 4}, {1, 5}, {2, 6, 7}}
 	AssertAssignation(t, expected, actual)
-
-	algo.Close()
 }
 
 // DoTestRunSyncPP Algorithm must be configured with PP with 3 centers
@@ -54,12 +51,10 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	expected[i2] = []int{2, 6, 7}
 
 	AssertAssignation(t, expected, actual)
-
-	algo.Close()
 }
 
 // DoTestRunSyncCentroids Algorithm must be configured with 3 centers
-func DoTestRunSyncCentroids(t *testing.T, km *core.Algo) {
+func DoTestRunSyncCentroids(t *testing.T, km core.OnlineClust) {
 	c0, _, _ := km.Predict(TestVectors[0])
 	c1, _, _ := km.Predict(TestVectors[1])
 	c2, _, _ := km.Predict(TestVectors[2])
@@ -79,35 +74,11 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 
 	time.Sleep(1000 * time.Millisecond)
 
-	// var centroids1, _ = algo.Centroids()
-	//
-	// for _, elemt := range TestVectors {
-	// 	algo.Push(elemt)
-	// }
-	//
-	// time.Sleep(1000 * time.Millisecond)
-	//
-	// var centroids2, _ = algo.Centroids()
-	//
-	// for _, elemt := range TestVectors {
-	// 	algo.Push(elemt)
-	// }
-	//
-	// time.Sleep(1000 * time.Millisecond)
-	//
-	// var centroids3, _ = algo.Centroids()
-	//
-	// AssertNotEqual(t, centroids1, centroids2)
-	// AssertNotEqual(t, centroids2, centroids3)
-	// AssertNotEqual(t, centroids1, centroids3)
-
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs)
 	algo.Push(obs)
 
 	time.Sleep(1000 * time.Millisecond)
-
-	algo.Close()
 
 	var cn, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
@@ -116,8 +87,44 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	AssertEqual(t, c0, cn)
 }
 
+// DoTestRunAsyncPush Algorithm must be configured with 3 centers
+func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
+	// RunAsyncAndPush(algo)
+
+	time.Sleep(1000 * time.Millisecond)
+
+	var centroids1, err = algo.Centroids()
+
+	AssertNoError(t, err)
+
+	for _, elemt := range TestVectors {
+		algo.Push(elemt)
+	}
+
+	time.Sleep(1000 * time.Millisecond)
+
+	var centroids2, err2 = algo.Centroids()
+
+	AssertNotEqual(t, centroids1, centroids2)
+
+	AssertNoError(t, err2)
+
+	for _, elemt := range TestVectors {
+		algo.Push(elemt)
+	}
+
+	time.Sleep(1000 * time.Millisecond)
+
+	var centroids3, err3 = algo.Centroids()
+
+	AssertNoError(t, err3)
+
+	AssertNotEqual(t, centroids2, centroids3)
+	AssertNotEqual(t, centroids1, centroids3)
+}
+
 // DoTestRunAsyncCentroids test
-func DoTestRunAsyncCentroids(t *testing.T, km *core.Algo) {
+func DoTestRunAsyncCentroids(t *testing.T, km core.OnlineClust) {
 	c0, _, _ := km.Predict(TestVectors[0])
 	c1, _, _ := km.Predict(TestVectors[1])
 	c2, _, _ := km.Predict(TestVectors[2])

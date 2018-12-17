@@ -21,6 +21,7 @@ var conf = core.Conf{
 	},
 	SpaceConf: nil,
 }
+
 var data = []core.Elemt{
 	[]float64{1., 3.4, 5.4},
 	[]float64{10., 9.2, 12.3},
@@ -34,7 +35,6 @@ func Test_NewSeqAlgo(t *testing.T) {
 		vectors.Space{},
 		data,
 		initializer,
-		distrib,
 	)
 	algo.AcceptRatio()
 }
@@ -42,12 +42,12 @@ func Test_NewSeqAlgo(t *testing.T) {
 func Test_NewParAlgo(t *testing.T) {
 	mcmcConf := conf.ImplConf.(mcmc.Conf)
 	mcmcConf.Par = true
+	conf.ImplConf = mcmcConf
 	mcmc.NewAlgo(
 		conf,
 		vectors.Space{},
 		data,
 		initializer,
-		distrib,
 	)
 }
 

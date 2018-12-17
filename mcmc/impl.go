@@ -3,6 +3,7 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+	"errors"
 	"math"
 
 	"gonum.org/v1/gonum/stat/distuv"
@@ -50,10 +51,10 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distri
 }
 
 func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
+	if conf.Dim == 0 {
+		conf.Dim = space.Dim(data)
+	}
 	if impl.distrib == nil {
-		if conf.Dim == 0 {
-			conf.Dim = space.Dim(data)
-		}
 		impl.distrib = NewMultivT(MultivTConf{*conf})
 	}
 }
@@ -74,6 +75,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		select {
 		case <-closing:
 			loop = false
+			err = errors.New("interrupted")
 
 		default:
 			data = impl.buffer.Data()

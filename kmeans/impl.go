@@ -2,6 +2,7 @@ package kmeans
 
 import (
 	"distclus/core"
+	"errors"
 )
 
 // Impl algorithm abstract implementation
@@ -42,6 +43,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 
 		case <-closing:
 			loop = false
+			err = errors.New("interrupted")
 
 		default:
 			centroids = impl.strategy.Iterate(space, centroids, impl.buffer.Data())

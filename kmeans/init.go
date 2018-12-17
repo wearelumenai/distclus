@@ -33,9 +33,9 @@ func check(k int, elemts []core.Elemt) (err error) {
 // GivenInitializer initializes a clustering algorithm with the k first testPoints.
 func GivenInitializer(k int, elemts []core.Elemt, space core.Space, _ *rand.Rand) (centroids core.Clust, err error) {
 	err = check(k, elemts)
-	centroids = make(core.Clust, k)
 
 	if err == nil {
+		centroids = make(core.Clust, k)
 		for i := 0; i < k; i++ {
 			centroids[i] = space.Copy(elemts[i])
 		}

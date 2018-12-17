@@ -77,12 +77,16 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 // Run executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
 func (algo *Algo) Run(async bool) (err error) {
 	if async {
-		err = algo.impl.SetAsync()
-		if err == nil {
-			go algo.initAndRunAsync()
+		if algo.status != Running {
+			err = algo.impl.SetAsync()
+			if err == nil {
+				go algo.initAndRunAsync()
+			}
+		} else {
+			err = errors.New("Algo is running")
 		}
 	} else {
-		err = algo.initAndRunSync()
+		err = algo.initAndRunSync(async)
 	}
 	if err == nil {
 		algo.status = Running
@@ -132,8 +136,10 @@ func (algo *Algo) updateCentroids(centroids Clust) {
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) initAndRunSync() (err error) {
-	algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
+func (algo *Algo) initAndRunSync(async bool) (err error) {
+	if !async {
+		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
+	}
 	if err == nil {
 		err = algo.impl.Run(
 			algo.conf.ImplConf,
@@ -142,7 +148,7 @@ func (algo *Algo) initAndRunSync() (err error) {
 			algo.updateCentroids,
 			algo.closing,
 		)
-		if err == nil {
+		if err == nil && !async {
 			algo.closed <- true
 		}
 	}
@@ -151,10 +157,12 @@ func (algo *Algo) initAndRunSync() (err error) {
 }
 
 // Initialize the algorithm, if success run it asynchronously otherwise retry
-func (algo *Algo) initAndRunAsync() (err error) {
-	if err = algo.initAndRunSync(); err != nil {
+func (algo *Algo) initAndRunAsync() {
+	var err error
+	algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
+	for err == nil {
+		err = algo.initAndRunSync(true)
 		time.Sleep(300 * time.Millisecond)
-		err = algo.initAndRunAsync()
 	}
-	return
+	algo.closed <- true
 }

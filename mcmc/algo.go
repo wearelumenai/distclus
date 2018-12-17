@@ -10,9 +10,6 @@ type Algo struct {
 // NewAlgo creates a new kmeans algo
 func NewAlgo(conf core.Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) Algo {
 	var mcmcConf = conf.ImplConf.(Conf)
-	if mcmcConf.Dim == 0 {
-		mcmcConf.Dim = space.Dim(data)
-	}
 	var distrib Distrib
 	if len(args) == 1 {
 		distrib = args[0].(Distrib)

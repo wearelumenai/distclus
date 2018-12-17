@@ -40,6 +40,7 @@ func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.C
 		case <-closing:
 			loop = false
 			impl.running = false
+			err = errors.New("closed")
 		default:
 			notifier(impl.clust)
 		}
@@ -90,10 +91,10 @@ func (m mockSpace) Dim(e []core.Elemt) int {
 func newAlgo(t *testing.T) (algo core.Algo) {
 	algo = core.NewAlgo(
 		core.Conf{
-			mockConf{
+			ImplConf: mockConf{
 				Iter: 1,
 			},
-			nil,
+			SpaceConf: nil,
 		},
 		&mockImpl{
 			clust: make(core.Clust, 10),
@@ -151,6 +152,8 @@ func TestAsyncError(t *testing.T) {
 	if err == nil {
 		t.Error("no error in wrong cluster")
 	}
+
+	algo.Close()
 }
 
 func Test_Conf(t *testing.T) {
@@ -344,7 +347,7 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	algo.Close()
 
-	if !impl.running {
+	if impl.running {
 		t.Error("running")
 	}
 }

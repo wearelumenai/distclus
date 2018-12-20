@@ -123,14 +123,14 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 	return
 }
 
-func TestError(t *testing.T) {
+func TestErrorAtInitialization(t *testing.T) {
 	var algo = newAlgo(t)
 	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
 	err := algo.Run(false)
 
-	if err != nil {
+	if err == nil {
 		t.Error("no error in wrong cluster")
 	}
 }

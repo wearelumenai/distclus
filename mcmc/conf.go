@@ -88,10 +88,6 @@ func Verify(conf Conf) {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}
 
-	if conf.FrameSize == 0 {
-		panic(fmt.Sprintf("Illegal value for FrameSize: %v", conf.FrameSize))
-	}
-
 	if conf.InitK > conf.MaxK && conf.MaxK != 0 {
 		panic(fmt.Sprintf("Illegal value for Max K / Init K: %v / %v", conf.MaxK, conf.InitK))
 	}

@@ -82,27 +82,25 @@ func (algo *Algo) Run(async bool) (err error) {
 	if algo.status == Created {
 		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
 		if err == nil {
-			algo.status = Initialized
+			algo.status = Ready
+		} else {
+			return
 		}
 	}
-	if algo.status == Closed {
-		err = errors.New("Algo is closed")
-	} else {
+	if algo.status == Ready {
 		if async {
-			if algo.status == Running {
-				err = errors.New("Algo is already running")
-			} else {
-				err = algo.impl.SetAsync()
-				if err == nil {
-					algo.status = Running
-					go algo.runAsync()
-				}
+			err = algo.impl.SetAsync()
+			if err == nil {
+				algo.status = Running
+				go algo.runAsync()
 			}
 		} else {
 			algo.status = Running
 			err = algo.runSync()
-			algo.status = Finished
+			algo.status = Ready
 		}
+	} else {
+		err = fmt.Errorf("invalid status %v", algo.status)
 	}
 	return
 }

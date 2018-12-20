@@ -13,7 +13,9 @@ type ClustStatus int
 // ClustStatus const values
 const (
 	Created ClustStatus = iota
+	Initialized
 	Running
+	Finished
 	Closed
 )
 

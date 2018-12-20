@@ -143,7 +143,6 @@ func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 	DoTestBeforeRun(algo, t)
 
 	algo.Run(true)
-	time.Sleep(300 * time.Millisecond)
 	DoTestAfterRun(algo, t)
 
 	algo.Close()
@@ -164,6 +163,12 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 
 	_, _, err = algo.Predict(TestVectors[5])
 	AssertNoError(t, err)
+
+	err = algo.Run(false)
+	AssertError(t, err)
+
+	err = algo.Run(true)
+	AssertError(t, err)
 }
 
 // DoTestAfterRun test
@@ -221,10 +226,10 @@ func PushAndRunAsync(algorithm core.OnlineClust) {
 
 // RunAsyncAndPush test
 func RunAsyncAndPush(algo core.OnlineClust) {
-	algo.Run(true)
 	for _, elemt := range TestVectors {
 		algo.Push(elemt)
 	}
+	algo.Run(true)
 }
 
 // PushAndRunSync test

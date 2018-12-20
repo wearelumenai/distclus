@@ -29,18 +29,19 @@ func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core
 	return
 }
 
-func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
+func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
 	var mockConf = conf.(mockConf)
-	impl.running = true
 	if impl.error != "" {
 		err = errors.New(impl.error)
 	}
+	impl.running = true
 	for iter, loop := 0, true; iter < mockConf.Iter && loop; iter++ {
 		select {
 		case <-closing:
 			loop = false
 			impl.running = false
-			err = errors.New("closed")
+			closed <- true
+			time.Sleep(300 * time.Millisecond)
 		default:
 			notifier(impl.clust)
 		}
@@ -129,7 +130,7 @@ func TestError(t *testing.T) {
 
 	err := algo.Run(false)
 
-	if err == nil {
+	if err != nil {
 		t.Error("no error in wrong cluster")
 	}
 }
@@ -225,7 +226,7 @@ func Test_Predict(t *testing.T) {
 	}
 
 	if err == nil {
-		t.Error("Missing error after close and prediction")
+		t.Error("error after close and prediction")
 	}
 }
 

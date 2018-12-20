@@ -60,7 +60,7 @@ func Test_ParRunAsync(t *testing.T) {
 			ProbaK:    []float64{1, 8, 1},
 			RGen:      rand.New(rand.NewSource(6305689164243)),
 			B:         100, Amp: 0.1,
-			Nu: 3, McmcIter: 1 << 30,
+			Nu: 3, McmcIter: 5,
 			InitIter: 1,
 			Par:      true,
 		},

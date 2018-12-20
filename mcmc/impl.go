@@ -3,8 +3,8 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"errors"
 	"math"
+	"time"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -60,7 +60,7 @@ func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
 }
 
 // Run executes the algorithm
-func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool) (err error) {
+func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
 	var mcmcConf = conf.(Conf)
 	var data = impl.buffer.Data()
 	impl.initRun(&mcmcConf, space, data)
@@ -75,7 +75,8 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		select {
 		case <-closing:
 			loop = false
-			err = errors.New("interrupted")
+			closed <- true
+			time.Sleep(300 * time.Millisecond)
 
 		default:
 			data = impl.buffer.Data()

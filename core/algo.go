@@ -3,7 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
-	"time"
+	"sync"
 )
 
 // OnlineClust interface
@@ -31,6 +31,7 @@ type Algo struct {
 	closing        chan bool
 	closed         chan bool
 	lastUpdateTime int64
+	mutex          sync.RWMutex
 }
 
 // AlgoConf algorithm configuration
@@ -54,6 +55,8 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	case Created:
 		err = fmt.Errorf("clustering not started")
 	default:
+		algo.mutex.RLock()
+		defer algo.mutex.RUnlock()
 		var algoCentroids = algo.centroids
 		centroids = make(Clust, len(algoCentroids))
 		for index, centroid := range algoCentroids {
@@ -76,36 +79,46 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 
 // Run executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
 func (algo *Algo) Run(async bool) (err error) {
-	if async {
-		if algo.status != Running {
-			err = algo.impl.SetAsync()
-			if err == nil {
-				go algo.initAndRunAsync()
+	if algo.status == Created {
+		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
+		if err == nil {
+			algo.status = Initialized
+		}
+	}
+	if algo.status == Closed {
+		err = errors.New("Algo is closed")
+	} else {
+		if async {
+			if algo.status == Running {
+				err = errors.New("Algo is already running")
+			} else {
+				err = algo.impl.SetAsync()
+				if err == nil {
+					algo.status = Running
+					go algo.runAsync()
+				}
 			}
 		} else {
-			err = errors.New("Algo is running")
+			algo.status = Running
+			err = algo.runSync()
+			algo.status = Finished
 		}
-	} else {
-		err = algo.initAndRunSync(async)
-	}
-	if err == nil {
-		algo.status = Running
 	}
 	return
 }
 
 // Conf returns configuration
-func (algo Algo) Conf() Conf {
+func (algo *Algo) Conf() Conf {
 	return algo.conf
 }
 
 // Impl returns impl
-func (algo Algo) Impl() Impl {
+func (algo *Algo) Impl() Impl {
 	return algo.impl
 }
 
 // Space returns space
-func (algo Algo) Space() Space {
+func (algo *Algo) Space() Space {
 	return algo.space
 }
 
@@ -132,37 +145,30 @@ func (algo *Algo) Close() (err error) {
 }
 
 func (algo *Algo) updateCentroids(centroids Clust) {
+	algo.mutex.Lock()
+	defer algo.mutex.Unlock()
 	algo.centroids = centroids
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) initAndRunSync(async bool) (err error) {
-	if !async {
-		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
-	}
-	if err == nil {
-		err = algo.impl.Run(
-			algo.conf.ImplConf,
-			algo.space,
-			algo.centroids,
-			algo.updateCentroids,
-			algo.closing,
-		)
-		if err == nil && !async {
-			algo.closed <- true
-		}
-	}
-
-	return
+func (algo *Algo) runSync() (err error) {
+	return algo.impl.Run(
+		algo.conf.ImplConf,
+		algo.space,
+		algo.centroids,
+		algo.updateCentroids,
+		algo.closing,
+		algo.closed,
+	)
 }
 
 // Initialize the algorithm, if success run it asynchronously otherwise retry
-func (algo *Algo) initAndRunAsync() {
+func (algo *Algo) runAsync() {
 	var err error
-	algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
-	for err == nil {
-		err = algo.initAndRunSync(true)
-		time.Sleep(300 * time.Millisecond)
+	for algo.status != Closed {
+		err = algo.runSync()
+		if err != nil {
+			fmt.Print(err)
+		}
 	}
-	algo.closed <- true
 }

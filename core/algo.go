@@ -79,14 +79,24 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 
 // Run executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
 func (algo *Algo) Run(async bool) (err error) {
+	err = algo.tryInit()
+	if err == nil {
+		err = algo.runIfReady(async)
+	}
+	return
+}
+
+func (algo *Algo) tryInit() (err error) {
 	if algo.status == Created {
 		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
 		if err == nil {
 			algo.status = Ready
-		} else {
-			return
 		}
 	}
+	return
+}
+
+func (algo *Algo) runIfReady(async bool) (err error) {
 	if algo.status == Ready {
 		if async {
 			err = algo.impl.SetAsync()

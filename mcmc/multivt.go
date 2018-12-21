@@ -17,10 +17,10 @@ type MultivTConf struct {
 // MultivT Vectors(float64[]) distribution wrapping StudentsT of Gonum
 type MultivT struct {
 	MultivTConf
-	normal *distmv.Normal
-	chi2   *distuv.ChiSquared
-	k      float64
-	i      float64
+	normal      *distmv.Normal
+	chi2        *distuv.ChiSquared
+	gammaFactor float64
+	power       float64
 }
 
 // NewMultivT Constructor for multivT distribution
@@ -38,39 +38,39 @@ func NewMultivT(conf MultivTConf) MultivT {
 	m.MultivTConf = conf
 	m.normal, _ = distmv.NewNormal(mu, sigma, m.RGen)
 	m.chi2 = &distuv.ChiSquared{K: conf.Nu, Src: m.RGen}
-	m.i = (float64(conf.Dim) + conf.Nu) / 2.
-	m.k = math.Log(math.Gamma(m.i) / math.Gamma(float64(conf.Nu)/2.))
+	m.power = (float64(conf.Dim) + conf.Nu) / 2.
+	m.gammaFactor = math.Log(math.Gamma(m.power) / math.Gamma(float64(conf.Nu)/2.))
 
 	return m
 }
 
 // Sample from a (uncorrelated) multivariate t distribution
 func (m MultivT) Sample(mu core.Elemt, time int) core.Elemt {
-	var g = math.Sqrt(m.chi2.K / m.chi2.Rand())
-	var z = m.normal.Rand(nil)
-	var cmu = mu.([]float64)
-	var tau = 1 / math.Sqrt(float64(time*20))
+	var fmu = mu.([]float64)
+	var scale = 1 / math.Sqrt(float64(time*20))
 
-	for i, v := range z {
-		z[i] = cmu[i] + v*g*tau
+	var chiInverse = math.Sqrt(m.chi2.K / m.chi2.Rand())
+	var student = m.normal.Rand(nil)
+
+	for i := range student {
+		student[i] = fmu[i] + student[i]*chiInverse*scale
 	}
 
-	return z
+	return student
 }
 
 // Pdf Density of a (uncorrelated) multivariate t distribution
 func (m MultivT) Pdf(mu, x core.Elemt, time int) float64 {
-	var cmu = mu.([]float64)
-	var cx = x.([]float64)
-	var nk = 0.
+	var fmu = mu.([]float64)
+	var fx = x.([]float64)
+	var shift = 0.
 
-	for i, v := range cmu {
-		f := v - cx[i]
-		nk += f * f
+	for i := range fmu {
+		f := fmu[i] - fx[i]
+		shift += f * f
 	}
 
-	var tau = 1 / math.Sqrt(float64(time*20))
-	var d = m.Nu * tau
-	var k = m.k - float64(m.Dim)/2.*math.Log(math.Pi*d)
-	return k + (-m.i * math.Log(1.+nk/d))
+	var scale = m.Nu / math.Sqrt(float64(time*20))
+	var k = m.gammaFactor - math.Log(math.Pi*scale)*float64(m.Dim)/2.
+	return k + (-m.power * math.Log(1.+shift/scale))
 }

@@ -68,7 +68,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		k:       mcmcConf.InitK,
 		centers: centroids,
 		loss:    impl.strategy.Loss(mcmcConf, space, centroids, data),
-		pdf:     impl.proba(mcmcConf, space, centroids, centroids),
+		pdf:     impl.proba(mcmcConf, space, centroids, centroids, impl.getCurrentTime(data)),
 	}
 
 	for i, loop := 0, true; i < mcmcConf.McmcIter && loop; i++ {
@@ -80,12 +80,16 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 
 		default:
 			data = impl.buffer.Data()
-			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data)
+			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data, impl.getCurrentTime(data))
 			notifier(centroids)
 			err = impl.buffer.Apply()
 		}
 	}
 	return
+}
+
+func (impl *Impl) getCurrentTime(data []core.Elemt) int {
+	return len(data)
 }
 
 // SetAsync changes the status of impl buffer to async
@@ -105,10 +109,10 @@ type proposal struct {
 	pdf     float64
 }
 
-func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt) (proposal, core.Clust) {
-	var prop = impl.propose(conf, space, current, centroids, data)
+func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt, time int) (proposal, core.Clust) {
+	var prop = impl.propose(conf, space, current, centroids, data, time)
 
-	if impl.accept(conf, current, prop) {
+	if impl.accept(conf, current, prop, time) {
 		current = prop
 		centroids = prop.centers
 		impl.store.SetCenters(centroids)
@@ -119,23 +123,25 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroid
 	return current, centroids
 }
 
-func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt) proposal {
+func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt, time int) proposal {
 	var k = impl.nextK(conf, current.k, data)
 	var centers = impl.store.GetCenters(data, space, k, centroids)
 	centers = impl.strategy.Iterate(conf, space, centers, data, 1)
-	var alteredCenters = impl.alter(conf, space, centers)
+	var alteredCenters = impl.alter(conf, space, centers, time)
 	return proposal{
 		k:       k,
 		centers: alteredCenters,
 		loss:    impl.strategy.Loss(conf, space, alteredCenters, data),
-		pdf:     impl.proba(conf, space, alteredCenters, centers),
+		pdf:     impl.proba(conf, space, alteredCenters, centers, time),
 	}
 }
 
-func (impl *Impl) accept(conf Conf, current proposal, prop proposal) bool {
+func (impl *Impl) accept(conf Conf, current proposal, prop proposal, time int) bool {
 	var rProp = current.pdf - prop.pdf
-	var rInit = conf.L2B() * float64(conf.Dim*(current.k-prop.k))
-	var rGibbs = conf.Lambda() * (current.loss - prop.loss)
+	var l2b = math.Log(2 * conf.B)
+	var rInit = l2b * float64(conf.Dim*(current.k-prop.k))
+	var lambda = conf.Amp * math.Sqrt(float64(conf.Dim+3)/float64(time))
+	var rGibbs = lambda * (current.loss - prop.loss)
 
 	var rho = math.Exp(rGibbs + rInit + rProp)
 	return impl.uniform.Rand() < rho
@@ -156,20 +162,20 @@ func (impl *Impl) nextK(conf Conf, k int, data []core.Elemt) int {
 	}
 }
 
-func (impl *Impl) alter(conf Conf, space core.Space, clust core.Clust) core.Clust {
+func (impl *Impl) alter(conf Conf, space core.Space, clust core.Clust, time int) core.Clust {
 	var result = make(core.Clust, len(clust))
 
 	for i, c := range clust {
-		result[i] = impl.distrib.Sample(c)
+		result[i] = impl.distrib.Sample(c, time)
 	}
 
 	return result
 }
 
-func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust) (p float64) {
+func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int) (p float64) {
 	p = 0.
 	for i, v := range x {
-		p += impl.distrib.Pdf(mu[i], v)
+		p += impl.distrib.Pdf(mu[i], v, time)
 	}
 	return p
 }

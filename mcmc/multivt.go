@@ -45,11 +45,11 @@ func NewMultivT(conf MultivTConf) MultivT {
 }
 
 // Sample from a (uncorrelated) multivariate t distribution
-func (m MultivT) Sample(mu core.Elemt) core.Elemt {
+func (m MultivT) Sample(mu core.Elemt, time int) core.Elemt {
 	var g = math.Sqrt(m.chi2.K / m.chi2.Rand())
 	var z = m.normal.Rand(nil)
 	var cmu = mu.([]float64)
-	var tau = m.Tau()
+	var tau = 1 / math.Sqrt(float64(time*20))
 
 	for i, v := range z {
 		z[i] = cmu[i] + v*g*tau
@@ -59,7 +59,7 @@ func (m MultivT) Sample(mu core.Elemt) core.Elemt {
 }
 
 // Pdf Density of a (uncorrelated) multivariate t distribution
-func (m MultivT) Pdf(mu, x core.Elemt) float64 {
+func (m MultivT) Pdf(mu, x core.Elemt, time int) float64 {
 	var cmu = mu.([]float64)
 	var cx = x.([]float64)
 	var nk = 0.
@@ -69,7 +69,8 @@ func (m MultivT) Pdf(mu, x core.Elemt) float64 {
 		nk += f * f
 	}
 
-	var d = m.Nu * m.Tau()
+	var tau = 1 / math.Sqrt(float64(time*20))
+	var d = m.Nu * tau
 	var k = m.k - float64(m.Dim)/2.*math.Log(math.Pi*d)
 	return k + (-m.i * math.Log(1.+nk/d))
 }

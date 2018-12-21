@@ -32,19 +32,19 @@ func TestMultivT_Pdf(t *testing.T) {
 	}
 
 	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: mcmcConf})
-	var d0 = math.Exp(distrib.Pdf(mu[0], x[0]))
+	var d0 = math.Exp(distrib.Pdf(mu[0], x[0], 8))
 
 	if math.Abs(d0-0.319520) > 1e-6 {
 		t.Error("Expected 0.319520 got", d0)
 	}
 
-	var d1 = math.Exp(distrib.Pdf(mu[1], x[1]))
+	var d1 = math.Exp(distrib.Pdf(mu[1], x[1], 8))
 
 	if math.Abs(d1-0.0286968) > 1e-6 {
 		t.Error("Expected 0.0286968 got", d1)
 	}
 
-	var d2 = math.Exp(distrib.Pdf(mu[2], x[2]))
+	var d2 = math.Exp(distrib.Pdf(mu[2], x[2], 8))
 
 	if math.Abs(d2-0.0253301) > 1e-6 {
 		t.Error("Expected 0.0253301 got", d0)
@@ -60,7 +60,7 @@ func TestMultivT_Sample(t *testing.T) {
 
 	n := 1000000
 	for i := 0; i < n; i++ {
-		var s = distrib.Sample(mu).([]float64)
+		var s = distrib.Sample(mu, 8).([]float64)
 		for j := 0; j < len(m); j++ {
 			m[j] += s[j] / float64(n)
 		}

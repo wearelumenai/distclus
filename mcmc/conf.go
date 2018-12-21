@@ -2,7 +2,6 @@ package mcmc
 
 import (
 	"fmt"
-	"math"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -23,37 +22,6 @@ type Conf struct {
 	McmcIter, InitIter int
 	ProbaK             []float64
 	lamb, l2b, tau     float64
-}
-
-// Tau returns configuration Tau
-func (conf *Conf) Tau() float64 {
-	if conf.tau == 0 {
-		conf.tau = 1 / math.Sqrt(float64(conf.FrameSize*20))
-	}
-	return conf.tau
-}
-
-// L2B returns configuration L2B
-func (conf *Conf) L2B() float64 {
-	if conf.l2b == 0 {
-		conf.l2b = math.Log(2 * conf.B)
-	}
-	return conf.l2b
-}
-
-// Lambda returns configuration lambda
-func (conf *Conf) Lambda() float64 {
-	if conf.lamb == 0 {
-		var r = conf.R
-
-		if r == 0 { // lambda = (d+2)sqrt(log T)/(2sqrt(T)r^2)
-			r = 1
-		}
-
-		conf.lamb = conf.Amp * math.Sqrt(float64(conf.Dim+3)/float64(conf.FrameSize))
-	}
-
-	return conf.lamb
 }
 
 // SetConfigDefaults initializes nil parameter values

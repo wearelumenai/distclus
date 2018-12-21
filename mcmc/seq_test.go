@@ -92,10 +92,10 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 
 func Test_RunAsync(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK:     3,
-		FrameSize: 8,
-		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 0.1,
+		InitK: 3,
+		// FrameSize: 8,
+		RGen: rand.New(rand.NewSource(6305689164243)),
+		Dim:  5, B: 100, Amp: 0.1,
 		Norm: 2, Nu: 3, McmcIter: 20,
 		InitIter: 0,
 		ProbaK:   []float64{1, 8, 1},

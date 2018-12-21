@@ -66,9 +66,6 @@ func TestCheckK(t *testing.T) {
 }
 
 func TestWeightedChoice(t *testing.T) {
-	if testing.Short() {
-		t.Skip("skipping test in short mode.")
-	}
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 	var w = []float64{10, 10, 80}
 	var sum = make([]int, 3)

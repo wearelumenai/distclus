@@ -29,6 +29,10 @@ func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core
 	return
 }
 
+func (impl mockImpl) Iterations() uint {
+	return 0
+}
+
 func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
 	var mockConf = conf.(mockConf)
 	if impl.error != "" {
@@ -76,8 +80,9 @@ func (mockSpace) Dist(e1, e2 core.Elemt) float64 {
 	return 42.
 }
 
-func (m mockSpace) Combine(e1 core.Elemt, w1 int, e2 core.Elemt, w2 int) {
+func (m mockSpace) Combine(e1 core.Elemt, w1 int, e2 core.Elemt, w2 int) core.Elemt {
 	m.combine++
+	return e1
 }
 
 func (m mockSpace) Copy(e core.Elemt) core.Elemt {

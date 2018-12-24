@@ -6,6 +6,7 @@ type Impl interface {
 	Run(conf ImplConf, space Space, centroids Clust, notifier func(Clust), closing <-chan bool, closed chan<- bool) error
 	Push(Elemt) error
 	SetAsync() error
+	Iterations() uint
 }
 
 // ImplConf is implementation configuration interface

@@ -32,11 +32,10 @@ func allocate(in [][]float64, dim int) (out [][]float64) {
 func interpolate(in [][]float64, dim int) (out [][]float64) {
 	out = make([][]float64, dim, dim)
 	lenin := len(in)
-	var pos float64
 	copy(out[0], in[0])
 	copy(out[dim-1], in[lenin-1])
 	for index := range out[1 : dim-1] {
-		pos = float64(index * lenin / dim)
+		var pos = float64(index * lenin / dim)
 		var ceil = math.Ceil(pos)
 		var p = pos - ceil
 		iindex := int(ceil)
@@ -69,7 +68,12 @@ func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
 	return
 }
 
-func (space Space) path(elemt1, elemt2 core.Elemt) (path []float64) {
+type entry struct {
+	i, j int
+	cost float64
+}
+
+func (space Space) path(elemt1, elemt2 core.Elemt) (path []entry) {
 	var e1 = elemt1.([][]float64)
 	var e2 = elemt2.([][]float64)
 
@@ -118,8 +122,25 @@ func (space Space) path(elemt1, elemt2 core.Elemt) (path []float64) {
 			var dist = Dist(cols[colIndex], rows[rowIndex])
 			var cost = dist + math.Min(insertion, math.Min(deletion, match))
 			matrix[colIndex][rowIndex] = cost
-			path = append(path, cost)
 		}
+	}
+
+	var i = lenCols
+	var j = lenRows
+
+	for i != 0 && j != 0 {
+		var insertion = matrix[i-1][j]
+		var match = matrix[i-1][j-1]
+		var deletion = matrix[i][j-1]
+		if insertion < match && insertion < deletion {
+			i--
+		} else if match < insertion && match < deletion {
+			i--
+			j--
+		} else if deletion < insertion && deletion < match {
+			j--
+		}
+		path = append(path, entry{i, j, matrix[i][j]})
 	}
 
 	return
@@ -130,17 +151,36 @@ func (space Space) Dist(elemt1, elemt2 core.Elemt) (sum float64) {
 	var path = space.path(elemt1, elemt2)
 
 	for _, dist := range path {
-		sum += dist
+		sum += dist.cost
 	}
 
 	return
 }
 
 // Combine computes combination between two nodes
-func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
+func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) core.Elemt {
 	var Combine = space.innerSpace.Combine
 
-	Combine(elemt1, weight1, elemt2, weight2)
+	var e1 = elemt1.([][]float64)
+	var e2 = elemt2.([][]float64)
+
+	var path = space.path(elemt1, elemt2)
+
+	var result = make([]core.Elemt, len(path))
+	var indices = make([]int, len(path))
+
+	for c, pathEntry := range path {
+		var i = pathEntry.i
+		var j = pathEntry.j
+		result[c] = Combine(e1[i], weight1, e2[j], weight2)
+		indices[c] = (i*weight1 + j*weight2) / (weight1 + weight2)
+	}
+
+	return interpolateMean(result, indices)
+}
+
+func interpolateMean(elemts []core.Elemt, indices []int) core.Elemt {
+	return elemts[0]
 }
 
 // Copy creates a copy of a vector

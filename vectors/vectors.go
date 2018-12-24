@@ -26,16 +26,22 @@ func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 }
 
 // Combine computes combination between two nodes
-func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) {
+func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) core.Elemt {
 	var e1 = elemt1.([]float64)
 	var e2 = elemt2.([]float64)
-	dim := len(e1)
-	w1 := float64(weight1)
-	w2 := float64(weight2)
-	t := w1 + w2
+
+	var dim = len(e1)
+	var w1 = float64(weight1)
+	var w2 = float64(weight2)
+	var t = w1 + w2
+
+	var result = make([]float64, dim)
+
 	for i := 0; i < dim; i++ {
-		e1[i] = (e1[i]*w1 + e2[i]*w2) / t
+		result[i] = (e1[i]*w1 + e2[i]*w2) / t
 	}
+
+	return result
 }
 
 // Copy creates a copy of a vector

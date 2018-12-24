@@ -17,7 +17,7 @@ type Impl struct {
 	uniform     distuv.Uniform
 	distrib     Distrib
 	store       CenterStore
-	iter, acc   int
+	iter, acc   uint
 }
 
 // Strategy specifies strategy methods
@@ -30,6 +30,7 @@ type Strategy interface {
 func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var mcmcConf = conf.(Conf)
 	impl.buffer.Apply()
+	impl.iter = 0
 	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 }
 
@@ -183,4 +184,9 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 // AcceptRatio returns ratio between acc and iter
 func (impl *Impl) AcceptRatio() float64 {
 	return float64(impl.acc) / float64(impl.iter)
+}
+
+// Iterations returns number of iterations per execution
+func (impl Impl) Iterations() uint {
+	return impl.iter
 }

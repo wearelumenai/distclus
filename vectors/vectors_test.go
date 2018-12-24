@@ -43,9 +43,9 @@ func TestVectorCombine2x1And4x1(t *testing.T) {
 	e1 := []float64{2}
 	e2 := []float64{4}
 	space := vectors.Space{}
-	space.Combine(e1, 1, e2, 1)
-	if e1[0] != 3 {
-		t.Errorf("Expected 3, got %v", e1)
+	var e3 = space.Combine(e1, 1, e2, 1).([]float64)
+	if e3[0] != 3 {
+		t.Errorf("Expected 3, got %v", e3)
 	}
 }
 
@@ -53,12 +53,12 @@ func TestVectorCombine2_1x2And4_2x2(t *testing.T) {
 	e1 := []float64{2, 1}
 	e2 := []float64{4, 2}
 	space := vectors.Space{}
-	space.Combine(e1, 2, e2, 2)
-	if e1[0] != 3 {
-		t.Errorf("Expected 3, got %v", e1[0])
+	var e3 = space.Combine(e1, 2, e2, 2).([]float64)
+	if e3[0] != 3 {
+		t.Errorf("Expected 3, got %v", e3[0])
 	}
-	if e1[1] != 1.5 {
-		t.Errorf("Expected 3/2, got %v", e1[1])
+	if e3[1] != 1.5 {
+		t.Errorf("Expected 3/2, got %v", e3[1])
 	}
 }
 
@@ -66,12 +66,12 @@ func TestVectorCombine2_1x0And4_2x1(t *testing.T) {
 	e1 := []float64{2, 1}
 	e2 := []float64{4, 2}
 	space := vectors.Space{}
-	space.Combine(e1, 0, e2, 1)
-	if e1[0] != 4 {
-		t.Errorf("Expected 3, got %v", e1[0])
+	var e3 = space.Combine(e1, 0, e2, 1).([]float64)
+	if e3[0] != 4 {
+		t.Errorf("Expected 3, got %v", e3[0])
 	}
-	if e1[1] != 2 {
-		t.Errorf("Expected 3/2, got %v", e1[1])
+	if e3[1] != 2 {
+		t.Errorf("Expected 3/2, got %v", e3[1])
 	}
 }
 

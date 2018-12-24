@@ -10,6 +10,7 @@ type Impl struct {
 	strategy    Strategy
 	buffer      core.Buffer
 	initializer core.Initializer
+	iter        uint
 }
 
 // Strategy Abstract Impl strategy to be implemented by concrete algorithms
@@ -32,6 +33,7 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt) (impl 
 func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var kmeansConf = conf.(Conf)
 	impl.buffer.Apply()
+	impl.iter = 0
 	return impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
 }
 
@@ -40,13 +42,13 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 	var kmeansConf = conf.(Conf)
 	for iter, loop := 0, true; iter < kmeansConf.Iter && loop; iter++ {
 		select {
-
 		case <-closing:
 			loop = false
 			closed <- true
 			time.Sleep(300 * time.Millisecond)
 
 		default:
+			impl.iter++
 			centroids = impl.strategy.Iterate(space, centroids, impl.buffer.Data())
 			notifier(centroids)
 			err = impl.buffer.Apply()
@@ -63,4 +65,9 @@ func (impl *Impl) Push(elemt core.Elemt) error {
 // SetAsync changes the status of impl buffer to async
 func (impl *Impl) SetAsync() error {
 	return impl.buffer.SetAsync()
+}
+
+// Iterations returns number of iterations per execution
+func (impl Impl) Iterations() uint {
+	return impl.iter
 }

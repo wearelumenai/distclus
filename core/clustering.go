@@ -36,7 +36,7 @@ func (c *Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards [
 			centroids[ix] = space.Copy(elemt)
 			cards[ix] = 1
 		} else {
-			space.Combine(centroids[ix], cards[ix], elemt, 1)
+			centroids[ix] = space.Combine(centroids[ix], cards[ix], elemt, 1)
 			cards[ix]++
 		}
 	}
@@ -102,7 +102,7 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 	var weight = 1
 
 	for i := 1; i < len(elemts); i++ {
-		space.Combine(dba, weight, elemts[i], 1)
+		dba = space.Combine(dba, weight, elemts[i], 1)
 		weight++
 	}
 

@@ -89,8 +89,10 @@ func (strategy *workerSupport) assignCombine(space core.Space, aggregate msg, ot
 			aggregate.cards[i] = other.cards[i]
 
 		case other.cards[i] > 0:
-			space.Combine(aggregate.dbas[i], aggregate.cards[i],
-				other.dbas[i], other.cards[i])
+			aggregate.dbas[i] = space.Combine(
+				aggregate.dbas[i], aggregate.cards[i],
+				other.dbas[i], other.cards[i],
+			)
 			aggregate.cards[i] += other.cards[i]
 		}
 	}

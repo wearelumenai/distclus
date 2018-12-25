@@ -17,7 +17,7 @@ type Impl struct {
 	uniform     distuv.Uniform
 	distrib     Distrib
 	store       CenterStore
-	iter, acc   uint
+	iter, acc   int
 }
 
 // Strategy specifies strategy methods
@@ -187,6 +187,6 @@ func (impl *Impl) AcceptRatio() float64 {
 }
 
 // Iterations returns number of iterations per execution
-func (impl Impl) Iterations() uint {
+func (impl Impl) Iterations() int {
 	return impl.iter
 }

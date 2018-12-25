@@ -39,6 +39,19 @@ func Test_NewSeqAlgo(t *testing.T) {
 	algo.AcceptRatio()
 }
 
+// func Test_NewDistribAlgo(t *testing.T) {
+// 	mcmcConf := conf.ImplConf.(mcmc.Conf)
+// 	mcmcConf.Par = true
+// 	conf.ImplConf = mcmcConf
+// 	mcmc.NewAlgo(
+// 		conf,
+// 		vectors.Space{},
+// 		data,
+// 		initializer,
+// 		mcmc.MultivT{},
+// 	)
+// }
+
 func Test_NewParAlgo(t *testing.T) {
 	mcmcConf := conf.ImplConf.(mcmc.Conf)
 	mcmcConf.Par = true

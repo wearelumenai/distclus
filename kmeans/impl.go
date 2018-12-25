@@ -10,7 +10,7 @@ type Impl struct {
 	strategy    Strategy
 	buffer      core.Buffer
 	initializer core.Initializer
-	iter        uint
+	iter        int
 }
 
 // Strategy Abstract Impl strategy to be implemented by concrete algorithms
@@ -68,6 +68,6 @@ func (impl *Impl) SetAsync() error {
 }
 
 // Iterations returns number of iterations per execution
-func (impl Impl) Iterations() uint {
+func (impl Impl) Iterations() int {
 	return impl.iter
 }

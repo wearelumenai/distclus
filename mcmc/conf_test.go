@@ -27,3 +27,16 @@ func TestMCMC_ConfErrorK(t *testing.T) {
 	conf.InitK = 0
 	mcmc.Verify(conf)
 }
+
+func Test_Defaults(t *testing.T) {
+	var conf = mcmc.Conf{}
+	mcmc.SetConfigDefaults(&conf)
+
+	test.AssertFalse(t, conf.RGen == nil)
+	test.AssertFalse(t, conf.ProbaK == nil)
+	test.AssertTrue(t, conf.Norm == 2)
+	test.AssertTrue(t, conf.MaxK == 16)
+	test.AssertTrue(t, conf.B == 1)
+	test.AssertTrue(t, conf.Nu == 3)
+	test.AssertTrue(t, conf.Iter == 1)
+}

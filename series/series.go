@@ -129,16 +129,18 @@ func (space Space) path(elemt1, elemt2 core.Elemt) (path []entry) {
 	var j = lenRows
 
 	for i != 0 && j != 0 {
-		var insertion = matrix[i-1][j]
-		var match = matrix[i-1][j-1]
-		var deletion = matrix[i][j-1]
+		var prevCol = (int)(math.Max(0, (float64)(i-1)))
+		var prevRow = (int)(math.Max(0, (float64)(j-1)))
+		var insertion = matrix[prevCol][j]
+		var match = matrix[prevCol][prevRow]
+		var deletion = matrix[i][prevRow]
 		if insertion < match && insertion < deletion {
-			i--
+			i = prevCol
 		} else if match < insertion && match < deletion {
-			i--
-			j--
+			i = prevCol
+			j = prevRow
 		} else if deletion < insertion && deletion < match {
-			j--
+			j = prevRow
 		}
 		path = append(path, entry{i, j, matrix[i][j]})
 	}
@@ -150,11 +152,11 @@ func (space Space) path(elemt1, elemt2 core.Elemt) (path []entry) {
 func (space Space) Dist(elemt1, elemt2 core.Elemt) (sum float64) {
 	var path = space.path(elemt1, elemt2)
 
-	for _, dist := range path {
-		sum += dist.cost
-	}
+	return path[0].cost
 
-	return
+	// for _, dist := range path {
+	// sum += dist.cost
+	// }
 }
 
 // Combine computes combination between two nodes

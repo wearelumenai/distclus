@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"distclus/core"
+	"distclus/internal/test"
 	"errors"
 	"testing"
 	"time"
@@ -18,19 +19,21 @@ type mockImpl struct {
 	async       bool
 	clust       core.Clust
 	error       string
+	iter        int
 }
 
 func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core.Clust, err error) {
 	centroids = impl.clust
 	impl.initialized = true
+	impl.iter = 0
 	if len(centroids) == 1 {
 		err = errors.New("clustering")
 	}
 	return
 }
 
-func (impl mockImpl) Iterations() uint {
-	return 0
+func (impl *mockImpl) Iterations() int {
+	return impl.iter
 }
 
 func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
@@ -40,6 +43,7 @@ func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.C
 	}
 	impl.running = true
 	for iter, loop := 0, true; iter < mockConf.Iter && loop; iter++ {
+		impl.iter++
 		select {
 		case <-closing:
 			loop = false
@@ -293,6 +297,11 @@ func Test_Scenario_Sync(t *testing.T) {
 func Test_Scenario_ASync(t *testing.T) {
 	var algo = newAlgo(t)
 
+	var iter0, erri0 = algo.Iterations()
+
+	test.AssertError(t, erri0)
+	test.AssertEqual(t, iter0, 0)
+
 	_, err := algo.Centroids()
 
 	if err == nil {
@@ -327,6 +336,11 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
+	var iter1, erri1 = algo.Iterations()
+
+	test.AssertNoError(t, erri1)
+	test.AssertTrue(t, iter1 > 0)
+
 	if !impl.async {
 		t.Error("not async after asynchronous execution")
 	}
@@ -356,4 +370,9 @@ func Test_Scenario_ASync(t *testing.T) {
 	if impl.running {
 		t.Error("running")
 	}
+
+	var iter2, erri2 = algo.Iterations()
+
+	test.AssertError(t, erri2)
+	test.AssertEqual(t, iter2, 0)
 }

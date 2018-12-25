@@ -19,6 +19,7 @@ type OnlineClust interface {
 	Predict(elemt Elemt) (Elemt, int, error)
 	Run(async bool) error
 	Close() error
+	Iterations() (int, error)
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -179,4 +180,15 @@ func (algo *Algo) runAsync() {
 			fmt.Print(err)
 		}
 	}
+}
+
+// Iterations returns number of iterations per execution
+func (algo *Algo) Iterations() (iter int, err error) {
+	switch algo.status {
+	case Running:
+		iter = algo.impl.Iterations()
+	default:
+		err = fmt.Errorf("clustering not running")
+	}
+	return
 }

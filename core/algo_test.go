@@ -373,6 +373,6 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	var iter2, erri2 = algo.Iterations()
 
-	test.AssertError(t, erri2)
-	test.AssertEqual(t, iter2, 0)
+	test.AssertNoError(t, erri2)
+	test.AssertTrue(t, iter2 > iter1)
 }

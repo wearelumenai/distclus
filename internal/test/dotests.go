@@ -72,13 +72,13 @@ func DoTestRunSyncCentroids(t *testing.T, km core.OnlineClust) {
 func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	RunAsyncAndPush(algo)
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs)
 	algo.Push(obs)
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	var cn, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
@@ -96,7 +96,7 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	AssertTrue(t, iter0 > 0)
 	AssertNoError(t, erri0)
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	var iter1, erri1 = algo.Iterations()
 
@@ -111,7 +111,7 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 		algo.Push(elemt)
 	}
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	var iter2, erri2 = algo.Iterations()
 
@@ -128,7 +128,7 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 		algo.Push(elemt)
 	}
 
-	time.Sleep(1000 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	var iter3, erri3 = algo.Iterations()
 
@@ -142,12 +142,14 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	AssertNotEqual(t, centroids2, centroids3)
 	AssertNotEqual(t, centroids1, centroids3)
 
+	time.Sleep(500 * time.Millisecond)
+
 	algo.Close()
 
 	var iter4, erri4 = algo.Iterations()
 
-	AssertError(t, erri4)
-	AssertEqual(t, iter4, 0)
+	AssertNoError(t, erri4)
+	AssertTrue(t, iter3 < iter4)
 }
 
 // DoTestRunAsyncCentroids test

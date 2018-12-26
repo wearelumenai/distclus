@@ -185,10 +185,10 @@ func (algo *Algo) runAsync() {
 // Iterations returns number of iterations per execution
 func (algo *Algo) Iterations() (iter int, err error) {
 	switch algo.status {
-	case Running:
-		iter = algo.impl.Iterations()
-	default:
+	case Created:
 		err = fmt.Errorf("clustering not running")
+	default:
+		iter = algo.impl.Iterations()
 	}
 	return
 }

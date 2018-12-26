@@ -2,6 +2,7 @@ package kmeans
 
 import (
 	"distclus/core"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -67,7 +68,13 @@ func (impl *Impl) SetAsync() error {
 	return impl.buffer.SetAsync()
 }
 
-// Iterations returns number of iterations per execution
-func (impl Impl) Iterations() int {
-	return impl.iter
+// RuntimeFigure returns number of iterations per execution
+func (impl Impl) RuntimeFigure(name string) (figure float64, err error) {
+	switch name {
+	case "iterations":
+		figure = float64(impl.iter)
+	default:
+		err = errors.New("unknown figure")
+	}
+	return
 }

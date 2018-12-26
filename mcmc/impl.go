@@ -3,6 +3,7 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+	"errors"
 	"math"
 	"time"
 
@@ -186,7 +187,13 @@ func (impl *Impl) AcceptRatio() float64 {
 	return float64(impl.acc) / float64(impl.iter)
 }
 
-// Iterations returns number of iterations per execution
-func (impl Impl) Iterations() int {
-	return impl.iter
+// RuntimeFigure returns number of iterations per execution
+func (impl Impl) RuntimeFigure(name string) (figure float64, err error) {
+	switch name {
+	case "iterations":
+		figure = float64(impl.iter)
+	default:
+		err = errors.New("unknown figure")
+	}
+	return
 }

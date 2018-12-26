@@ -32,8 +32,8 @@ func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core
 	return
 }
 
-func (impl *mockImpl) Iterations() int {
-	return impl.iter
+func (impl *mockImpl) RuntimeFigure(name string) (float64, error) {
+	return float64(impl.iter), nil
 }
 
 func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
@@ -297,7 +297,7 @@ func Test_Scenario_Sync(t *testing.T) {
 func Test_Scenario_ASync(t *testing.T) {
 	var algo = newAlgo(t)
 
-	var iter0, erri0 = algo.Iterations()
+	var iter0, erri0 = algo.RuntimeFigure("iterations")
 
 	test.AssertError(t, erri0)
 	test.AssertEqual(t, iter0, 0)
@@ -336,7 +336,7 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	var iter1, erri1 = algo.Iterations()
+	var iter1, erri1 = algo.RuntimeFigure("iterations")
 
 	test.AssertNoError(t, erri1)
 	test.AssertTrue(t, iter1 > 0)
@@ -371,7 +371,7 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("running")
 	}
 
-	var iter2, erri2 = algo.Iterations()
+	var iter2, erri2 = algo.RuntimeFigure("iterations")
 
 	test.AssertNoError(t, erri2)
 	test.AssertTrue(t, iter2 > iter1)

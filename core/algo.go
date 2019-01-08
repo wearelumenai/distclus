@@ -56,9 +56,10 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	case Created:
 		err = fmt.Errorf("clustering not started")
 	default:
+		centroids = make(Clust, len(algo.centroids))
 		algo.mutex.RLock()
 		defer algo.mutex.RUnlock()
-		centroids = algo.centroids
+		copy(centroids, algo.centroids)
 	}
 	return
 }

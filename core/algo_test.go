@@ -297,10 +297,9 @@ func Test_Scenario_Sync(t *testing.T) {
 func Test_Scenario_ASync(t *testing.T) {
 	var algo = newAlgo(t)
 
-	var iter0, erri0 = algo.RuntimeFigure("iterations")
+	var _, erri0 = algo.RuntimeFigure("iterations")
 
 	test.AssertError(t, erri0)
-	test.AssertEqual(t, iter0, 0)
 
 	_, err := algo.Centroids()
 

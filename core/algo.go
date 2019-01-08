@@ -58,11 +58,7 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	default:
 		algo.mutex.RLock()
 		defer algo.mutex.RUnlock()
-		var algoCentroids = algo.centroids
-		centroids = make(Clust, len(algoCentroids))
-		for index, centroid := range algoCentroids {
-			centroids[index] = algo.space.Copy(centroid)
-		}
+		centroids = algo.centroids
 	}
 	return
 }

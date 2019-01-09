@@ -35,6 +35,7 @@ type msg struct {
 func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) core.Clust {
 	var kmeansConf = core.Conf{
 		ImplConf: kmeans.Conf{
+			Par:  true,
 			K:    len(centroids),
 			Iter: iter,
 		},

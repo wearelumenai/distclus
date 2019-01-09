@@ -2,7 +2,7 @@ package kmeans
 
 import (
 	"distclus/core"
-	"github.com/pkg/errors"
+	"errors"
 	"time"
 )
 
@@ -77,4 +77,5 @@ func (impl Impl) RuntimeFigure(name string) (figure float64, err error) {
 		err = errors.New("unknown figure")
 	}
 	return
+
 }

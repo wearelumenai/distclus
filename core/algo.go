@@ -58,11 +58,8 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	default:
 		algo.mutex.RLock()
 		defer algo.mutex.RUnlock()
-		var algoCentroids = algo.centroids
-		centroids = make(Clust, len(algoCentroids))
-		for index, centroid := range algoCentroids {
-			centroids[index] = algo.space.Copy(centroid)
-		}
+		centroids = make(Clust, len(algo.centroids))
+		copy(centroids, algo.centroids)
 	}
 	return
 }
@@ -182,7 +179,7 @@ func (algo *Algo) runAsync() {
 	}
 }
 
-// Iterations returns number of iterations per execution
+// RuntimeFigure returns specific algo property by name
 func (algo *Algo) RuntimeFigure(name string) (figure float64, err error) {
 	switch algo.status {
 	case Created:

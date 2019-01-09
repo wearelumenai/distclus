@@ -2,6 +2,7 @@ package mcmc
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -22,6 +23,7 @@ type Conf struct {
 	McmcIter, InitIter int
 	ProbaK             []float64
 	lamb, l2b, tau     float64
+	NumCPU             int
 }
 
 // SetConfigDefaults initializes nil parameter values
@@ -47,6 +49,9 @@ func SetConfigDefaults(conf *Conf) {
 	}
 	if conf.Iter == 0 {
 		conf.Iter = 1
+	}
+	if conf.NumCPU == 0 {
+		conf.NumCPU = runtime.NumCPU()
 	}
 }
 

@@ -32,7 +32,7 @@ func NewMultivT(conf MultivTConf) MultivT {
 		s[i] = 1
 		mu[i] = 0.
 	}
-	var sigma = mat.NewDiagonal(conf.Dim, s)
+	var sigma = mat.NewDiagDense(conf.Dim, s)
 
 	var m = MultivT{}
 	m.MultivTConf = conf

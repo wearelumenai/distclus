@@ -2,7 +2,6 @@ package kmeans
 
 import (
 	"distclus/core"
-	"runtime"
 	"sync"
 )
 
@@ -10,7 +9,7 @@ import (
 func NewParImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) (impl Impl) {
 	impl = NewSeqImpl(conf, initializer, data)
 	impl.strategy = ParStrategy{
-		Degree: runtime.NumCPU(),
+		Degree: conf.NumCPU,
 	}
 	return
 }

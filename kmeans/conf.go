@@ -2,6 +2,7 @@ package kmeans
 
 import (
 	"fmt"
+	"runtime"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -10,6 +11,7 @@ import (
 // Conf of KMeans
 type Conf struct {
 	Par       bool
+	NumCPU    int
 	K         int
 	Iter      int
 	FrameSize int
@@ -32,5 +34,8 @@ func SetConfigDefaults(conf *Conf) {
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
 		conf.RGen = rand.New(rand.NewSource(seed))
+	}
+	if conf.NumCPU == 0 {
+		conf.NumCPU = runtime.NumCPU()
 	}
 }

@@ -3,7 +3,6 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"runtime"
 	"sync"
 )
 
@@ -11,7 +10,7 @@ import (
 func NewParImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
 	impl = NewSeqImpl(conf, initializer, data, distrib)
 	impl.strategy = &ParStrategy{
-		Degree: runtime.NumCPU(),
+		Degree: conf.NumCPU,
 	}
 	return
 }

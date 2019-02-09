@@ -91,16 +91,20 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	// RunAsyncAndPush(algo)
 
-	var iter0, err0 = algo.RuntimeFigure("iterations")
+	var figures0, err0 = algo.RuntimeFigures()
+	var iter0, ok0 = figures0["iterations"]
 
-	AssertTrue(t, iter0 > 0)
+	AssertTrue(t, ok0)
 	AssertNoError(t, err0)
+	AssertTrue(t, iter0 > 0)
 
 	time.Sleep(500 * time.Millisecond)
 
-	var iter1, erri1 = algo.RuntimeFigure("iterations")
+	var figures1, err1 = algo.RuntimeFigures()
+	var iter1, ok1 = figures1["iterations"]
 
-	AssertNoError(t, erri1)
+	AssertTrue(t, ok1)
+	AssertNoError(t, err1)
 	AssertTrue(t, iter0 < iter1)
 
 	var centroids1, err = algo.Centroids()
@@ -113,8 +117,10 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	var iter2, erri2 = algo.RuntimeFigure("iterations")
+	var figures2, erri2 = algo.RuntimeFigures()
+	var iter2, ok2 = figures2["iterations"]
 
+	AssertTrue(t, ok2)
 	AssertNoError(t, erri2)
 	AssertTrue(t, iter1 < iter2)
 
@@ -130,8 +136,10 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	var iter3, erri3 = algo.RuntimeFigure("iterations")
+	var figures3, erri3 = algo.RuntimeFigures()
+	var iter3, ok3 = figures3["iterations"]
 
+	AssertTrue(t, ok3)
 	AssertNoError(t, erri3)
 	AssertTrue(t, iter2 < iter3)
 
@@ -146,8 +154,10 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 
 	algo.Close()
 
-	var iter4, erri4 = algo.RuntimeFigure("iterations")
+	var figures4, erri4 = algo.RuntimeFigures()
+	var iter4, ok4 = figures4["iterations"]
 
+	AssertTrue(t, ok4)
 	AssertNoError(t, erri4)
 	AssertTrue(t, iter3 < iter4)
 }

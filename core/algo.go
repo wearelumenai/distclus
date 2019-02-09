@@ -19,7 +19,7 @@ type OnlineClust interface {
 	Predict(elemt Elemt) (Elemt, int, error)
 	Run(async bool) error
 	Close() error
-	RuntimeFigure(name string) (float64, error)
+	RuntimeFigures() (map[string]float64, error)
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -179,13 +179,13 @@ func (algo *Algo) runAsync() {
 	}
 }
 
-// RuntimeFigure returns specific algo property by name
-func (algo *Algo) RuntimeFigure(name string) (figure float64, err error) {
+// RuntimeFigures returns specific algo properties
+func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
 	switch algo.status {
 	case Created:
 		err = fmt.Errorf("clustering not running")
 	default:
-		figure, err = algo.impl.RuntimeFigure(name)
+		figures, err = algo.impl.RuntimeFigures()
 	}
 	return
 }

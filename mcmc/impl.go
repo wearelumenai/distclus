@@ -3,11 +3,9 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
-	"errors"
+	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 	"time"
-
-	"gonum.org/v1/gonum/stat/distuv"
 )
 
 // Impl of MCMC
@@ -187,13 +185,9 @@ func (impl *Impl) AcceptRatio() float64 {
 	return float64(impl.acc) / float64(impl.iter)
 }
 
-// RuntimeFigure returns number of iterations per execution
-func (impl Impl) RuntimeFigure(name string) (figure float64, err error) {
-	switch name {
-	case "iterations":
-		figure = float64(impl.iter)
-	default:
-		err = errors.New("unknown figure")
-	}
+// RuntimeFigures returns specific kmeans properties
+func (impl Impl) RuntimeFigures() (figures map[string]float64, err error) {
+	figures = map[string]float64{"iterations": float64(impl.iter)}
 	return
+
 }

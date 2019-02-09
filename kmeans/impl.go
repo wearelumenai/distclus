@@ -2,7 +2,6 @@ package kmeans
 
 import (
 	"distclus/core"
-	"errors"
 	"time"
 )
 
@@ -68,14 +67,9 @@ func (impl *Impl) SetAsync() error {
 	return impl.buffer.SetAsync()
 }
 
-// RuntimeFigure returns number of iterations per execution
-func (impl Impl) RuntimeFigure(name string) (figure float64, err error) {
-	switch name {
-	case "iterations":
-		figure = float64(impl.iter)
-	default:
-		err = errors.New("unknown figure")
-	}
+// RuntimeFigures returns specific kmeans properties
+func (impl Impl) RuntimeFigures() (figures map[string]float64, err error) {
+	figures = map[string]float64{"iterations": float64(impl.iter)}
 	return
 
 }

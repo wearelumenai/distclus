@@ -32,8 +32,8 @@ func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core
 	return
 }
 
-func (impl *mockImpl) RuntimeFigure(name string) (float64, error) {
-	return float64(impl.iter), nil
+func (impl *mockImpl) RuntimeFigures() (map[string]float64, error) {
+	return map[string]float64{"iterations": float64(impl.iter)}, nil
 }
 
 func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
@@ -155,7 +155,7 @@ func TestAsyncError(t *testing.T) {
 		t.Error("error during async execution")
 	}
 
-	impl.error = "launch error"
+	impl.error = "launch error\n"
 
 	err = algo.Run(true)
 
@@ -297,9 +297,11 @@ func Test_Scenario_Sync(t *testing.T) {
 func Test_Scenario_ASync(t *testing.T) {
 	var algo = newAlgo(t)
 
-	var iter0, erri0 = algo.RuntimeFigure("iterations")
+	var figures0, err0 = algo.RuntimeFigures()
+	var iter0, ok0 = figures0["iterations"]
 
-	test.AssertError(t, erri0)
+	test.AssertError(t, err0)
+	test.AssertFalse(t, ok0)
 	test.AssertTrue(t, iter0 == 0)
 
 	_, err := algo.Centroids()
@@ -336,9 +338,11 @@ func Test_Scenario_ASync(t *testing.T) {
 
 	time.Sleep(500 * time.Millisecond)
 
-	var iter1, erri1 = algo.RuntimeFigure("iterations")
+	var figures1, err1 = algo.RuntimeFigures()
+	var iter1, ok1 = figures1["iterations"]
 
-	test.AssertNoError(t, erri1)
+	test.AssertNoError(t, err1)
+	test.AssertTrue(t, ok1)
 	test.AssertTrue(t, iter1 > 0)
 
 	if !impl.async {
@@ -371,8 +375,10 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("running")
 	}
 
-	var iter2, erri2 = algo.RuntimeFigure("iterations")
+	var figures2, err2 = algo.RuntimeFigures()
+	var iter2, ok2 = figures2["iterations"]
 
-	test.AssertNoError(t, erri2)
+	test.AssertNoError(t, err2)
+	test.AssertTrue(t, ok2)
 	test.AssertTrue(t, iter2 > iter1)
 }

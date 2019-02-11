@@ -260,7 +260,7 @@ func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
 	}
 
 	for i := 0; i < len(actual); i++ {
-		AssertAlmostEqual(t, expected[i].([]float64), actual[i].([]float64))
+		AssertArrayAlmostEqual(t, expected[i].([]float64), actual[i].([]float64))
 	}
 }
 
@@ -299,16 +299,20 @@ func AssertNotEqual(t *testing.T, unexpected core.Elemt, actual core.Elemt) {
 	}
 }
 
-// AssertAlmostEqual test
-func AssertAlmostEqual(t *testing.T, expected []float64, actual []float64) {
+// AssertArrayAlmostEqual test
+func AssertArrayAlmostEqual(t *testing.T, expected []float64, actual []float64) {
 	if len(expected) != len(actual) {
 		t.Error("Expected", len(expected), "got", len(actual))
 	}
 
 	for i := 0; i < len(expected); i++ {
-		if math.Abs(expected[i]-actual[i]) > 1e-6 {
-			t.Error("Expected", expected[i], "got", actual[i])
-		}
+		AssertAlmostEqual(t, expected[i], actual[i])
+	}
+}
+
+func AssertAlmostEqual(t *testing.T, expected float64, actual float64) {
+	if math.Abs(expected-actual) > 1e-6 {
+		t.Error("Expected", expected, "got", actual)
 	}
 }
 

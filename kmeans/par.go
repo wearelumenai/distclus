@@ -2,7 +2,6 @@ package kmeans
 
 import (
 	"distclus/core"
-	"sync"
 )
 
 // NewParImpl parallelizes algorithm implementation
@@ -19,94 +18,8 @@ type ParStrategy struct {
 	Degree int
 }
 
-type workerSupport struct {
-	ParStrategy
-	out chan msg
-	wg  *sync.WaitGroup
-}
-
-type msg struct {
-	dbas  core.Clust
-	cards []int
-}
-
 // Iterate processes input cluster
 func (strategy ParStrategy) Iterate(space core.Space, centroids core.Clust, data []core.Elemt) core.Clust {
-	var workers = strategy.startWorkers(space, centroids, data)
-	var aggr = workers.assignAggregate(space)
-	return strategy.buildResult(centroids, aggr)
-}
-
-func (strategy ParStrategy) startWorkers(space core.Space, centroids core.Clust, data []core.Elemt) (workers workerSupport) {
-	var offset = (len(data)-1)/strategy.Degree + 1
-	workers = workerSupport{
-		ParStrategy: strategy,
-		out:         make(chan msg, strategy.Degree),
-		wg:          &sync.WaitGroup{},
-	}
-	workers.wg.Add(strategy.Degree)
-
-	for i := 0; i < strategy.Degree; i++ {
-		var part = core.GetChunk(i, offset, data)
-		go workers.assignMapReduce(space, centroids, part)
-	}
-
-	workers.wg.Wait()
-	close(workers.out)
-
-	return
-}
-
-func (strategy *workerSupport) assignMapReduce(space core.Space, centroids core.Clust, elemts []core.Elemt) {
-	defer strategy.wg.Done()
-
-	var reduced msg
-	reduced.dbas, reduced.cards = centroids.AssignDBA(elemts, space)
-
-	strategy.out <- reduced
-}
-
-func (strategy *workerSupport) assignAggregate(space core.Space) msg {
-	var aggregate msg
-	for other := range strategy.out {
-		if aggregate.dbas == nil {
-			aggregate.dbas = other.dbas
-			aggregate.cards = other.cards
-		} else {
-			aggregate = strategy.assignCombine(space, aggregate, other)
-		}
-	}
-
-	return aggregate
-}
-
-func (strategy *workerSupport) assignCombine(space core.Space, aggregate msg, other msg) msg {
-	for i := 0; i < len(aggregate.dbas); i++ {
-		switch {
-		case aggregate.cards[i] == 0:
-			aggregate.dbas[i] = other.dbas[i]
-			aggregate.cards[i] = other.cards[i]
-
-		case other.cards[i] > 0:
-			aggregate.dbas[i] = space.Combine(
-				aggregate.dbas[i], aggregate.cards[i],
-				other.dbas[i], other.cards[i],
-			)
-			aggregate.cards[i] += other.cards[i]
-		}
-	}
-
-	return aggregate
-}
-
-func (strategy *ParStrategy) buildResult(data core.Clust, aggr msg) core.Clust {
-	var result = make(core.Clust, len(aggr.dbas))
-	for i := 0; i < len(data); i++ {
-		if aggr.cards[i] > 0 {
-			result[i] = aggr.dbas[i]
-		} else {
-			result[i] = data[i]
-		}
-	}
+	result, _ := centroids.ParAssignDBA(data, space, strategy.Degree)
 	return result
 }

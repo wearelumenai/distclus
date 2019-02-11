@@ -126,13 +126,13 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroid
 func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt, time int) proposal {
 	var k = impl.nextK(conf, current.k, data)
 	var centers = impl.store.GetCenters(data, space, k, centroids)
+	centers = impl.alter(conf, space, centers, time)
 	centers = impl.strategy.Iterate(conf, space, centers, data, 1)
-	var alteredCenters = impl.alter(conf, space, centers, time)
 	return proposal{
 		k:       k,
-		centers: alteredCenters,
-		loss:    impl.strategy.Loss(conf, space, alteredCenters, data),
-		pdf:     impl.proba(conf, space, alteredCenters, centers, time),
+		centers: centers,
+		loss:    impl.strategy.Loss(conf, space, centers, data),
+		pdf:     impl.proba(conf, space, centers, centers, time),
 	}
 }
 

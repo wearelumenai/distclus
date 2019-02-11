@@ -116,7 +116,6 @@ func runMcmc() {
 
 	log.Println(fmt.Sprintf("Cluster cards : %v", abstract))
 	log.Println(fmt.Sprintf("Loss : %v", centers.Loss(data, space, conf.Norm)))
-	log.Println(fmt.Sprintf("Acceptation ratio : %v", impl.AcceptRatio()))
 
 	printLabels(labels, olabels)
 	printCenters(centers, ocenters)

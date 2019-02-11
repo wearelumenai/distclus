@@ -172,7 +172,8 @@ func Test_AcceptRatio(t *testing.T) {
 	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
 
 	test.PushAndRunSync(&algo)
-	var r = algo.AcceptRatio()
+	var rf, _ = algo.RuntimeFigures()
+	var r = rf["acceptations"] / rf["iterations"]
 	if r < 0 || r > 1 {
 		t.Error("Expected ratio in [0 1], got", r)
 	}

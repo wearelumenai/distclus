@@ -180,14 +180,9 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 	return p
 }
 
-// AcceptRatio returns ratio between acc and iter
-func (impl *Impl) AcceptRatio() float64 {
-	return float64(impl.acc) / float64(impl.iter)
-}
-
 // RuntimeFigures returns specific kmeans properties
 func (impl Impl) RuntimeFigures() (figures map[string]float64, err error) {
-	figures = map[string]float64{"iterations": float64(impl.iter)}
+	figures = map[string]float64{"iterations": float64(impl.iter), "acceptations": float64(impl.acc)}
 	return
 
 }

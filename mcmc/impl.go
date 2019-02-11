@@ -60,7 +60,7 @@ func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
 }
 
 // Run executes the algorithm
-func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
+func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) (err error) {
 	var mcmcConf = conf.(Conf)
 	var data = impl.buffer.Data()
 	impl.initRun(&mcmcConf, space, data)
@@ -81,7 +81,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		default:
 			data = impl.buffer.Data()
 			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data, impl.getCurrentTime(data))
-			notifier(centroids)
+			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
 		}
 	}
@@ -180,9 +180,8 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 	return p
 }
 
-// RuntimeFigures returns specific kmeans properties
-func (impl Impl) RuntimeFigures() (figures map[string]float64, err error) {
-	figures = map[string]float64{"iterations": float64(impl.iter), "acceptations": float64(impl.acc)}
-	return
+// runtimeFigures returns specific kmeans properties
+func (impl Impl) runtimeFigures() map[string]float64 {
+	return map[string]float64{"iterations": float64(impl.iter), "acceptations": float64(impl.acc)}
 
 }

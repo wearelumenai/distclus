@@ -38,7 +38,7 @@ func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error)
 }
 
 // Run the algorithm until signal received on closing channel or iteration number is reached
-func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
+func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) (err error) {
 	var kmeansConf = conf.(Conf)
 	for iter, loop := 0, true; iter < kmeansConf.Iter && loop; iter++ {
 		select {
@@ -50,7 +50,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		default:
 			impl.iter++
 			centroids = impl.strategy.Iterate(space, centroids, impl.buffer.Data())
-			notifier(centroids)
+			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
 		}
 	}
@@ -67,9 +67,7 @@ func (impl *Impl) SetAsync() error {
 	return impl.buffer.SetAsync()
 }
 
-// RuntimeFigures returns specific kmeans properties
-func (impl Impl) RuntimeFigures() (figures map[string]float64, err error) {
-	figures = map[string]float64{"iterations": float64(impl.iter)}
-	return
-
+// runtimeFigures returns specific kmeans properties
+func (impl Impl) runtimeFigures() map[string]float64 {
+	return map[string]float64{"iterations": float64(impl.iter)}
 }

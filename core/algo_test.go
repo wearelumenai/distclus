@@ -32,11 +32,7 @@ func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core
 	return
 }
 
-func (impl *mockImpl) RuntimeFigures() (map[string]float64, error) {
-	return map[string]float64{"iterations": float64(impl.iter)}, nil
-}
-
-func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier func(core.Clust), closing <-chan bool, closed chan<- bool) (err error) {
+func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) (err error) {
 	var mockConf = conf.(mockConf)
 	if impl.error != "" {
 		err = errors.New(impl.error)
@@ -51,7 +47,7 @@ func (impl *mockImpl) Run(conf core.ImplConf, space core.Space, centroids core.C
 			closed <- true
 			time.Sleep(300 * time.Millisecond)
 		default:
-			notifier(impl.clust)
+			notifier(impl.clust, map[string]float64{"iterations": float64(impl.iter)})
 		}
 	}
 	return

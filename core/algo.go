@@ -33,6 +33,7 @@ type Algo struct {
 	closed         chan bool
 	lastUpdateTime int64
 	mutex          sync.RWMutex
+	runtimeFigures map[string]float64
 }
 
 // AlgoConf algorithm configuration
@@ -58,8 +59,7 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	default:
 		algo.mutex.RLock()
 		defer algo.mutex.RUnlock()
-		centroids = make(Clust, len(algo.centroids))
-		copy(centroids, algo.centroids)
+		centroids = algo.centroids
 	}
 	return
 }
@@ -150,10 +150,11 @@ func (algo *Algo) Close() (err error) {
 	return
 }
 
-func (algo *Algo) updateCentroids(centroids Clust) {
+func (algo *Algo) updateCentroids(centroids Clust, figures map[string]float64) {
 	algo.mutex.Lock()
 	defer algo.mutex.Unlock()
 	algo.centroids = centroids
+	algo.runtimeFigures = figures
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
@@ -179,13 +180,15 @@ func (algo *Algo) runAsync() {
 	}
 }
 
-// RuntimeFigures returns specific algo properties
+// runtimeFigures returns specific algo properties
 func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
 	switch algo.status {
 	case Created:
 		err = fmt.Errorf("clustering not running")
 	default:
-		figures, err = algo.impl.RuntimeFigures()
+		algo.mutex.RLock()
+		defer algo.mutex.RUnlock()
+		figures = algo.runtimeFigures
 	}
 	return
 }

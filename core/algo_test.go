@@ -4,6 +4,7 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"errors"
+	"math"
 	"testing"
 	"time"
 )
@@ -94,11 +95,11 @@ func (m mockSpace) Dim(e []core.Elemt) int {
 	return 0
 }
 
-func newAlgo(t *testing.T) (algo core.Algo) {
+func newAlgo(t *testing.T, iter int) (algo core.Algo) {
 	algo = core.NewAlgo(
 		core.Conf{
 			ImplConf: mockConf{
-				Iter: 1,
+				Iter: iter,
 			},
 			SpaceConf: nil,
 		},
@@ -129,7 +130,7 @@ func newAlgo(t *testing.T) (algo core.Algo) {
 }
 
 func TestErrorAtInitialization(t *testing.T) {
-	var algo = newAlgo(t)
+	var algo = newAlgo(t, 1)
 	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
@@ -141,7 +142,7 @@ func TestErrorAtInitialization(t *testing.T) {
 }
 
 func TestAsyncError(t *testing.T) {
-	algo := newAlgo(t)
+	algo := newAlgo(t, 1)
 
 	impl := algo.Impl().(*mockImpl)
 
@@ -163,7 +164,7 @@ func TestAsyncError(t *testing.T) {
 }
 
 func Test_Conf(t *testing.T) {
-	var algo = newAlgo(t)
+	var algo = newAlgo(t, 1)
 
 	var conf = algo.Conf()
 
@@ -174,7 +175,7 @@ func Test_Conf(t *testing.T) {
 
 func Test_Predict(t *testing.T) {
 
-	var algo = newAlgo(t)
+	var algo = newAlgo(t, 1)
 
 	_, _, err := algo.Predict(nil)
 
@@ -236,7 +237,7 @@ func Test_Predict(t *testing.T) {
 }
 
 func Test_Scenario_Sync(t *testing.T) {
-	var algo = newAlgo(t)
+	var algo = newAlgo(t, 1)
 
 	var err error
 	_, err = algo.Centroids()
@@ -291,7 +292,7 @@ func Test_Scenario_Sync(t *testing.T) {
 }
 
 func Test_Scenario_ASync(t *testing.T) {
-	var algo = newAlgo(t)
+	var algo = newAlgo(t, math.MaxInt32)
 
 	var figures0, err0 = algo.RuntimeFigures()
 	var iter0, ok0 = figures0["iterations"]
@@ -340,20 +341,6 @@ func Test_Scenario_ASync(t *testing.T) {
 	test.AssertNoError(t, err1)
 	test.AssertTrue(t, ok1)
 	test.AssertTrue(t, iter1 > 0)
-
-	if !impl.async {
-		t.Error("not async after asynchronous execution")
-	}
-	if !impl.initialized {
-		t.Error("not initialized")
-	}
-	if !impl.running {
-		t.Error("not running")
-	}
-
-	impl.clust = nil
-
-	algo.Run(true)
 
 	if !impl.async {
 		t.Error("not async after asynchronous execution")

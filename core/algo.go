@@ -3,6 +3,7 @@ package core
 import (
 	"errors"
 	"fmt"
+	"log"
 	"sync"
 )
 
@@ -84,45 +85,6 @@ func (algo *Algo) Run(async bool) (err error) {
 	return
 }
 
-func (algo *Algo) tryInit() (err error) {
-	if algo.status == Created {
-		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
-		if err == nil {
-			algo.status = Ready
-		}
-	}
-	return
-}
-
-func (algo *Algo) runIfReady(async bool) (err error) {
-	if algo.status == Ready {
-		if async {
-			err = algo.impl.SetAsync()
-			if err == nil {
-				algo.status = Running
-				go algo.runAsync()
-			}
-		} else {
-			algo.status = Running
-			err = algo.runSync()
-			algo.status = Ready
-		}
-	} else {
-		err = fmt.Errorf("invalid status %v", algo.status)
-	}
-	return
-}
-
-// Conf returns configuration
-func (algo *Algo) Conf() Conf {
-	return algo.conf
-}
-
-// Impl returns impl
-func (algo *Algo) Impl() Impl {
-	return algo.impl
-}
-
 // Space returns space
 func (algo *Algo) Space() Space {
 	return algo.space
@@ -150,11 +112,61 @@ func (algo *Algo) Close() (err error) {
 	return
 }
 
-func (algo *Algo) updateCentroids(centroids Clust, figures map[string]float64) {
-	algo.mutex.Lock()
-	defer algo.mutex.Unlock()
-	algo.centroids = centroids
-	algo.runtimeFigures = figures
+// Conf returns configuration
+func (algo *Algo) Conf() Conf {
+	return algo.conf
+}
+
+// Impl returns impl
+func (algo *Algo) Impl() Impl {
+	return algo.impl
+}
+
+// runtimeFigures returns specific algo properties
+func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
+	switch algo.status {
+	case Created:
+		err = fmt.Errorf("clustering not running")
+	default:
+		algo.mutex.RLock()
+		defer algo.mutex.RUnlock()
+		figures = algo.runtimeFigures
+	}
+	return
+}
+
+func (algo *Algo) tryInit() (err error) {
+	if algo.status == Created {
+		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
+		if err == nil {
+			algo.status = Ready
+		}
+	}
+	return
+}
+
+func (algo *Algo) runIfReady(async bool) (err error) {
+	if algo.status == Ready {
+		err = algo.run(async)
+	} else {
+		err = fmt.Errorf("invalid status %v", algo.status)
+	}
+	return
+}
+
+func (algo *Algo) run(async bool) (err error) {
+	if async {
+		err = algo.impl.SetAsync()
+		if err == nil {
+			algo.status = Running
+			go algo.runAsync()
+		}
+	} else {
+		algo.status = Running
+		err = algo.runSync()
+		algo.status = Ready
+	}
+	return
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
@@ -175,20 +187,14 @@ func (algo *Algo) runAsync() {
 	for algo.status != Closed {
 		err = algo.runSync()
 		if err != nil {
-			fmt.Print(err)
+			log.Println(err)
 		}
 	}
 }
 
-// runtimeFigures returns specific algo properties
-func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
-	switch algo.status {
-	case Created:
-		err = fmt.Errorf("clustering not running")
-	default:
-		algo.mutex.RLock()
-		defer algo.mutex.RUnlock()
-		figures = algo.runtimeFigures
-	}
-	return
+func (algo *Algo) updateCentroids(centroids Clust, figures map[string]float64) {
+	algo.mutex.Lock()
+	defer algo.mutex.Unlock()
+	algo.centroids = centroids
+	algo.runtimeFigures = figures
 }

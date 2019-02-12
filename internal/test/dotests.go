@@ -3,6 +3,9 @@ package test
 import (
 	"distclus/core"
 	"distclus/vectors"
+	"golang.org/x/exp/rand"
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat/distmv"
 	"math"
 	"reflect"
 	"testing"
@@ -335,4 +338,56 @@ func AssertPanic(t *testing.T) {
 	if x := recover(); x == nil {
 		t.Error("Expected error")
 	}
+}
+
+func GenerateData(n int) (core.Clust, []core.Elemt) {
+	var rgen = rand.New(rand.NewSource(6305689164243))
+	var sigma = mat.NewDiagDense(3, []float64{1., 1., 1.})
+	var centroids = core.Clust{
+		[]float64{0., 0., 0.},
+		[]float64{0., 15., 0.},
+		[]float64{-5., -5., 5.},
+	}
+	var dist1, _ = distmv.NewNormal(centroids[0].([]float64), sigma, rgen)
+	var dist2, _ = distmv.NewNormal(centroids[1].([]float64), sigma, rgen)
+	var dist3, _ = distmv.NewNormal(centroids[2].([]float64), sigma, rgen)
+
+	var mixed = func() distmv.Rander {
+		var alpha = rgen.Float64()
+		switch {
+		case alpha < .2:
+			return dist1
+		case alpha < .5:
+			return dist2
+		default:
+			return dist3
+		}
+	}
+
+	var data = make([]core.Elemt, n)
+	for i := 0; i < n; i++ {
+		var x = make([]float64, 3)
+		data[i] = mixed().Rand(x)
+	}
+
+	return centroids, data
+}
+
+func Mean(data []core.Elemt, weights []int) []float64 {
+	var s = make([]float64, len(data[0].([]float64)))
+	var w = 0.
+	for i := 0; i < len(data); i++ {
+		var weight = 1.
+		if weights != nil {
+			weight = float64(weights[i])
+		}
+		w += weight
+		for j := 0; j < len(s); j++ {
+			s[j] += data[i].([]float64)[j] * weight
+		}
+	}
+	for j := 0; j < len(s); j++ {
+		s[j] /= w
+	}
+	return s
 }

@@ -155,3 +155,14 @@ func TestClust_Empty(t *testing.T) {
 		clust.AssignAll(testPoints, vectors.Space{})
 	}()
 }
+
+func TestClust_AssignDBA2(t *testing.T) {
+	var centroids, data = test.GenerateData(10000)
+
+	var dbas, cards = centroids.AssignDBA(data, vectors.NewSpace(nil))
+
+	var dbasAverage = test.Mean(dbas, cards)
+	var dataAverage = test.Mean(data, nil)
+
+	test.AssertArrayAlmostEqual(t, dataAverage, dbasAverage)
+}

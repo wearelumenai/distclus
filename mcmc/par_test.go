@@ -5,6 +5,7 @@ import (
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
+	"gonum.org/v1/gonum/mat"
 	"math"
 	"runtime"
 	"testing"
@@ -102,5 +103,50 @@ func TestParStrategy_Loss(t *testing.T) {
 
 	if math.Abs(l1-l2) > 1e-6 {
 		t.Error("Expected", l2, "got", l1)
+	}
+}
+
+func Test_Normal(t *testing.T) {
+	var implConf = mcmc.Conf{
+		InitK:     3,
+		FrameSize: 0,
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         1, Amp: .05,
+		Norm: 2, Nu: 3, McmcIter: 60,
+		InitIter: 1,
+		Par:      true,
+	}
+	var conf = core.Conf{
+		ImplConf:  implConf,
+		SpaceConf: nil,
+	}
+	var initializer = kmeans.RandInitializer
+	var centroids, data = test.GenerateData(10000)
+	var algo = mcmc.NewAlgo(conf, space, data, initializer)
+
+	_ = algo.Run(false)
+	var result, _ = algo.Centroids()
+
+	var _, cards = result.ParLosses(data, space, implConf.Norm, runtime.NumCPU())
+
+	var resultMean = test.Mean(result, cards)
+	var dataMean = test.Mean(data, nil)
+
+	test.AssertArrayAlmostEqual(t, dataMean, resultMean)
+
+	var result0, _, _ = algo.Predict(centroids[0])
+	AssertDistance(t, centroids[0], result0)
+	var result1, _, _ = algo.Predict(centroids[1])
+	AssertDistance(t, centroids[1], result1)
+	var result2, _, _ = algo.Predict(centroids[2])
+	AssertDistance(t, centroids[2], result2)
+}
+
+func AssertDistance(t *testing.T, center core.Elemt, actual core.Elemt) {
+	var diff = mat.NewVecDense(3, nil)
+	diff.SubVec(mat.NewVecDense(3, actual.([]float64)), mat.NewVecDense(3, center.([]float64)))
+	var dist = mat.Norm(diff, 2)
+	if dist > 1 {
+		t.Error("to far from distribution center")
 	}
 }

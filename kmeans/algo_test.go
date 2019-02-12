@@ -8,7 +8,7 @@ import (
 )
 
 var conf = core.Conf{ImplConf: kmeans.Conf{K: 1}, SpaceConf: nil}
-var data = []core.Elemt{}
+var data []core.Elemt
 var initializer = kmeans.GivenInitializer
 
 func Test_NewSeqAlgo(t *testing.T) {

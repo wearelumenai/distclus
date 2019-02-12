@@ -42,12 +42,12 @@ func b1(log func(args ...interface{})) {
 	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, space)
 
 	for _, elt := range data {
-		algo.Push(elt)
+		_ = algo.Push(elt)
 	}
 
-	algo.Run(false)
+	_ = algo.Run(false)
 
-	algo.Close()
+	_ = algo.Close()
 
 	var centers, _ = algo.Centroids()
 	var labels = make([]int, len(centers))

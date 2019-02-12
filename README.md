@@ -19,9 +19,13 @@ $ make test
 Create an online clustering algorithm `oc`:
 
 ```go
-import ("distclus/factory")
+package main
+import (
+	"distclus/core"
+	"distclus/factory"
+)
 
-conf := Conf{...}
+conf := core.Conf{...}
 
 space := factory.CreateSpace(space, conf)
 

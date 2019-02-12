@@ -12,8 +12,8 @@ import (
 	"time"
 )
 
-// TestVectors are values to test
-var TestVectors = []core.Elemt{
+// Vectors are values to test
+var Vectors = []core.Elemt{
 	[]float64{7.2, 6, 8, 11, 10},
 	[]float64{-8, -10.5, -7, -8.5, -9},
 	[]float64{42, 41.2, 42, 40.2, 45},
@@ -27,14 +27,14 @@ var TestVectors = []core.Elemt{
 // DoTestInitialization Algorithm must be configured with GivenInitializer with 3 centers and 0 iteration
 func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
 	var actual = PushAndRunSync(algo)
-	var expected = TestVectors[:3]
+	var expected = Vectors[:3]
 	AssertCentroids(t, expected, actual)
 }
 
 // DoTestRunSyncGiven Algorithm must be configured with GivenInitializer with 3 centers
 func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.AssignAll(TestVectors, vectors.Space{})
+	var actual = clust.AssignAll(Vectors, vectors.Space{})
 
 	var expected = [][]int{{0, 3, 4}, {1, 5}, {2, 6, 7}}
 	AssertAssignation(t, expected, actual)
@@ -43,12 +43,12 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 // DoTestRunSyncPP Algorithm must be configured with PP with 3 centers
 func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.AssignAll(TestVectors, vectors.Space{})
+	var actual = clust.AssignAll(Vectors, vectors.Space{})
 
 	var expected = make([][]int, 3)
-	_, i0, _ := algo.Predict(TestVectors[0])
-	_, i1, _ := algo.Predict(TestVectors[1])
-	_, i2, _ := algo.Predict(TestVectors[2])
+	_, i0, _ := algo.Predict(Vectors[0])
+	_, i1, _ := algo.Predict(Vectors[1])
+	_, i2, _ := algo.Predict(Vectors[2])
 	expected[i0] = []int{0, 3, 4}
 	expected[i1] = []int{1, 5}
 	expected[i2] = []int{2, 6, 7}
@@ -58,9 +58,9 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 
 // DoTestRunSyncCentroids Algorithm must be configured with 3 centers
 func DoTestRunSyncCentroids(t *testing.T, km core.OnlineClust) {
-	c0, _, _ := km.Predict(TestVectors[0])
-	c1, _, _ := km.Predict(TestVectors[1])
-	c2, _, _ := km.Predict(TestVectors[2])
+	c0, _, _ := km.Predict(Vectors[0])
+	c1, _, _ := km.Predict(Vectors[1])
+	c2, _, _ := km.Predict(Vectors[2])
 	var actual = core.Clust{c0, c1, c2}
 	var expected = core.Clust{
 		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
@@ -79,14 +79,14 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs)
-	algo.Push(obs)
+	_ = algo.Push(obs)
 
 	time.Sleep(500 * time.Millisecond)
 
 	var cn, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
 
-	var c0, _, _ = algo.Predict(TestVectors[1])
+	var c0, _, _ = algo.Predict(Vectors[1])
 	AssertEqual(t, c0, cn)
 }
 
@@ -114,9 +114,9 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 
 	AssertNoError(t, err)
 
-	algo.Push(TestVectors[0])
-	algo.Push(TestVectors[3])
-	algo.Push(TestVectors[5])
+	_ = algo.Push(Vectors[0])
+	_ = algo.Push(Vectors[3])
+	_ = algo.Push(Vectors[5])
 
 	time.Sleep(500 * time.Millisecond)
 
@@ -133,14 +133,14 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 
 	AssertNoError(t, err2)
 
-	algo.Close()
+	_ = algo.Close()
 }
 
 // DoTestRunAsyncCentroids test
 func DoTestRunAsyncCentroids(t *testing.T, km core.OnlineClust) {
-	c0, _, _ := km.Predict(TestVectors[0])
-	c1, _, _ := km.Predict(TestVectors[1])
-	c2, _, _ := km.Predict(TestVectors[2])
+	c0, _, _ := km.Predict(Vectors[0])
+	c1, _, _ := km.Predict(Vectors[1])
+	c2, _, _ := km.Predict(Vectors[2])
 	var actual = core.Clust{c0, c1, c2}
 	var expected = core.Clust{
 		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
@@ -155,26 +155,26 @@ func DoTestRunAsyncCentroids(t *testing.T, km core.OnlineClust) {
 func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 	DoTestBeforeRun(algo, t)
 
-	algo.Run(true)
+	_ = algo.Run(true)
 	DoTestAfterRun(algo, t)
 
-	algo.Close()
+	_ = algo.Close()
 	DoTestAfterClose(algo, t)
 }
 
 // DoTestAfterClose test
 func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	var err error
-	err = algo.Push(TestVectors[5])
+	err = algo.Push(Vectors[5])
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[5])
+	_, _, err = algo.Predict(Vectors[5])
 	if err == nil {
-		err = algo.Push(TestVectors[5])
+		err = algo.Push(Vectors[5])
 	}
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[5])
+	_, _, err = algo.Predict(Vectors[5])
 	AssertNoError(t, err)
 
 	err = algo.Run(false)
@@ -187,11 +187,11 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 // DoTestAfterRun test
 func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
 	var err error
-	err = algo.Push(TestVectors[3])
+	err = algo.Push(Vectors[3])
 	AssertNoError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[4])
-	algo.Push(TestVectors[4])
+	_, _, err = algo.Predict(Vectors[4])
+	_ = algo.Push(Vectors[4])
 
 	AssertNoError(t, err)
 }
@@ -199,15 +199,15 @@ func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
 // DoTestBeforeRun test
 func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
 	var err error
-	algo.Push(TestVectors[0])
-	algo.Push(TestVectors[1])
-	err = algo.Push(TestVectors[2])
+	_ = algo.Push(Vectors[0])
+	_ = algo.Push(Vectors[1])
+	err = algo.Push(Vectors[2])
 	AssertNoError(t, err)
 
 	_, err = algo.Centroids()
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(TestVectors[3])
+	_, _, err = algo.Predict(Vectors[3])
 	AssertError(t, err)
 }
 
@@ -231,26 +231,26 @@ func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) 
 
 // PushAndRunAsync test
 func PushAndRunAsync(algorithm core.OnlineClust) {
-	for _, elemt := range TestVectors {
-		algorithm.Push(elemt)
+	for _, elemt := range Vectors {
+		_ = algorithm.Push(elemt)
 	}
-	algorithm.Run(true)
+	_ = algorithm.Run(true)
 }
 
 // RunAsyncAndPush test
 func RunAsyncAndPush(algo core.OnlineClust) {
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
+	for _, elemt := range Vectors {
+		_ = algo.Push(elemt)
 	}
-	algo.Run(true)
+	_ = algo.Run(true)
 }
 
 // PushAndRunSync test
 func PushAndRunSync(algo core.OnlineClust) core.Clust {
-	for _, elemt := range TestVectors {
-		algo.Push(elemt)
+	for _, elemt := range Vectors {
+		_ = algo.Push(elemt)
 	}
-	algo.Run(false)
+	_ = algo.Run(false)
 	var clust, _ = algo.Centroids()
 	return clust
 }

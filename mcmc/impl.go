@@ -28,7 +28,7 @@ type Strategy interface {
 // Init initializes the algorithm
 func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var mcmcConf = conf.(Conf)
-	impl.buffer.Apply()
+	_ = impl.buffer.Apply()
 	impl.iter = 0
 	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 }

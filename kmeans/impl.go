@@ -32,7 +32,7 @@ func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt) (impl 
 // Init Algorithm
 func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var kmeansConf = conf.(Conf)
-	impl.buffer.Apply()
+	_ = impl.buffer.Apply()
 	impl.iter = 0
 	return impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
 }

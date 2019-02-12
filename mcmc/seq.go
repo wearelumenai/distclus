@@ -25,8 +25,8 @@ func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core
 		SpaceConf: nil,
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
-	algo.Run(false)
-	algo.Close()
+	_ = algo.Run(false)
+	_ = algo.Close()
 	result, _ = algo.Centroids()
 
 	return

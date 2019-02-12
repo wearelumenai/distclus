@@ -23,13 +23,13 @@ func Test_getCenters(t *testing.T) {
 	var space = vectors.Space{}
 	var store = mcmc.NewCenterStore(rgen)
 
-	for _, elemt := range test.TestVectors {
-		buffer.Push(elemt)
+	for _, elemt := range test.Vectors {
+		_ = buffer.Push(elemt)
 	}
 
 	var data = buffer.Data()
 
-	var clust3, _ = kmeans.GivenInitializer(3, test.TestVectors, space, rgen)
+	var clust3, _ = kmeans.GivenInitializer(3, test.Vectors, space, rgen)
 	var clust = store.GetCenters(data, space, 3, clust3)
 	store.SetCenters(clust)
 

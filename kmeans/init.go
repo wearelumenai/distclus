@@ -24,7 +24,7 @@ func check(k int, elemts []core.Elemt) (err error) {
 	if k < 1 {
 		err = errors.New("K is lower than 1")
 	} else if len(elemts) < k {
-		err = errors.New("Less elements than k")
+		err = errors.New("less elements than k")
 	}
 
 	return

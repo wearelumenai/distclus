@@ -100,11 +100,11 @@ func runMcmc() {
 
 	log.Println(fmt.Sprintf("Add data to algo model : %v obs.", len(data)))
 	for _, elt := range data {
-		algo.Push(elt)
+		_ = algo.Push(elt)
 	}
 
-	algo.Run(false)
-	algo.Close()
+	_ = algo.Run(false)
+	_ = algo.Close()
 
 	var centers, _ = algo.Centroids()
 	var labels = make([]int, len(data))
@@ -129,7 +129,7 @@ func printLabels(res []int, out *string) {
 			panic(err)
 		}
 		o = f
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 	} else {
 		o = os.Stdout
 	}
@@ -151,7 +151,7 @@ func printCenters(res core.Clust, out *string) {
 			panic(err)
 		}
 		o = f
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 	} else {
 		o = os.Stdout
 	}
@@ -189,7 +189,7 @@ func parseFloatCsv(in *string) ([]core.Elemt, int) {
 	} else {
 		i = os.Stdin
 	}
-	defer i.Close()
+	defer func() { _ = i.Close() }()
 
 	var reader = csv.NewReader(i)
 	reader.Comma = ','

@@ -20,15 +20,6 @@ func NewSpace(conf core.SpaceConf) Space {
 	}
 }
 
-func allocate(in [][]float64, dim int) (out [][]float64) {
-	out = make([][]float64, dim)
-	lenin := len(in[0])
-	for index := range out {
-		out[index] = make([]float64, lenin)
-	}
-	return
-}
-
 func interpolate(in [][]float64, indices []float64) (out [][]float64) {
 	var dim = len(indices)
 	out = make([][]float64, dim, dim)
@@ -179,7 +170,7 @@ func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, we
 		var i = pathEntry.i
 		var j = pathEntry.j
 		result[c] = Combine(e1[i], weight1, e2[j], weight2)
-		indices[c] = float64((i*weight1 + j*weight2)) / float64((weight1 + weight2))
+		indices[c] = float64(i*weight1+j*weight2) / float64(weight1+weight2)
 	}
 
 	var toInterpolate = make([][]float64, len(result))

@@ -10,18 +10,18 @@ import (
 )
 
 func TestClust_ParAssignDBA(t *testing.T) {
-	var data = make([]core.Elemt, 0, len(test.TestVectors)*20)
-	var centroids = core.Clust(test.TestVectors[0:3])
+	var data = make([]core.Elemt, 0, len(test.Vectors)*20)
+	var centroids = core.Clust(test.Vectors[0:3])
 	for i := 0; i < 20; i++ {
-		data = append(data, test.TestVectors...)
+		data = append(data, test.Vectors...)
 	}
 
-	var seq_dbas, seq_cards = centroids.AssignDBA(data, vectors.Space{})
-	var par_dbas, par_cards = centroids.ParAssignDBA(data, vectors.Space{}, runtime.NumCPU())
+	var seqDbas, seqCards = centroids.AssignDBA(data, vectors.Space{})
+	var parDbas, parCards = centroids.ParAssignDBA(data, vectors.Space{}, runtime.NumCPU())
 
-	test.AssertCentroids(t, seq_dbas, par_dbas)
+	test.AssertCentroids(t, seqDbas, parDbas)
 
-	if !reflect.DeepEqual(seq_cards, par_cards) {
+	if !reflect.DeepEqual(seqCards, parCards) {
 		t.Error("cardinality error")
 	}
 }

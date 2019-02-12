@@ -160,7 +160,7 @@ func TestAsyncError(t *testing.T) {
 		t.Error("no error in wrong cluster")
 	}
 
-	algo.Close()
+	_ = algo.Close()
 }
 
 func Test_Conf(t *testing.T) {
@@ -205,7 +205,7 @@ func Test_Predict(t *testing.T) {
 	}
 
 	pred, label, err = algo.Predict(nil)
-	algo.Push(nil)
+	_ = algo.Push(nil)
 
 	if err != nil {
 		t.Error("Error after prediction")
@@ -275,7 +275,7 @@ func Test_Scenario_Sync(t *testing.T) {
 		t.Error("async before starting")
 	}
 
-	algo.Run(false)
+	_ = algo.Run(false)
 
 	if !impl.initialized {
 		t.Error("not initialized")
@@ -284,7 +284,7 @@ func Test_Scenario_Sync(t *testing.T) {
 		t.Error("not running")
 	}
 
-	algo.Close()
+	_ = algo.Close()
 
 	if !impl.running {
 		t.Error("running")
@@ -307,7 +307,7 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("centroids exist")
 	}
 
-	algo.Push(nil)
+	_ = algo.Push(nil)
 
 	var impl = algo.Impl().(*mockImpl)
 	var space = algo.Space().(mockSpace)
@@ -331,7 +331,7 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("async before starting")
 	}
 
-	algo.Run(true)
+	_ = algo.Run(true)
 
 	time.Sleep(500 * time.Millisecond)
 
@@ -352,7 +352,7 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("not running")
 	}
 
-	algo.Close()
+	_ = algo.Close()
 
 	if impl.running {
 		t.Error("running")

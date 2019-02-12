@@ -94,12 +94,12 @@ func TestParStrategy_Loss(t *testing.T) {
 	test.PushAndRunSync(&algo)
 
 	var strategy = mcmc.ParStrategy{}
-	buffer := core.NewDataBuffer(test.TestVectors, implConf.FrameSize)
+	buffer := core.NewDataBuffer(test.Vectors, implConf.FrameSize)
 	strategy.Degree = runtime.NumCPU()
 
 	var clust, _ = algo.Centroids()
 	var l1 = strategy.Loss(implConf, algo.Space(), clust, buffer.Data())
-	var l2 = clust.Loss(test.TestVectors, algo.Space(), implConf.Norm)
+	var l2 = clust.Loss(test.Vectors, algo.Space(), implConf.Norm)
 
 	if math.Abs(l1-l2) > 1e-6 {
 		t.Error("Expected", l2, "got", l1)

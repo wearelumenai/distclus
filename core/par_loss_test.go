@@ -10,31 +10,31 @@ import (
 )
 
 func TestClust_ParLosses(t *testing.T) {
-	var data = make([]core.Elemt, 0, len(test.TestVectors)*20)
-	var centroids = core.Clust(test.TestVectors[0:3])
+	var data = make([]core.Elemt, 0, len(test.Vectors)*20)
+	var centroids = core.Clust(test.Vectors[0:3])
 	for i := 0; i < 20; i++ {
-		data = append(data, test.TestVectors...)
+		data = append(data, test.Vectors...)
 	}
 
-	var seq_losses, seq_cards = centroids.Losses(data, vectors.Space{}, 2.)
-	var par_losses, par_cards = centroids.ParLosses(data, vectors.Space{}, 2., runtime.NumCPU())
+	var seqLosses, seqCards = centroids.Losses(data, vectors.Space{}, 2.)
+	var parLosses, parCards = centroids.ParLosses(data, vectors.Space{}, 2., runtime.NumCPU())
 
-	test.AssertArrayAlmostEqual(t, seq_losses, par_losses)
+	test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
 
-	if !reflect.DeepEqual(seq_cards, par_cards) {
+	if !reflect.DeepEqual(seqCards, parCards) {
 		t.Error("cardinality error")
 	}
 }
 
 func TestClust_ParLoss(t *testing.T) {
-	var data = make([]core.Elemt, 0, len(test.TestVectors)*20)
-	var centroids = core.Clust(test.TestVectors[0:3])
+	var data = make([]core.Elemt, 0, len(test.Vectors)*20)
+	var centroids = core.Clust(test.Vectors[0:3])
 	for i := 0; i < 20; i++ {
-		data = append(data, test.TestVectors...)
+		data = append(data, test.Vectors...)
 	}
 
-	var seq_loss = centroids.Loss(data, vectors.Space{}, 2.)
-	var par_loss = centroids.ParLoss(data, vectors.Space{}, 2., runtime.NumCPU())
+	var seqLoss = centroids.Loss(data, vectors.Space{}, 2.)
+	var parLoss = centroids.ParLoss(data, vectors.Space{}, 2., runtime.NumCPU())
 
-	test.AssertAlmostEqual(t, seq_loss, par_loss)
+	test.AssertAlmostEqual(t, seqLoss, parLoss)
 }

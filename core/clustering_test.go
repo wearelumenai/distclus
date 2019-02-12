@@ -128,7 +128,7 @@ func TestDBA(t *testing.T) {
 
 func AssertDBA(t *testing.T, elemts []core.Elemt, sp vectors.Space, average []float64) {
 	var dba, _ = core.DBA(elemts, sp)
-	for i, _ := range average {
+	for i := range average {
 		if value := dba.([]float64)[i]; value != average[i] {
 			t.Error("Expected", average[i], "got", value)
 		}

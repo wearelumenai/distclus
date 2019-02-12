@@ -112,16 +112,6 @@ func (algo *Algo) Close() (err error) {
 	return
 }
 
-// Conf returns configuration
-func (algo *Algo) Conf() Conf {
-	return algo.conf
-}
-
-// Impl returns impl
-func (algo *Algo) Impl() Impl {
-	return algo.impl
-}
-
 // runtimeFigures returns specific algo properties
 func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
 	switch algo.status {
@@ -133,6 +123,20 @@ func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
 		figures = algo.runtimeFigures
 	}
 	return
+}
+
+// Conf returns configuration
+func (algo *Algo) Conf() Conf {
+	return algo.conf
+}
+
+// Impl returns impl
+func (algo *Algo) Impl() Impl {
+	return algo.impl
+}
+
+func (algo *Algo) Status() ClustStatus {
+	return algo.status
 }
 
 func (algo *Algo) tryInit() (err error) {

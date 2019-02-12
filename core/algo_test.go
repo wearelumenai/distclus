@@ -238,6 +238,9 @@ func Test_Predict(t *testing.T) {
 
 func Test_Scenario_Sync(t *testing.T) {
 	var algo = newAlgo(t, 1)
+	if algo.Status() != core.Created {
+		t.Error("status should be Created")
+	}
 
 	var err error
 	_, err = algo.Centroids()
@@ -276,6 +279,9 @@ func Test_Scenario_Sync(t *testing.T) {
 	}
 
 	_ = algo.Run(false)
+	if algo.Status() != core.Ready {
+		t.Error("status should be Ready")
+	}
 
 	if !impl.initialized {
 		t.Error("not initialized")
@@ -285,6 +291,9 @@ func Test_Scenario_Sync(t *testing.T) {
 	}
 
 	_ = algo.Close()
+	if algo.Status() != core.Closed {
+		t.Error("status should be Closed")
+	}
 
 	if !impl.running {
 		t.Error("running")
@@ -293,6 +302,9 @@ func Test_Scenario_Sync(t *testing.T) {
 
 func Test_Scenario_ASync(t *testing.T) {
 	var algo = newAlgo(t, math.MaxInt32)
+	if algo.Status() != core.Created {
+		t.Error("status should be Created")
+	}
 
 	var figures0, err0 = algo.RuntimeFigures()
 	var iter0, ok0 = figures0["iterations"]
@@ -332,6 +344,9 @@ func Test_Scenario_ASync(t *testing.T) {
 	}
 
 	_ = algo.Run(true)
+	if algo.Status() != core.Running {
+		t.Error("status should be Running")
+	}
 
 	time.Sleep(500 * time.Millisecond)
 
@@ -353,6 +368,9 @@ func Test_Scenario_ASync(t *testing.T) {
 	}
 
 	_ = algo.Close()
+	if algo.Status() != core.Closed {
+		t.Error("status should be Closed")
+	}
 
 	if impl.running {
 		t.Error("running")

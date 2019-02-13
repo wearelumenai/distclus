@@ -162,20 +162,19 @@ func (algo *Algo) run(async bool) (err error) {
 	if async {
 		err = algo.impl.SetAsync()
 		if err == nil {
-			algo.status = Running
 			go algo.runAsync()
 		}
 	} else {
-		algo.status = Running
 		err = algo.runSync()
-		algo.status = Ready
 	}
 	return
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) runSync() (err error) {
-	return algo.impl.Run(
+	algo.status = Running
+
+	err = algo.impl.Run(
 		algo.conf.ImplConf,
 		algo.space,
 		algo.centroids,
@@ -183,12 +182,18 @@ func (algo *Algo) runSync() (err error) {
 		algo.closing,
 		algo.closed,
 	)
+
+	if algo.status == Running {
+		algo.status = Ready
+	}
+
+	return
 }
 
 // Initialize the algorithm, if success run it asynchronously otherwise retry
 func (algo *Algo) runAsync() {
 	var err error
-	for algo.status != Closed {
+	for algo.status == Ready {
 		err = algo.runSync()
 		if err != nil {
 			log.Println(err)

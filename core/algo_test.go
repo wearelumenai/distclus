@@ -344,11 +344,10 @@ func Test_Scenario_ASync(t *testing.T) {
 	}
 
 	_ = algo.Run(true)
+	time.Sleep(500 * time.Millisecond)
 	if algo.Status() != core.Running {
 		t.Error("status should be Running")
 	}
-
-	time.Sleep(500 * time.Millisecond)
 
 	var figures1, err1 = algo.RuntimeFigures()
 	var iter1, ok1 = figures1["iterations"]

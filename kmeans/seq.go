@@ -5,8 +5,12 @@ import (
 )
 
 // NewSeqImpl returns a sequential algorithm execution
-func NewSeqImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) Impl {
-	return NewImpl(conf, initializer, data)
+func NewSeqImpl(conf Conf, initializer core.Initializer, data []core.Elemt, args ...interface{}) Impl {
+	return Impl{
+		buffer:      core.NewDataBuffer(data, conf.FrameSize),
+		strategy:    &SeqStrategy{},
+		initializer: initializer,
+	}
 }
 
 // SeqStrategy defines strategy for sequential execution

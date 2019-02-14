@@ -159,7 +159,7 @@ func TestClust_Empty(t *testing.T) {
 func TestClust_AssignDBA2(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
-	var dbas, cards = centroids.AssignDBA(data, vectors.NewSpace(nil))
+	var dbas, cards = centroids.AssignDBA(data, vectors.NewSpace(vectors.Conf{}))
 
 	var dbasAverage = test.Mean(dbas, cards)
 	var dataAverage = test.Mean(data, nil)

@@ -6,9 +6,9 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/series"
-	"strings"
-
+	"distclus/vectors"
 	"golang.org/x/exp/rand"
+	"reflect"
 
 	"testing"
 )
@@ -22,62 +22,48 @@ var mcmcConf = mcmc.Conf{
 	InitIter: 1,
 }
 
-var ocs = map[string]core.ImplConf{
-	"MCMC":    mcmcConf,
-	"mcmc":    mcmcConf,
-	"kmeans":  kmeans.Conf{K: 1, Iter: 1},
-	"unknown": nil,
+var ocs = []core.ImplConf{
+	mcmcConf,
+	kmeans.Conf{K: 1, Iter: 1},
 }
 
-var spaces = map[string]core.SpaceConf{
-	"Vectors": series.Conf{},
-	"vectors": series.Conf{},
-	"series":  series.Conf{},
-	"unknown": nil,
+var spaces = []core.SpaceConf{
+	series.Conf{},
+	vectors.Conf{},
 }
 
 func Test_CreateSpace(t *testing.T) {
-	for name, conf := range spaces {
-		var space = factory.CreateSpace(name, conf)
-		if conf != nil {
-			if space == nil {
-				t.Error("space not created")
-			}
-		} else {
-			if space != nil {
-				t.Error("space has been created")
-			}
+	for _, conf := range spaces {
+		var space = factory.CreateSpace(conf)
+		if space == nil {
+			t.Error("space has been created")
 		}
 	}
 }
 
-func getData(space string) (data []core.Elemt) {
+func getData(spaceConf core.SpaceConf) (data []core.Elemt) {
 	data = make([]core.Elemt, 1)
-	switch strings.ToLower(space) {
-	case "vectors":
+	switch spaceConf.(type) {
+	case vectors.Conf:
 		data[0] = []float64{0.}
-	case "series":
+	case series.Conf:
 		data[0] = [][]float64{{0.}}
 	}
 	return
 }
 
 func Test_CreateOC(t *testing.T) {
-	for oc, implConf := range ocs {
-		for space, spaceConf := range spaces {
-			algoSpace := factory.CreateSpace(space, spaceConf)
+	for _, implConf := range ocs {
+		for _, spaceConf := range spaces {
+			algoSpace := factory.CreateSpace(spaceConf)
 			if algoSpace != nil {
-				data := getData(space)
-				conf := core.Conf{ImplConf: implConf, SpaceConf: spaceConf}
-				var algo = factory.CreateOC(oc, space, conf, data, nil)
-				if implConf != nil {
-					if algo == nil {
-						t.Error("an error has been thrown")
-					}
-				} else {
-					if algo != nil {
-						t.Error("an error has not been thrown")
-					}
+				data := getData(spaceConf)
+				var algo = factory.CreateOC(implConf, spaceConf, data, nil)
+				if algo == nil {
+					t.Error("algorithm should have been constructed")
+				}
+				if reflect.TypeOf((algo).(*core.Algo).Space()) != reflect.TypeOf(algoSpace) {
+					t.Error("wrong space type")
 				}
 			}
 		}

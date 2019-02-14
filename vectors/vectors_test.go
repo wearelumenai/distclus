@@ -93,7 +93,7 @@ func TestVectorSpace_Copy(t *testing.T) {
 }
 
 func Test_NewSpace(t *testing.T) {
-	space := vectors.NewSpace(nil)
+	space := vectors.NewSpace(vectors.Conf{})
 
 	if &space == nil {
 		t.Error("no space created")
@@ -101,7 +101,7 @@ func Test_NewSpace(t *testing.T) {
 }
 
 func Test_Dim(t *testing.T) {
-	space := vectors.NewSpace(nil)
+	space := vectors.NewSpace(vectors.Conf{})
 
 	data := make([]core.Elemt, 1)
 	data[0] = []float64{}

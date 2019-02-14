@@ -6,7 +6,7 @@ import (
 )
 
 // NewParImpl returns a new parallelized algorithm implementation
-func NewParImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
+func NewParImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
 	impl = NewSeqImpl(conf, initializer, data, distrib)
 	impl.strategy = &ParStrategy{
 		Degree: conf.NumCPU,
@@ -21,13 +21,10 @@ type ParStrategy struct {
 
 // Iterate is the iterative execution
 func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) core.Clust {
-	var kmeansConf = core.Conf{
-		ImplConf: kmeans.Conf{
-			Par:  true,
-			K:    len(centroids),
-			Iter: iter,
-		},
-		SpaceConf: nil,
+	var kmeansConf = kmeans.Conf{
+		Par:  true,
+		K:    len(centroids),
+		Iter: iter,
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 

@@ -38,7 +38,7 @@ func b1(log func(args ...interface{})) {
 	conf.Norm = 2
 	conf.Nu = 3
 	distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: conf})
-	var impl = mcmc.NewSeqImpl(&conf, initializer, nil, distrib)
+	var impl = mcmc.NewSeqImpl(conf, initializer, nil, distrib)
 	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, space)
 
 	for _, elt := range data {

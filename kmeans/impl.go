@@ -18,17 +18,6 @@ type Strategy interface {
 	Iterate(space core.Space, centroids core.Clust, data []core.Elemt) core.Clust
 }
 
-// NewImpl returns a kmeans implementation
-func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt) (impl Impl) {
-	SetConfigDefaults(conf)
-	Verify(*conf)
-	return Impl{
-		buffer:      core.NewDataBuffer(data, conf.FrameSize),
-		strategy:    &SeqStrategy{},
-		initializer: initializer,
-	}
-}
-
 // Init Algorithm
 func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
 	var kmeansConf = conf.(Conf)

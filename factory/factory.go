@@ -6,34 +6,27 @@ import (
 	"distclus/mcmc"
 	"distclus/series"
 	"distclus/vectors"
-	"strings"
 )
 
 // CreateSpace create a new space
-func CreateSpace(name string, conf core.SpaceConf) (space core.Space) {
-	switch strings.ToLower(name) {
-	case "vectors":
+func CreateSpace(spaceConf core.SpaceConf) (space core.Space) {
+	switch conf := spaceConf.(type) {
+	case vectors.Conf:
 		space = vectors.NewSpace(conf)
-	case "series":
+	case series.Conf:
 		space = series.NewSpace(conf)
 	}
-
 	return
 }
 
 // CreateOC returns an algorithm by name and configuration
-func CreateOC(name string, space string, conf core.Conf, data []core.Elemt, initializer core.Initializer, args ...interface{}) (oc core.OnlineClust) {
-	var algo interface{}
-	var finalSpace = CreateSpace(space, conf.SpaceConf)
-	switch strings.ToLower(name) {
-	case "mcmc":
-		algo = mcmc.NewAlgo(conf, finalSpace, data, initializer, args...)
-	case "kmeans":
-		algo = kmeans.NewAlgo(conf, finalSpace, data, initializer, args...)
+func CreateOC(implConf core.ImplConf, spaceConf core.SpaceConf, data []core.Elemt, initializer core.Initializer, args ...interface{}) (oc core.OnlineClust) {
+	var space = CreateSpace(spaceConf)
+	switch conf := implConf.(type) {
+	case mcmc.Conf:
+		oc = mcmc.NewAlgo(conf, space, data, initializer, args...)
+	case kmeans.Conf:
+		oc = kmeans.NewAlgo(conf, space, data, initializer, args...)
 	}
-	if algo != nil {
-		oc = algo.(core.OnlineClust)
-	}
-
 	return
 }

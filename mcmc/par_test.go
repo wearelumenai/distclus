@@ -23,14 +23,10 @@ func Test_ParPredict_Given(t *testing.T) {
 		InitIter: 1,
 		Par:      true,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestRunSyncGiven(t, &algo)
+	test.DoTestRunSyncGiven(t, algo)
 }
 
 func Test_ParPredictPP(t *testing.T) {
@@ -43,35 +39,28 @@ func Test_ParPredictPP(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 20,
 		InitIter: 0, Par: true,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.PPInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestRunSyncPP(t, &algo)
+	test.DoTestRunSyncPP(t, algo)
 }
 
 func Test_ParRunAsync(t *testing.T) {
-	var conf = core.Conf{
-		ImplConf: mcmc.Conf{
-			InitK:     3,
-			FrameSize: 8,
-			ProbaK:    []float64{1, 8, 1},
-			RGen:      rand.New(rand.NewSource(6305689164243)),
-			B:         100, Amp: 0.1,
-			Nu: 3, McmcIter: 5,
-			InitIter: 1,
-			Par:      true,
-		},
-		SpaceConf: nil,
+	var implConf = mcmc.Conf{
+		InitK:     3,
+		FrameSize: 8,
+		ProbaK:    []float64{1, 8, 1},
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         100, Amp: 0.1,
+		Nu: 3, McmcIter: 5,
+		InitIter: 1,
+		Par:      true,
 	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestRunAsync(t, &algo)
-	test.DoTestRunAsyncPush(t, &algo)
+	test.DoTestRunAsync(t, algo)
+	test.DoTestRunAsyncPush(t, algo)
 }
 
 func TestParStrategy_Loss(t *testing.T) {
@@ -84,14 +73,10 @@ func TestParStrategy_Loss(t *testing.T) {
 		InitIter: 1,
 		Par:      true,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.PushAndRunSync(&algo)
+	test.PushAndRunSync(algo)
 
 	var strategy = mcmc.ParStrategy{}
 	buffer := core.NewDataBuffer(test.Vectors, implConf.FrameSize)
@@ -116,13 +101,9 @@ func Test_Normal(t *testing.T) {
 		InitIter: 1,
 		Par:      true,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.RandInitializer
 	var centroids, data = test.GenerateData(10000)
-	var algo = mcmc.NewAlgo(conf, space, data, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, data, initializer)
 
 	_ = algo.Run(false)
 	var result, _ = algo.Centroids()

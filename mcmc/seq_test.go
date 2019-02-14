@@ -22,14 +22,10 @@ func Test_Initialization(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 0,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestInitialization(t, &algo)
+	test.DoTestInitialization(t, algo)
 }
 
 func Test_DefaultConf(t *testing.T) {
@@ -41,14 +37,10 @@ func Test_DefaultConf(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 0,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestInitialization(t, &algo)
+	test.DoTestInitialization(t, algo)
 }
 
 func Test_RunSyncGiven(t *testing.T) {
@@ -60,14 +52,10 @@ func Test_RunSyncGiven(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 0,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestRunSyncGiven(t, &algo)
+	test.DoTestRunSyncGiven(t, algo)
 }
 
 func Test_RunSyncKMeansPP(t *testing.T) {
@@ -80,14 +68,10 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 1,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.PPInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestRunSyncPP(t, &algo)
+	test.DoTestRunSyncPP(t, algo)
 }
 
 func Test_RunAsync(t *testing.T) {
@@ -100,15 +84,11 @@ func Test_RunAsync(t *testing.T) {
 		InitIter: 0,
 		ProbaK:   []float64{1, 8, 1},
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestRunAsync(t, &algo)
-	test.DoTestRunAsyncPush(t, &algo)
+	test.DoTestRunAsync(t, algo)
+	test.DoTestRunAsyncPush(t, algo)
 }
 
 func Test_Workflow(t *testing.T) {
@@ -120,14 +100,10 @@ func Test_Workflow(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 20,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.PPInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.DoTestWorkflow(t, &algo)
+	test.DoTestWorkflow(t, algo)
 }
 
 func Test_MaxK(t *testing.T) {
@@ -140,18 +116,14 @@ func Test_MaxK(t *testing.T) {
 		MaxK:     6,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.PushAndRunSync(&algo)
+	test.PushAndRunSync(algo)
 
 	var clust, _ = algo.Centroids()
 	if l := len(clust); l > 6 {
-		t.Error("Exepected ", conf.ImplConf.(mcmc.Conf).MaxK, "got", l)
+		t.Error("Exepected ", implConf.MaxK, "got", l)
 	}
 }
 
@@ -164,14 +136,10 @@ func Test_AcceptRatio(t *testing.T) {
 		Norm: 2, Nu: 3, McmcIter: 20,
 		InitIter: 0,
 	}
-	var conf = core.Conf{
-		ImplConf:  implConf,
-		SpaceConf: nil,
-	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(conf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
-	test.PushAndRunSync(&algo)
+	test.PushAndRunSync(algo)
 	var rf, _ = algo.RuntimeFigures()
 	var r = rf["acceptations"] / rf["iterations"]
 	if r < 0 || r > 1 {

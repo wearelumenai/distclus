@@ -9,7 +9,7 @@ import (
 type Space struct{}
 
 // NewSpace creates a new Space
-func NewSpace(conf core.SpaceConf) Space {
+func NewSpace(conf Conf) Space {
 	return Space{}
 }
 

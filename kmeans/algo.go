@@ -2,22 +2,27 @@ package kmeans
 
 import "distclus/core"
 
-// Algo is kmeans algorithm specific structure
-type Algo struct {
-	*core.Algo
+// NewAlgo creates a new kmeans algo
+func NewAlgo(kmeansConf Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) *core.Algo {
+	SetConfigDefaults(&kmeansConf)
+	Verify(kmeansConf)
+	var impl = getImpl(kmeansConf, initializer, data, args)
+	return buildAlgo(kmeansConf, impl, space)
 }
 
-// NewAlgo creates a new kmeans algo
-func NewAlgo(conf core.Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) Algo {
-	var kmeansConf = conf.ImplConf.(Conf)
-	var implFunc func(*Conf, core.Initializer, []core.Elemt, ...interface{}) Impl
+func buildAlgo(kmeansConf Conf, impl Impl, space core.Space) *core.Algo {
+	var conf = core.Conf{ImplConf: kmeansConf}
+	var algo = core.NewAlgo(conf, &impl, space)
+	return &algo
+}
+
+func getImpl(kmeansConf Conf, initializer core.Initializer, data []core.Elemt, args []interface{}) Impl {
+	var implFunc func(Conf, core.Initializer, []core.Elemt, ...interface{}) Impl
 	if kmeansConf.Par {
 		implFunc = NewParImpl
 	} else {
 		implFunc = NewSeqImpl
 	}
-	var impl = implFunc(&kmeansConf, initializer, data, args...)
-	conf.ImplConf = kmeansConf
-	var algo = core.NewAlgo(conf, &impl, space)
-	return Algo{Algo: &algo}
+	var impl = implFunc(kmeansConf, initializer, data, args...)
+	return impl
 }

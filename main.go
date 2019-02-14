@@ -95,7 +95,7 @@ func runMcmc() {
 		distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: conf})
 	}
 
-	var impl = mcmc.NewParImpl(&conf, initializer, nil, distrib)
+	var impl = mcmc.NewParImpl(conf, initializer, nil, distrib)
 	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, space)
 
 	log.Println(fmt.Sprintf("Add data to algo model : %v obs.", len(data)))

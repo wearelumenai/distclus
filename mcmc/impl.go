@@ -33,23 +33,6 @@ func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error)
 	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 }
 
-// NewImpl function
-func NewImpl(conf *Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
-	SetConfigDefaults(conf)
-	Verify(*conf)
-	var buffer = core.NewDataBuffer(data, conf.FrameSize)
-	impl = Impl{
-		buffer:      buffer,
-		initializer: initializer,
-		distrib:     distrib,
-		uniform:     distuv.Uniform{Max: 1, Min: 0, Src: conf.RGen},
-		store:       NewCenterStore(conf.RGen),
-		strategy:    &SeqStrategy{},
-	}
-
-	return
-}
-
 func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
 	if conf.Dim == 0 {
 		conf.Dim = space.Dim(data)

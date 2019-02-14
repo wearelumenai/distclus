@@ -96,7 +96,7 @@ func runMcmc() {
 	}
 
 	var impl = mcmc.NewParImpl(conf, initializer, nil, distrib)
-	var algo = core.NewAlgo(core.Conf{ImplConf: conf, SpaceConf: nil}, &impl, space)
+	var algo = core.NewAlgo(core.Conf{ImplConf: conf}, &impl, space)
 
 	log.Println(fmt.Sprintf("Add data to algo model : %v obs.", len(data)))
 	for _, elt := range data {

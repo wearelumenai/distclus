@@ -101,7 +101,6 @@ func newAlgo(t *testing.T, iter int) (algo core.Algo) {
 			ImplConf: mockConf{
 				Iter: iter,
 			},
-			SpaceConf: nil,
 		},
 		&mockImpl{
 			clust: make(core.Clust, 10),

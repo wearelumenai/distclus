@@ -20,8 +20,9 @@ func CreateSpace(spaceConf core.SpaceConf) (space core.Space) {
 }
 
 // CreateOC returns an algorithm by name and configuration
-func CreateOC(implConf core.ImplConf, spaceConf core.SpaceConf, data []core.Elemt, initializer core.Initializer, args ...interface{}) (oc core.OnlineClust) {
-	var space = CreateSpace(spaceConf)
+func CreateOC(implConf core.ImplConf, spaceConf core.SpaceConf, data []core.Elemt, initializer core.Initializer,
+	args ...interface{}) (oc core.OnlineClust, space core.Space) {
+	space = CreateSpace(spaceConf)
 	switch conf := implConf.(type) {
 	case mcmc.Conf:
 		oc = mcmc.NewAlgo(conf, space, data, initializer, args...)

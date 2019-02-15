@@ -58,7 +58,7 @@ func Test_CreateOC(t *testing.T) {
 			algoSpace := factory.CreateSpace(spaceConf)
 			if algoSpace != nil {
 				data := getData(spaceConf)
-				var algo = factory.CreateOC(implConf, spaceConf, data, nil)
+				var algo, _ = factory.CreateOC(implConf, spaceConf, data, nil)
 				if algo == nil {
 					t.Error("algorithm should have been constructed")
 				}

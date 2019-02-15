@@ -135,6 +135,24 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 	return
 }
 
+func WeightedDBA(elemts []Elemt, weights []int, space Space) (dba Elemt, err error) {
+
+	if len(elemts) == 0 {
+		err = errors.New("DBA needs at least one elements")
+		return
+	}
+
+	dba = space.Copy(elemts[0])
+	var weight = weights[0]
+
+	for i := 1; i < len(elemts); i++ {
+		dba = space.Combine(dba, weight, elemts[i], weights[i])
+		weight += weights[i]
+	}
+
+	return
+}
+
 // Initializer that always returns the centroids
 func (c *Clust) Initializer(int, []Elemt, Space, *rand.Rand) (centroids Clust, err error) {
 	return *c, nil

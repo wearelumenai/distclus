@@ -126,8 +126,33 @@ func TestDBA(t *testing.T) {
 	AssertDBA(t, elemts, sp, []float64{average, 2 * average})
 }
 
+func TestWeightedDBA(t *testing.T) {
+	var sp = vectors.Space{}
+
+	var average = 0.
+	var n = len(testPoints)
+	var weights = make([]int, n)
+	var total = 0.
+	for i := 0; i < n; i++ {
+		weights[i] = i + 1
+		average += (testPoints[i]).([]float64)[0] * float64(i+1)
+		total += float64(i + 1)
+	}
+	average = average / total
+	AssertWeightedDBA(t, testPoints, weights, sp, []float64{average})
+}
+
 func AssertDBA(t *testing.T, elemts []core.Elemt, sp vectors.Space, average []float64) {
 	var dba, _ = core.DBA(elemts, sp)
+	for i := range average {
+		if value := dba.([]float64)[i]; value != average[i] {
+			t.Error("Expected", average[i], "got", value)
+		}
+	}
+}
+
+func AssertWeightedDBA(t *testing.T, elemts []core.Elemt, weights []int, sp vectors.Space, average []float64) {
+	var dba, _ = core.WeightedDBA(elemts, weights, sp)
 	for i := range average {
 		if value := dba.([]float64)[i]; value != average[i] {
 			t.Error("Expected", average[i], "got", value)

@@ -8,7 +8,7 @@ import (
 )
 
 // ClustStatus integer type
-type ClustStatus int
+type ClustStatus = int64
 
 // ClustStatus const values
 const (

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"sync/atomic"
 )
 
 // OnlineClust interface
@@ -108,7 +109,7 @@ func (algo *Algo) Close() (err error) {
 		algo.closing <- true
 		<-algo.closed
 	}
-	algo.status = Closed
+	atomic.StoreInt64(&algo.status, Closed)
 	return
 }
 
@@ -136,14 +137,15 @@ func (algo *Algo) Impl() Impl {
 }
 
 func (algo *Algo) Status() ClustStatus {
-	return algo.status
+	var status = atomic.LoadInt64(&algo.status)
+	return status
 }
 
 func (algo *Algo) tryInit() (err error) {
 	if algo.status == Created {
 		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
 		if err == nil {
-			algo.status = Ready
+			atomic.StoreInt64(&algo.status, Ready)
 		}
 	}
 	return
@@ -172,7 +174,7 @@ func (algo *Algo) run(async bool) (err error) {
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) runSync() (err error) {
-	algo.status = Running
+	atomic.StoreInt64(&algo.status, Running)
 
 	err = algo.impl.Run(
 		algo.conf.ImplConf,
@@ -184,7 +186,7 @@ func (algo *Algo) runSync() (err error) {
 	)
 
 	if algo.status == Running {
-		algo.status = Ready
+		atomic.StoreInt64(&algo.status, Ready)
 	}
 
 	return

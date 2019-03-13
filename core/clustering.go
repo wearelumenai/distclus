@@ -45,19 +45,24 @@ func (c *Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards [
 }
 
 func (c *Clust) ParAssignDBA(elemts []Elemt, space Space, degree int) (Clust, []int) {
-	return parAssign(*c, elemts, space, degree)
+	return parAssignDBA(*c, elemts, space, degree)
 }
 
 // AssignAll assignes elemts to each centroids
-func (c *Clust) AssignAll(elemts []Elemt, space Space) (clusters [][]int) {
-	clusters = make([][]int, len(*c))
+func (c *Clust) AssignAll(elemts []Elemt, space Space) (labels []int) {
+	labels = make([]int, len(elemts))
 
 	for i, elemt := range elemts {
-		var idx, _ = c.nearest(elemt, space)
-		clusters[idx] = append(clusters[idx], i)
+		var label, _ = c.nearest(elemt, space)
+		labels[i] = label
 	}
 
 	return
+}
+
+// AssignAll assignes elemts to each centroids
+func (c *Clust) ParAssignAll(elemts []Elemt, space Space, degree int) (labels []int) {
+	return parAssignAll(*c, elemts, space, degree)
 }
 
 // Assign returns the element nearest centroid, its label and the distance to the centroid

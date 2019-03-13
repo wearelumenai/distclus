@@ -3,81 +3,28 @@ package core
 import "sync"
 
 type assignWorker struct {
-	parts []partitionAssign
-	wg    *sync.WaitGroup
+	result []int
+	wg     *sync.WaitGroup
 }
 
-type partitionAssign struct {
-	dbas  Clust
-	cards []int
-}
-
-func parAssign(centroids Clust, data []Elemt, space Space, degree int) (Clust, []int) {
+func parAssignAll(centroids Clust, data []Elemt, space Space, degree int) []int {
 	var offset = (len(data)-1)/degree + 1
 	var workers = assignWorker{
-		parts: make([]partitionAssign, degree),
-		wg:    &sync.WaitGroup{},
+		result: make([]int, len(data)),
+		wg:     &sync.WaitGroup{},
 	}
 	workers.wg.Add(degree)
 
 	for i := 0; i < degree; i++ {
 		var part = GetChunk(i, offset, data)
-		go workers.assignMapReduce(space, centroids, part, i)
+		go workers.assignMap(space, centroids, part, i*offset)
 	}
 
 	workers.wg.Wait()
-
-	var aggr = workers.assignAggregate(space)
-	return buildResult(centroids, aggr)
+	return workers.result
 }
 
-func (strategy *assignWorker) assignMapReduce(space Space, centroids Clust, elemts []Elemt, index int) {
+func (strategy *assignWorker) assignMap(space Space, centroids Clust, elemts []Elemt, offset int) {
 	defer strategy.wg.Done()
-	strategy.parts[index].dbas, strategy.parts[index].cards = centroids.AssignDBA(elemts, space)
-}
-
-func (strategy *assignWorker) assignAggregate(space Space) partitionAssign {
-	var aggregate partitionAssign
-	for _, other := range strategy.parts {
-		if aggregate.dbas == nil {
-			aggregate.dbas = other.dbas
-			aggregate.cards = other.cards
-		} else {
-			aggregate = strategy.assignCombine(space, aggregate, other)
-		}
-	}
-
-	return aggregate
-}
-
-func (strategy *assignWorker) assignCombine(space Space, aggregate partitionAssign,
-	other partitionAssign) partitionAssign {
-	for i := 0; i < len(aggregate.dbas); i++ {
-		switch {
-		case aggregate.cards[i] == 0:
-			aggregate.dbas[i] = other.dbas[i]
-			aggregate.cards[i] = other.cards[i]
-
-		case other.cards[i] > 0:
-			aggregate.dbas[i] = space.Combine(
-				aggregate.dbas[i], aggregate.cards[i],
-				other.dbas[i], other.cards[i],
-			)
-			aggregate.cards[i] += other.cards[i]
-		}
-	}
-
-	return aggregate
-}
-
-func buildResult(data Clust, aggr partitionAssign) (Clust, []int) {
-	var result = make(Clust, len(aggr.dbas))
-	for i := 0; i < len(data); i++ {
-		if aggr.cards[i] > 0 {
-			result[i] = aggr.dbas[i]
-		} else {
-			result[i] = data[i]
-		}
-	}
-	return result, aggr.cards
+	copy(strategy.result[offset:], centroids.AssignAll(elemts, space))
 }

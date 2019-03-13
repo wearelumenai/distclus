@@ -36,8 +36,8 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
 	var actual = clust.AssignAll(Vectors, vectors.Space{})
 
-	var expected = [][]int{{0, 3, 4}, {1, 5}, {2, 6, 7}}
-	AssertAssignation(t, expected, actual)
+	var expected = []int{0, 1, 2, 0, 0, 1, 2, 2}
+	AssertArrayEqual(t, expected, actual)
 }
 
 // DoTestRunSyncPP Algorithm must be configured with PP with 3 centers
@@ -45,15 +45,12 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
 	var actual = clust.AssignAll(Vectors, vectors.Space{})
 
-	var expected = make([][]int, 3)
 	_, i0, _ := algo.Predict(Vectors[0])
 	_, i1, _ := algo.Predict(Vectors[1])
 	_, i2, _ := algo.Predict(Vectors[2])
-	expected[i0] = []int{0, 3, 4}
-	expected[i1] = []int{1, 5}
-	expected[i2] = []int{2, 6, 7}
+	var expected = []int{i0, i1, i2, i0, i0, i1, i2, i2}
 
-	AssertAssignation(t, expected, actual)
+	AssertArrayEqual(t, expected, actual)
 }
 
 // DoTestRunSyncCentroids Algorithm must be configured with 3 centers
@@ -268,7 +265,7 @@ func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
 }
 
 // AssertAssignation test
-func AssertAssignation(t *testing.T, expected [][]int, actual [][]int) {
+func AssertArrayEqual(t *testing.T, expected []int, actual []int) {
 	if !reflect.DeepEqual(actual, expected) {
 		t.Error("Expected", expected, "got", actual)
 	}

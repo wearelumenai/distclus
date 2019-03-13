@@ -61,14 +61,12 @@ func TestClust_AssignAll(t *testing.T) {
 	var sp = vectors.Space{}
 	var result = clust.AssignAll(testPoints, sp)
 
-	for i, c := range result {
-		for _, e := range c {
-			if i == 0 && testPoints[e].([]float64)[0] < 0 {
-				t.Error("Expected non negative elements")
-			}
-			if i == 1 && testPoints[e].([]float64)[0] >= 0 {
-				t.Error("Expected negative elements")
-			}
+	for i, label := range result {
+		if label == 0 && testPoints[i].([]float64)[0] < 0 {
+			t.Error("Expected non negative elements")
+		}
+		if label == 1 && testPoints[i].([]float64)[0] >= 0 {
+			t.Error("Expected negative elements")
 		}
 	}
 }

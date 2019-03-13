@@ -2,28 +2,23 @@ package core_test
 
 import (
 	"distclus/core"
+	"reflect"
 	"testing"
 )
 
-func TestGetChunk(t *testing.T) {
-	for offset := 1; offset < len(testPoints)*2; offset++ {
-		for chunkNumber := 0; chunkNumber <= len(testPoints)/offset+1; chunkNumber++ {
-			var parts = core.GetChunk(chunkNumber, offset, testPoints)
-			l := computeChunkSize(offset, chunkNumber)
-			if len(parts) != l {
-				t.Error("Expected", l, "elements got", len(parts))
-			}
+func Test_Par(t *testing.T) {
+	for degree := 1; degree < 100; degree++ {
+		var data = make([]core.Elemt, 2*3*5*7)
+		var result = make([]core.Elemt, len(data))
+		for i := range data {
+			data[i] = i
+		}
+		var process = func(part []core.Elemt, start int, end int, rank int) {
+			copy(result[start:end], part)
+		}
+		core.Par(process, data, degree)
+		if !reflect.DeepEqual(data, result) {
+			t.Error("par error")
 		}
 	}
-}
-
-func computeChunkSize(offset int, chunkNumber int) int {
-	var l = offset
-	if chunkNumber*offset+offset >= len(testPoints) {
-		l = len(testPoints) - chunkNumber*offset
-	}
-	if l < 0 {
-		l = 0
-	}
-	return l
 }

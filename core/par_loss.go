@@ -1,44 +1,31 @@
 package core
 
-import "sync"
-
-type lossWorker struct {
-	parts []partitionLosses
-	wg    *sync.WaitGroup
-}
-
 type partitionLosses struct {
 	losses []float64
 	cards  []int
 }
 
 func ParLosses(centroids Clust, data []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
-	var offset = (len(data)-1)/degree + 1
-	var workers = lossWorker{
-		parts: make([]partitionLosses, degree),
-		wg:    &sync.WaitGroup{},
-	}
-	workers.wg.Add(degree)
+	var parts = make([]partitionLosses, degree)
 
-	for i := 0; i < degree; i++ {
-		var part = GetChunk(i, offset, data)
-		go workers.lossMapReduce(centroids, part, space, norm, i)
+	var process = func(part []Elemt, start int, end int, rank int) {
+		lossReduce(centroids, part, space, norm, &parts[rank])
 	}
 
-	workers.wg.Wait()
+	Par(process, data, degree)
 
-	var aggr = workers.lossAggregate()
+	var aggr = lossAggregate(parts)
 	return aggr.losses, aggr.cards
 }
 
-func (strategy *lossWorker) lossMapReduce(centroids Clust, elemts []Elemt, space Space, norm float64, index int) {
-	defer strategy.wg.Done()
-	strategy.parts[index].losses, strategy.parts[index].cards = centroids.ReduceLoss(elemts, space, norm)
+func lossReduce(centroids Clust, elemts []Elemt, space Space, norm float64,
+	part *partitionLosses) {
+	part.losses, part.cards = centroids.ReduceLoss(elemts, space, norm)
 }
 
-func (strategy *lossWorker) lossAggregate() partitionLosses {
+func lossAggregate(parts []partitionLosses) partitionLosses {
 	var aggregate partitionLosses
-	for _, agg := range strategy.parts {
+	for _, agg := range parts {
 		if aggregate.losses == nil {
 			aggregate.losses = make([]float64, len(agg.losses))
 			aggregate.cards = make([]int, len(agg.cards))

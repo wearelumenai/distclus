@@ -4,8 +4,6 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"distclus/vectors"
-	"reflect"
-	"runtime"
 	"testing"
 )
 
@@ -16,13 +14,12 @@ func TestClust_ParLosses(t *testing.T) {
 		data = append(data, test.Vectors...)
 	}
 
-	var seqLosses, seqCards = centroids.ReduceLoss(data, vectors.Space{}, 2.)
-	var parLosses, parCards = centroids.ParReduceLoss(data, vectors.Space{}, 2., runtime.NumCPU())
+	for degree := 1; degree < 100; degree++ {
+		var seqLosses, seqCards = centroids.ReduceLoss(data, vectors.Space{}, 2.)
+		var parLosses, parCards = centroids.ParReduceLoss(data, vectors.Space{}, 2., degree)
 
-	test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
-
-	if !reflect.DeepEqual(seqCards, parCards) {
-		t.Error("cardinality error")
+		test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
+		test.AssertArrayEqual(t, seqCards, parCards)
 	}
 }
 
@@ -33,8 +30,10 @@ func TestClust_ParLoss(t *testing.T) {
 		data = append(data, test.Vectors...)
 	}
 
-	var seqLoss = centroids.TotalLoss(data, vectors.Space{}, 2.)
-	var parLoss = centroids.ParTotalLoss(data, vectors.Space{}, 2., runtime.NumCPU())
+	for degree := 1; degree < 100; degree++ {
+		var seqLoss = centroids.TotalLoss(data, vectors.Space{}, 2.)
+		var parLoss = centroids.ParTotalLoss(data, vectors.Space{}, 2., degree)
 
-	test.AssertAlmostEqual(t, seqLoss, parLoss)
+		test.AssertAlmostEqual(t, seqLoss, parLoss)
+	}
 }

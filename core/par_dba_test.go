@@ -4,7 +4,6 @@ import (
 	"distclus/core"
 	"distclus/internal/test"
 	"distclus/vectors"
-	"runtime"
 	"testing"
 )
 
@@ -15,9 +14,11 @@ func TestClust_ParReduceDBA(t *testing.T) {
 		data = append(data, test.Vectors...)
 	}
 
-	var seqDbas, seqCards = centroids.ReduceDBA(data, vectors.Space{})
-	var parDbas, parCards = centroids.ParReduceDBA(data, vectors.Space{}, runtime.NumCPU())
+	for degree := 1; degree < 100; degree++ {
+		var seqDbas, seqCards = centroids.ReduceDBA(data, vectors.Space{})
+		var parDbas, parCards = centroids.ParReduceDBA(data, vectors.Space{}, degree)
 
-	test.AssertCentroids(t, seqDbas, parDbas)
-	test.AssertArrayEqual(t, seqCards, parCards)
+		test.AssertCentroids(t, seqDbas, parDbas)
+		test.AssertArrayEqual(t, seqCards, parCards)
+	}
 }

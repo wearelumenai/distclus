@@ -7,3 +7,4 @@ build:
 
 test:
 	go test -coverprofile=coverage.out -timeout=60000ms -short -v ./...
+	go tool cover -func coverage.out

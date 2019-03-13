@@ -1,57 +1,42 @@
 package core
 
-import "sync"
-
-type dbaWorker struct {
-	parts []partitionDBA
-	wg    *sync.WaitGroup
-}
-
-type partitionDBA struct {
+type dbaParition struct {
 	dbas  Clust
 	cards []int
 }
 
 func parReduceDBA(centroids Clust, data []Elemt, space Space, degree int) (Clust, []int) {
-	var offset = (len(data)-1)/degree + 1
-	var workers = dbaWorker{
-		parts: make([]partitionDBA, degree),
-		wg:    &sync.WaitGroup{},
-	}
-	workers.wg.Add(degree)
+	var parts = make([]dbaParition, degree)
 
-	for i := 0; i < degree; i++ {
-		var part = GetChunk(i, offset, data)
-		go workers.assignMapReduce(space, centroids, part, i)
+	var process = func(part []Elemt, start int, end int, rank int) {
+		dbaReduce(space, centroids, part, &parts[rank])
 	}
 
-	workers.wg.Wait()
+	Par(process, data, degree)
 
-	var aggr = workers.assignAggregate(space)
+	var aggr = dbaAggregate(parts, space)
 	return buildResult(centroids, aggr)
 }
 
-func (strategy *dbaWorker) assignMapReduce(space Space, centroids Clust, elemts []Elemt, index int) {
-	defer strategy.wg.Done()
-	strategy.parts[index].dbas, strategy.parts[index].cards = centroids.ReduceDBA(elemts, space)
+func dbaReduce(space Space, centroids Clust, elemts []Elemt, part *dbaParition) {
+	part.dbas, part.cards = centroids.ReduceDBA(elemts, space)
 }
 
-func (strategy *dbaWorker) assignAggregate(space Space) partitionDBA {
-	var aggregate partitionDBA
-	for _, other := range strategy.parts {
+func dbaAggregate(parts []dbaParition, space Space) dbaParition {
+	var aggregate dbaParition
+	for _, other := range parts {
 		if aggregate.dbas == nil {
 			aggregate.dbas = other.dbas
 			aggregate.cards = other.cards
 		} else {
-			aggregate = strategy.assignCombine(space, aggregate, other)
+			aggregate = dbaCombine(space, aggregate, other)
 		}
 	}
 
 	return aggregate
 }
 
-func (strategy *dbaWorker) assignCombine(space Space, aggregate partitionDBA,
-	other partitionDBA) partitionDBA {
+func dbaCombine(space Space, aggregate dbaParition, other dbaParition) dbaParition {
 	for i := 0; i < len(aggregate.dbas); i++ {
 		switch {
 		case aggregate.cards[i] == 0:
@@ -70,7 +55,7 @@ func (strategy *dbaWorker) assignCombine(space Space, aggregate partitionDBA,
 	return aggregate
 }
 
-func buildResult(data Clust, aggr partitionDBA) (Clust, []int) {
+func buildResult(data Clust, aggr dbaParition) (Clust, []int) {
 	var result = make(Clust, len(aggr.dbas))
 	for i := 0; i < len(data); i++ {
 		if aggr.cards[i] > 0 {

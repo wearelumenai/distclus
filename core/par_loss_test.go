@@ -16,8 +16,8 @@ func TestClust_ParLosses(t *testing.T) {
 		data = append(data, test.Vectors...)
 	}
 
-	var seqLosses, seqCards = centroids.Losses(data, vectors.Space{}, 2.)
-	var parLosses, parCards = centroids.ParLosses(data, vectors.Space{}, 2., runtime.NumCPU())
+	var seqLosses, seqCards = centroids.ReduceLoss(data, vectors.Space{}, 2.)
+	var parLosses, parCards = centroids.ParReduceLoss(data, vectors.Space{}, 2., runtime.NumCPU())
 
 	test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
 
@@ -33,8 +33,8 @@ func TestClust_ParLoss(t *testing.T) {
 		data = append(data, test.Vectors...)
 	}
 
-	var seqLoss = centroids.Loss(data, vectors.Space{}, 2.)
-	var parLoss = centroids.ParLoss(data, vectors.Space{}, 2., runtime.NumCPU())
+	var seqLoss = centroids.TotalLoss(data, vectors.Space{}, 2.)
+	var parLoss = centroids.ParTotalLoss(data, vectors.Space{}, 2., runtime.NumCPU())
 
 	test.AssertAlmostEqual(t, seqLoss, parLoss)
 }

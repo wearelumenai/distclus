@@ -19,7 +19,7 @@ type SeqStrategy struct {
 
 // Iterate processes input cluster
 func (strategy *SeqStrategy) Iterate(space core.Space, centroids core.Clust, data []core.Elemt) core.Clust {
-	var result, _ = centroids.AssignDBA(data, space)
+	var result, _ = centroids.ReduceDBA(data, space)
 	return strategy.buildResult(centroids, result)
 }
 

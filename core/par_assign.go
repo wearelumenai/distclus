@@ -7,7 +7,7 @@ type assignWorker struct {
 	wg     *sync.WaitGroup
 }
 
-func parAssignAll(centroids Clust, data []Elemt, space Space, degree int) []int {
+func parMapLabel(centroids Clust, data []Elemt, space Space, degree int) []int {
 	var offset = (len(data)-1)/degree + 1
 	var workers = assignWorker{
 		result: make([]int, len(data)),
@@ -26,5 +26,5 @@ func parAssignAll(centroids Clust, data []Elemt, space Space, degree int) []int 
 
 func (strategy *assignWorker) assignMap(space Space, centroids Clust, elemts []Elemt, offset int) {
 	defer strategy.wg.Done()
-	copy(strategy.result[offset:], centroids.AssignAll(elemts, space))
+	copy(strategy.result[offset:], centroids.MapLabel(elemts, space))
 }

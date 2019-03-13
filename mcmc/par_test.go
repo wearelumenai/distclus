@@ -84,7 +84,7 @@ func TestParStrategy_Loss(t *testing.T) {
 
 	var clust, _ = algo.Centroids()
 	var l1 = strategy.Loss(implConf, algo.Space(), clust, buffer.Data())
-	var l2 = clust.Loss(test.Vectors, algo.Space(), implConf.Norm)
+	var l2 = clust.TotalLoss(test.Vectors, algo.Space(), implConf.Norm)
 
 	if math.Abs(l1-l2) > 1e-6 {
 		t.Error("Expected", l2, "got", l1)
@@ -108,7 +108,7 @@ func Test_Normal(t *testing.T) {
 	_ = algo.Run(false)
 	var result, _ = algo.Centroids()
 
-	var _, cards = result.ParLosses(data, space, implConf.Norm, runtime.NumCPU())
+	var _, cards = result.ParReduceLoss(data, space, implConf.Norm, runtime.NumCPU())
 
 	var resultMean = test.Mean(result, cards)
 	var dataMean = test.Mean(data, nil)

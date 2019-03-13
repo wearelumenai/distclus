@@ -25,13 +25,13 @@ func TestClust_Assign(t *testing.T) {
 	}
 }
 
-func TestClust_AssignDBA(t *testing.T) {
+func TestClust_ReduceDBA(t *testing.T) {
 	var clust = core.Clust{
 		[]float64{0.},
 		[]float64{-1.},
 	}
 	var sp = vectors.Space{}
-	var result, cards = clust.AssignDBA(testPoints, sp)
+	var result, cards = clust.ReduceDBA(testPoints, sp)
 
 	for i, e := range result {
 		switch i {
@@ -53,13 +53,13 @@ func TestClust_AssignDBA(t *testing.T) {
 	}
 }
 
-func TestClust_AssignAll(t *testing.T) {
+func TestClust_MapLabel(t *testing.T) {
 	var clust = core.Clust{
 		[]float64{0.},
 		[]float64{-1.},
 	}
 	var sp = vectors.Space{}
-	var result = clust.AssignAll(testPoints, sp)
+	var result = clust.MapLabel(testPoints, sp)
 
 	for i, label := range result {
 		if label == 0 && testPoints[i].([]float64)[0] < 0 {
@@ -84,7 +84,7 @@ func TestClust_Loss(t *testing.T) {
 		expected += d * d
 	}
 
-	var actual = clust.Loss(testPoints, sp, 2.)
+	var actual = clust.TotalLoss(testPoints, sp, 2.)
 
 	if expected != actual {
 		t.Error("Expected", expected, "got", actual)
@@ -175,14 +175,14 @@ func TestClust_Empty(t *testing.T) {
 	func() {
 		defer test.AssertPanic(t)
 		var clust = core.Clust{}
-		clust.AssignAll(testPoints, vectors.Space{})
+		clust.MapLabel(testPoints, vectors.Space{})
 	}()
 }
 
-func TestClust_AssignDBA2(t *testing.T) {
+func TestClust_ReduceDBA2(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
-	var dbas, cards = centroids.AssignDBA(data, vectors.NewSpace(vectors.Conf{}))
+	var dbas, cards = centroids.ReduceDBA(data, vectors.NewSpace(vectors.Conf{}))
 
 	var dbasAverage = test.Mean(dbas, cards)
 	var dataAverage = test.Mean(data, nil)

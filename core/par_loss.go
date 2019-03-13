@@ -33,7 +33,7 @@ func ParLosses(centroids Clust, data []Elemt, space Space, norm float64, degree 
 
 func (strategy *lossWorker) lossMapReduce(centroids Clust, elemts []Elemt, space Space, norm float64, index int) {
 	defer strategy.wg.Done()
-	strategy.parts[index].losses, strategy.parts[index].cards = centroids.Losses(elemts, space, norm)
+	strategy.parts[index].losses, strategy.parts[index].cards = centroids.ReduceLoss(elemts, space, norm)
 }
 
 func (strategy *lossWorker) lossAggregate() partitionLosses {

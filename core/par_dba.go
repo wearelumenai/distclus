@@ -12,7 +12,7 @@ type partitionDBA struct {
 	cards []int
 }
 
-func parAssignDBA(centroids Clust, data []Elemt, space Space, degree int) (Clust, []int) {
+func parReduceDBA(centroids Clust, data []Elemt, space Space, degree int) (Clust, []int) {
 	var offset = (len(data)-1)/degree + 1
 	var workers = dbaWorker{
 		parts: make([]partitionDBA, degree),
@@ -33,7 +33,7 @@ func parAssignDBA(centroids Clust, data []Elemt, space Space, degree int) (Clust
 
 func (strategy *dbaWorker) assignMapReduce(space Space, centroids Clust, elemts []Elemt, index int) {
 	defer strategy.wg.Done()
-	strategy.parts[index].dbas, strategy.parts[index].cards = centroids.AssignDBA(elemts, space)
+	strategy.parts[index].dbas, strategy.parts[index].cards = centroids.ReduceDBA(elemts, space)
 }
 
 func (strategy *dbaWorker) assignAggregate(space Space) partitionDBA {

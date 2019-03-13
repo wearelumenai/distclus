@@ -20,6 +20,6 @@ type ParStrategy struct {
 
 // Iterate processes input cluster
 func (strategy ParStrategy) Iterate(space core.Space, centroids core.Clust, data []core.Elemt) core.Clust {
-	result, _ := centroids.ParAssignDBA(data, space, strategy.Degree)
+	result, _ := centroids.ParReduceDBA(data, space, strategy.Degree)
 	return result
 }

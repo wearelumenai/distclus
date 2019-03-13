@@ -24,8 +24,8 @@ type Clust []Elemt
 // Initializer function initializes k centroids from the given elements.
 type Initializer func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, err error)
 
-// AssignDBA returns centroids and cardinalities in each clusters.
-func (c *Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
+// ReduceDBA returns centroids and cardinalities in each clusters.
+func (c *Clust) ReduceDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
 	centroids = make(Clust, len(*c))
 	cards = make([]int, len(*c))
 
@@ -44,12 +44,12 @@ func (c *Clust) AssignDBA(elemts []Elemt, space Space) (centroids Clust, cards [
 	return
 }
 
-func (c *Clust) ParAssignDBA(elemts []Elemt, space Space, degree int) (Clust, []int) {
-	return parAssignDBA(*c, elemts, space, degree)
+func (c *Clust) ParReduceDBA(elemts []Elemt, space Space, degree int) (Clust, []int) {
+	return parReduceDBA(*c, elemts, space, degree)
 }
 
-// AssignAll assignes elemts to each centroids
-func (c *Clust) AssignAll(elemts []Elemt, space Space) (labels []int) {
+// MapLabel assignes elemts to each centroids
+func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int) {
 	labels = make([]int, len(elemts))
 
 	for i, elemt := range elemts {
@@ -60,9 +60,9 @@ func (c *Clust) AssignAll(elemts []Elemt, space Space) (labels []int) {
 	return
 }
 
-// AssignAll assignes elemts to each centroids
-func (c *Clust) ParAssignAll(elemts []Elemt, space Space, degree int) (labels []int) {
-	return parAssignAll(*c, elemts, space, degree)
+// MapLabel assignes elemts to each centroids
+func (c *Clust) ParMapLabel(elemts []Elemt, space Space, degree int) (labels []int) {
+	return parMapLabel(*c, elemts, space, degree)
 }
 
 // Assign returns the element nearest centroid, its label and the distance to the centroid
@@ -72,14 +72,14 @@ func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dis
 	return
 }
 
-// Losses computes loss from distances between elements and their nearest centroid
-func (c *Clust) Loss(elemts []Elemt, space Space, norm float64) float64 {
-	losses, _ := c.Losses(elemts, space, norm)
+// TotalLoss computes loss from distances between elements and their nearest centroid
+func (c *Clust) TotalLoss(elemts []Elemt, space Space, norm float64) float64 {
+	losses, _ := c.ReduceLoss(elemts, space, norm)
 	return sumLosses(losses)
 }
 
-func (c *Clust) ParLoss(elemts []Elemt, space Space, norm float64, degree int) float64 {
-	losses, _ := c.ParLosses(elemts, space, norm, degree)
+func (c *Clust) ParTotalLoss(elemts []Elemt, space Space, norm float64, degree int) float64 {
+	losses, _ := c.ParReduceLoss(elemts, space, norm, degree)
 	return sumLosses(losses)
 }
 
@@ -91,7 +91,7 @@ func sumLosses(losses []float64) float64 {
 	return sum
 }
 
-func (c *Clust) Losses(elemts []Elemt, space Space, norm float64) ([]float64, []int) {
+func (c *Clust) ReduceLoss(elemts []Elemt, space Space, norm float64) ([]float64, []int) {
 	var losses = make([]float64, len(*c))
 	var cards = make([]int, len(*c))
 	for _, elemt := range elemts {
@@ -102,7 +102,7 @@ func (c *Clust) Losses(elemts []Elemt, space Space, norm float64) ([]float64, []
 	return losses, cards
 }
 
-func (c *Clust) ParLosses(elemts []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
+func (c *Clust) ParReduceLoss(elemts []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
 	return ParLosses(*c, elemts, space, norm, degree)
 }
 

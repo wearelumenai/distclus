@@ -37,7 +37,7 @@ func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core
 	return
 }
 
-// Loss calculates input centroids
+// TotalLoss calculates input centroids
 func (strategy *SeqStrategy) Loss(conf Conf, space core.Space, proposal core.Clust, data []core.Elemt) float64 {
-	return proposal.Loss(data, space, conf.Norm)
+	return proposal.TotalLoss(data, space, conf.Norm)
 }

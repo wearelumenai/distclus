@@ -3,10 +3,14 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+	"github.com/pkg/errors"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 	"time"
 )
+
+// ErrTimeOut is returned when an error occurs
+var ErrTimeOut = errors.New("algorithm timed out")
 
 // Impl of MCMC
 type Impl struct {
@@ -54,6 +58,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		pdf:     impl.proba(mcmcConf, space, centroids, centroids, impl.getCurrentTime(data)),
 	}
 
+	var start = time.Now()
 	for i, loop := 0, true; i < mcmcConf.McmcIter && loop; i++ {
 		select {
 		case <-closing:
@@ -66,6 +71,10 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data, impl.getCurrentTime(data))
 			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
+			if time.Now().Sub(start).Seconds() > float64(mcmcConf.Timeout) {
+				loop = false
+				err = ErrTimeOut
+			}
 		}
 	}
 	return

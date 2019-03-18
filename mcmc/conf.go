@@ -2,6 +2,7 @@ package mcmc
 
 import (
 	"fmt"
+	"math"
 	"runtime"
 	"time"
 
@@ -21,6 +22,7 @@ type Conf struct {
 	Nu                 float64
 	MaxK               int
 	McmcIter, InitIter int
+	Timeout            int
 	ProbaK             []float64
 	lamb, l2b, tau     float64
 	NumCPU             int
@@ -49,6 +51,9 @@ func SetConfigDefaults(conf *Conf) {
 	}
 	if conf.Iter == 0 {
 		conf.Iter = 1
+	}
+	if conf.Timeout == 0 {
+		conf.Timeout = math.MaxInt64
 	}
 	if conf.NumCPU == 0 {
 		conf.NumCPU = runtime.NumCPU()

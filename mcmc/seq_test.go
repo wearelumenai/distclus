@@ -146,3 +146,26 @@ func Test_AcceptRatio(t *testing.T) {
 		t.Error("Expected ratio in [0 1], got", r)
 	}
 }
+
+func Test_TimeOut(t *testing.T) {
+	var implConf = mcmc.Conf{
+		InitK:     3,
+		FrameSize: 8,
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		Dim:       5, B: 100, Amp: 1,
+		Norm: 2, Nu: 3, McmcIter: 2000000,
+		Timeout:  1,
+		InitIter: 0,
+	}
+	var initializer = kmeans.GivenInitializer
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+
+	for _, elemt := range test.Vectors {
+		_ = algo.Push(elemt)
+	}
+	var err = algo.Run(false)
+	if err != mcmc.ErrTimeOut {
+		t.Error("time out expected")
+	}
+	_ = algo.Close()
+}

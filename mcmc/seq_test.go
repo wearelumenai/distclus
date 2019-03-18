@@ -164,7 +164,7 @@ func Test_TimeOut(t *testing.T) {
 		_ = algo.Push(elemt)
 	}
 	var err = algo.Run(false)
-	if err != mcmc.ErrTimeOut {
+	if err != core.ErrTimeOut {
 		t.Error("time out expected")
 	}
 	_ = algo.Close()

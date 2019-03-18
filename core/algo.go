@@ -209,3 +209,6 @@ func (algo *Algo) updateCentroids(centroids Clust, figures map[string]float64) {
 	algo.centroids = centroids
 	algo.runtimeFigures = figures
 }
+
+// ErrTimeOut is returned when an error occurs
+var ErrTimeOut = errors.New("algorithm timed out")

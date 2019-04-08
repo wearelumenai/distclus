@@ -13,10 +13,10 @@ func Test_Par(t *testing.T) {
 		for i := range data {
 			data[i] = i
 		}
-		var process = func(part []core.Elemt, start int, end int, rank int) {
-			copy(result[start:end], part)
+		var process = func(start int, end int, rank int) {
+			copy(result[start:end], data[start:end])
 		}
-		core.Par(process, data, degree)
+		core.Par(process, len(data), degree)
 		if !reflect.DeepEqual(data, result) {
 			t.Error("par error")
 		}

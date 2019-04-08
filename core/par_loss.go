@@ -5,17 +5,35 @@ type partitionLosses struct {
 	cards  []int
 }
 
-func ParLosses(centroids Clust, data []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
+func ParLossesForLabels(centroids Clust, data []Elemt, labels []int, space Space, norm float64, degree int) ([]float64, []int) {
 	var parts = make([]partitionLosses, degree)
 
-	var process = func(part []Elemt, start int, end int, rank int) {
-		lossReduce(centroids, part, space, norm, &parts[rank])
+	var process = func(start int, end int, rank int) {
+		lossReduceForLabels(centroids, data[start:end], labels[start:end], space, norm, &parts[rank])
 	}
 
-	Par(process, data, degree)
+	Par(process, len(data), degree)
 
 	var aggr = lossAggregate(parts)
 	return aggr.losses, aggr.cards
+}
+
+func ParLosses(centroids Clust, data []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
+	var parts = make([]partitionLosses, degree)
+
+	var process = func(start int, end int, rank int) {
+		lossReduce(centroids, data[start:end], space, norm, &parts[rank])
+	}
+
+	Par(process, len(data), degree)
+
+	var aggr = lossAggregate(parts)
+	return aggr.losses, aggr.cards
+}
+
+func lossReduceForLabels(centroids Clust, elemts []Elemt, labels []int, space Space, norm float64,
+	part *partitionLosses) {
+	part.losses, part.cards = centroids.ReduceLossForLabels(elemts, labels, space, norm)
 }
 
 func lossReduce(centroids Clust, elemts []Elemt, space Space, norm float64,

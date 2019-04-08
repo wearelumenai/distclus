@@ -189,3 +189,19 @@ func TestClust_ReduceDBA2(t *testing.T) {
 
 	test.AssertArrayAlmostEqual(t, dataAverage, dbasAverage)
 }
+
+func TestClust_LossForLabels(t *testing.T) {
+	var centroids, data = test.GenerateData(10000)
+
+	var labels = make([]int, 10000)
+	var space = vectors.NewSpace(vectors.Conf{})
+	var loss, cards = centroids.ReduceLossForLabels(data, labels, space, 2.)
+
+	if cards[0] != 10000 {
+		t.Error("cardinality error")
+	}
+	var clusterLoss = centroids.TotalLoss(data, space, 2.)
+	if clusterLoss >= loss[0] {
+		t.Error("loss error")
+	}
+}

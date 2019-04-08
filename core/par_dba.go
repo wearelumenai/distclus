@@ -8,11 +8,11 @@ type dbaParition struct {
 func parReduceDBA(centroids Clust, data []Elemt, space Space, degree int) (Clust, []int) {
 	var parts = make([]dbaParition, degree)
 
-	var process = func(part []Elemt, start int, end int, rank int) {
-		dbaReduce(space, centroids, part, &parts[rank])
+	var process = func(start int, end int, rank int) {
+		dbaReduce(space, centroids, data[start:end], &parts[rank])
 	}
 
-	Par(process, data, degree)
+	Par(process, len(data), degree)
 
 	var aggr = dbaAggregate(parts, space)
 	return buildResult(centroids, aggr)

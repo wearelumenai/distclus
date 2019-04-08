@@ -37,3 +37,23 @@ func TestClust_ParLoss(t *testing.T) {
 		test.AssertAlmostEqual(t, seqLoss, parLoss)
 	}
 }
+
+func TestClust_ParLossForLabels(t *testing.T) {
+	var data = make([]core.Elemt, 0, len(test.Vectors)*20)
+	var labels = make([]int, 0, len(data))
+	var centroids = core.Clust(test.Vectors[0:3])
+	for i := 0; i < 20; i++ {
+		data = append(data, test.Vectors...)
+		for j := 0; j < len(data); j++ {
+			labels = append(labels, j%2)
+		}
+	}
+
+	for degree := 1; degree < 100; degree++ {
+		var seqLosses, seqCards = centroids.ReduceLossForLabels(data, labels, vectors.Space{}, 2.)
+		var parLosses, parCards = centroids.ParReduceLossForLabels(data, labels, vectors.Space{}, 2., degree)
+
+		test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
+		test.AssertArrayEqual(t, seqCards, parCards)
+	}
+}

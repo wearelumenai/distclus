@@ -106,6 +106,22 @@ func (c *Clust) ParReduceLoss(elemts []Elemt, space Space, norm float64, degree 
 	return ParLosses(*c, elemts, space, norm, degree)
 }
 
+func (c *Clust) ReduceLossForLabels(elemts []Elemt, labels []int, space Space, norm float64) ([]float64, []int) {
+	var losses = make([]float64, len(*c))
+	var cards = make([]int, len(*c))
+	for i := range elemts {
+		var label = labels[i]
+		var dist = space.Dist(elemts[i], (*c)[label])
+		cards[label] += 1
+		losses[label] += math.Pow(dist, norm)
+	}
+	return losses, cards
+}
+
+func (c *Clust) ParReduceLossForLabels(elemts []Elemt, labels []int, space Space, norm float64, degree int) ([]float64, []int) {
+	return ParLossesForLabels(*c, elemts, labels, space, norm, degree)
+}
+
 // Returns the label of element nearest centroid and the distance
 func (c *Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
 	min = space.Dist(elemt, (*c)[0])

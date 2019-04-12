@@ -4,6 +4,9 @@ import (
 	"distclus/core"
 	"distclus/streaming"
 	"distclus/vectors"
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat/distmv"
+	"gonum.org/v1/gonum/stat/distuv"
 	"reflect"
 	"testing"
 )
@@ -102,5 +105,100 @@ func TestImpl_UpdateCluster(t *testing.T) {
 	}
 	if maxDist := impl.GetMaxDistance(); maxDist != 1.3 {
 		t.Error("expected 1.3 got", maxDist)
+	}
+}
+
+func TestImpl_GetRadius(t *testing.T) {
+	if radius := streaming.GetRadius(1.); radius != 1. {
+		t.Error("expected 1. got", radius)
+	}
+	if radius := streaming.GetRadius(.1); radius != 1.09 {
+		t.Error("expected 1.09 got", radius)
+	}
+}
+
+func TestImpl_Interface(t *testing.T) {
+	var impl interface{} = &streaming.Impl{}
+	var _, ok = impl.(core.Impl)
+	if !ok {
+		t.Error("core.Impl should be implemented")
+	}
+}
+
+func TestImpl_InitError(t *testing.T) {
+	var impl = streaming.Impl{}
+	var _, err = impl.Init(streaming.Conf{}, vectors.Space{})
+	if err == nil {
+		t.Error("an error was expected (initialization is not possible)")
+	}
+}
+
+func TestImpl_InitSuccess(t *testing.T) {
+	var impl = streaming.NewImpl(streaming.Conf{})
+	var cluster0 = []float64{1.}
+	var err0 = impl.Push(cluster0)
+	if err0 != nil {
+		t.Error("unexpected error", err0)
+	}
+	var clust, err = impl.Init(streaming.Conf{}, vectors.Space{})
+	if err != nil {
+		t.Error("unexpected error", err)
+	}
+	if !reflect.DeepEqual(core.Clust{cluster0}, clust) {
+		t.Error("initialization failed")
+	}
+}
+
+func TestImpl_PushError(t *testing.T) {
+	var conf = streaming.Conf{}
+	var impl = streaming.NewImpl(conf)
+
+	var cluster0 = []float64{1.}
+
+	streaming.SetConfigDefaults(&conf)
+	for i := 0; i < conf.BufferSize; i++ {
+		var _ = impl.Push(cluster0)
+	}
+
+	var err0 = impl.Push(cluster0)
+	if err0 == nil {
+		t.Error("an error was expected (channel is full)")
+	}
+}
+
+func TestImpl_Iterate(t *testing.T) {
+	var r = mix()
+	var impl = streaming.NewImpl(streaming.Conf{})
+	impl.AddCluster(r(), 0.)
+	for i := 0; i < 1000; i++ {
+		var cluster1 = r()
+		impl.Iterate(cluster1, vectors.Space{})
+	}
+	var clusters = impl.GetClusters()
+	if c := len(clusters); c < 3 {
+		t.Error("3 or more clusters expected got", c)
+	}
+	if len(clusters) > 6 {
+		t.Error("less than 6 clusters expected")
+	}
+}
+
+func mix() func() []float64 {
+	var norm1, _ = distmv.NewNormal([]float64{1., 1.}, mat.NewDiagDense(2, []float64{2., 2.}), nil)
+	var norm2, _ = distmv.NewNormal([]float64{-23., 9.}, mat.NewDiagDense(2, []float64{4., 2.}), nil)
+	var norm3, _ = distmv.NewNormal([]float64{-12., -25.}, mat.NewDiagDense(2, []float64{2., 4.}), nil)
+	var p = distuv.Uniform{
+		Min: 0.,
+		Max: 1.,
+	}
+	return func() []float64 {
+		switch a := p.Rand(); {
+		case a < .2:
+			return norm1.Rand(nil)
+		case a < .5:
+			return norm2.Rand(nil)
+		default:
+			return norm3.Rand(nil)
+		}
 	}
 }

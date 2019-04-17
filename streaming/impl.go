@@ -109,6 +109,7 @@ func (impl *Impl) Iterate(elemt core.Elemt, space vectors.Space) {
 	} else {
 		impl.AddOutlier(elemt)
 	}
+	impl.count++
 }
 
 func GetRadius(Lambda float64) float64 {

@@ -96,16 +96,6 @@ func TestImpl_UpdateCluster(t *testing.T) {
 	if maxDist := impl.GetMaxDistance(); maxDist != 1.3 {
 		t.Error("expected 1.3 got", maxDist)
 	}
-
-	impl.AddOutlier(core.Elemt([]float64{1.}))
-	impl.UpdateCluster(1, core.Elemt([]float64{2.}), 1.3, vectors.Space{})
-	impl.UpdateCluster(1, core.Elemt([]float64{3.}), 1.1, vectors.Space{})
-	if c0 := impl.GetClusters()[0]; !reflect.DeepEqual([]float64{2.}, c0) {
-		t.Error("expected cluster: ", []float64{2.})
-	}
-	if maxDist := impl.GetMaxDistance(); maxDist != 1.3 {
-		t.Error("expected 1.3 got", maxDist)
-	}
 }
 
 func TestImpl_GetRadius(t *testing.T) {

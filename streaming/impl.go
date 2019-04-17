@@ -2,7 +2,6 @@ package streaming
 
 import (
 	"distclus/core"
-	"distclus/vectors"
 	"errors"
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -40,7 +39,20 @@ func (impl *Impl) Init(core.ImplConf, core.Space) (core.Clust, error) {
 }
 
 func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) error {
-	panic("implement me")
+	for i := range centroids {
+		impl.AddCenter(centroids[i], 0.)
+	}
+	for loop := true; loop; {
+		select {
+		case <-closing:
+			loop = false
+		case elemt := <-impl.c:
+			impl.Iterate(elemt, space)
+			notifier(impl.clust, nil)
+		}
+	}
+	closed <- true
+	return nil
 }
 
 func (impl *Impl) Push(elemt core.Elemt) error {
@@ -73,7 +85,7 @@ func (impl *Impl) GetRelativeDistance(distance float64) float64 {
 	return 1
 }
 
-func (impl *Impl) AddCluster(cluster core.Elemt, distance float64) {
+func (impl *Impl) AddCenter(cluster core.Elemt, distance float64) {
 	impl.clust = append(impl.clust, cluster)
 	impl.cards = append(impl.cards, 1)
 	impl.UpdateMaxDistance(distance)
@@ -84,7 +96,7 @@ func (impl *Impl) AddOutlier(outlier core.Elemt) {
 	impl.cards = append(impl.cards, 1)
 }
 
-func (impl *Impl) UpdateCluster(label int, elemt core.Elemt, distance float64, space core.Space) {
+func (impl *Impl) UpdateCenter(label int, elemt core.Elemt, distance float64, space core.Space) {
 	var cluster = space.Combine(impl.clust[label], impl.cards[label], elemt, 1)
 	impl.clust[label] = cluster
 	impl.cards[label] += 1
@@ -95,16 +107,16 @@ func (impl *Impl) GetClusters() core.Clust {
 	return impl.clust
 }
 
-func (impl *Impl) Iterate(elemt core.Elemt, space vectors.Space) {
+func (impl *Impl) Iterate(elemt core.Elemt, space core.Space) {
 	var _, label, distance = impl.clust.Assign(elemt, space)
 	var relative = impl.GetRelativeDistance(distance)
 
 	if impl.count < 5 || relative < impl.conf.B {
 		var threshold = impl.norm.Rand()
 		if threshold < relative {
-			impl.AddCluster(elemt, distance)
+			impl.AddCenter(elemt, distance)
 		} else {
-			impl.UpdateCluster(label, elemt, distance, space)
+			impl.UpdateCenter(label, elemt, distance, space)
 		}
 	} else {
 		impl.AddOutlier(elemt)

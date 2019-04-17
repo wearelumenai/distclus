@@ -4,6 +4,7 @@ import (
 	"distclus/core"
 	"distclus/streaming"
 	"distclus/vectors"
+	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distmv"
 	"gonum.org/v1/gonum/stat/distuv"
@@ -46,11 +47,11 @@ func TestImpl_GetRelativeDistance(t *testing.T) {
 	}
 }
 
-func TestImpl_AddCluster(t *testing.T) {
+func TestImpl_AddCenter(t *testing.T) {
 	var impl = streaming.Impl{}
 
 	var cluster0 = []float64{1.}
-	impl.AddCluster(cluster0, 1.2)
+	impl.AddCenter(cluster0, 1.2)
 
 	if c0 := impl.GetClusters()[0]; !reflect.DeepEqual(cluster0, c0) {
 		t.Error("expected cluster: ", cluster0)
@@ -60,7 +61,7 @@ func TestImpl_AddCluster(t *testing.T) {
 	}
 
 	var cluster1 = []float64{2.}
-	impl.AddCluster(cluster1, 1.1)
+	impl.AddCenter(cluster1, 1.1)
 	if c1 := impl.GetClusters()[1]; !reflect.DeepEqual(cluster1, c1) {
 		t.Error("expected cluster: ", cluster1)
 	}
@@ -73,7 +74,7 @@ func TestImpl_AddOutlier(t *testing.T) {
 	var impl = streaming.Impl{}
 
 	var cluster0 = []float64{1.}
-	impl.AddCluster(cluster0, 1.2)
+	impl.AddCenter(cluster0, 1.2)
 	var cluster1 = []float64{2.}
 	impl.AddOutlier(cluster1)
 	if c1 := impl.GetClusters()[1]; !reflect.DeepEqual(cluster1, c1) {
@@ -84,12 +85,12 @@ func TestImpl_AddOutlier(t *testing.T) {
 	}
 }
 
-func TestImpl_UpdateCluster(t *testing.T) {
+func TestImpl_UpdateCenter(t *testing.T) {
 	var impl = streaming.Impl{}
 
-	impl.AddCluster(core.Elemt([]float64{1.}), 1.2)
-	impl.UpdateCluster(0, core.Elemt([]float64{2.}), 1.3, vectors.Space{})
-	impl.UpdateCluster(0, core.Elemt([]float64{3.}), 1.1, vectors.Space{})
+	impl.AddCenter(core.Elemt([]float64{1.}), 1.2)
+	impl.UpdateCenter(0, core.Elemt([]float64{2.}), 1.3, vectors.Space{})
+	impl.UpdateCenter(0, core.Elemt([]float64{3.}), 1.1, vectors.Space{})
 	if c0 := impl.GetClusters()[0]; !reflect.DeepEqual([]float64{2.}, c0) {
 		t.Error("expected cluster: ", []float64{2.})
 	}
@@ -159,12 +160,40 @@ func TestImpl_PushError(t *testing.T) {
 func TestImpl_Iterate(t *testing.T) {
 	var r = mix()
 	var impl = streaming.NewImpl(streaming.Conf{})
-	impl.AddCluster(r(), 0.)
+	impl.AddCenter(r(), 0.)
 	for i := 0; i < 1000; i++ {
 		var cluster1 = r()
 		impl.Iterate(cluster1, vectors.Space{})
 	}
 	var clusters = impl.GetClusters()
+	if c := len(clusters); c < 3 {
+		t.Error("3 or more clusters expected got", c)
+	}
+	if len(clusters) > 6 {
+		t.Error("less than 6 clusters expected")
+	}
+}
+
+func TestImpl_Run(t *testing.T) {
+	var r = mix()
+	conf := streaming.Conf{
+		RGen: rand.New(rand.NewSource(6231645162)),
+	}
+	var impl = streaming.NewImpl(conf)
+	var closing = make(chan bool, 1)
+	var closed = make(chan bool, 1)
+	var clusters core.Clust
+	var notifier = func(clusts core.Clust, float64s map[string]float64) {
+		clusters = clusts
+	}
+	go func() {
+		_ = impl.Run(conf, vectors.Space{}, core.Clust{r()}, notifier, closing, closed)
+	}()
+	for i := 0; i < 1000; i++ {
+		_ = impl.Push(r())
+	}
+	closing <- true
+	<-closed
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)
 	}

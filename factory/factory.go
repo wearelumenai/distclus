@@ -2,6 +2,7 @@ package factory
 
 import (
 	"distclus/core"
+	"distclus/cosinus"
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/series"
@@ -15,6 +16,8 @@ func CreateSpace(spaceConf core.SpaceConf) (space core.Space) {
 		space = vectors.NewSpace(conf)
 	case series.Conf:
 		space = series.NewSpace(conf)
+	case cosinus.Conf:
+		space = cosinus.NewSpace(conf)
 	}
 	return
 }

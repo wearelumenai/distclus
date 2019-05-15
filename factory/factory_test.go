@@ -2,6 +2,7 @@ package factory_test
 
 import (
 	"distclus/core"
+	"distclus/cosinus"
 	"distclus/factory"
 	"distclus/kmeans"
 	"distclus/mcmc"
@@ -30,6 +31,7 @@ var ocs = []core.ImplConf{
 var spaces = []core.SpaceConf{
 	series.Conf{},
 	vectors.Conf{},
+	cosinus.Conf{},
 }
 
 func Test_CreateSpace(t *testing.T) {

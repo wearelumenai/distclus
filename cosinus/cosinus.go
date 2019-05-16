@@ -34,14 +34,18 @@ func (space Space) Dim(data []core.Elemt) int {
 	return space.vspace.Dim(data)
 }
 
+func Cosinus(v1, v2 []float64) (cos float64) {
+	cos = ScalarProduct(v1, v2) / Norm(v1) / Norm(v2)
+	return
+}
+
+func Norm(v []float64) float64 {
+	return math.Sqrt(ScalarProduct(v, v))
+}
+
 func ScalarProduct(v1, v2 []float64) (product float64) {
 	for i := range v1 {
 		product += v1[i] * v2[i]
 	}
-	return
-}
-
-func Cosinus(v1, v2 []float64) (cos float64) {
-	cos = ScalarProduct(v1, v2) / math.Sqrt(ScalarProduct(v1, v1)) / math.Sqrt(ScalarProduct(v2, v2))
 	return
 }

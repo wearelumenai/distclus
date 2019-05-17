@@ -53,8 +53,8 @@ func PPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand)
 		var draw = src.Intn(len(elemts))
 		centroids[0] = elemts[draw]
 
-		for i := 1; i < k; i++ {
-			centroids[i] = PPIter(centroids[:i], elemts, space, src)
+		for i := 1; i < k && err == nil; i++ {
+			centroids[i], err = PPIter(centroids[:i], elemts, space, src)
 		}
 	}
 
@@ -62,7 +62,7 @@ func PPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand)
 }
 
 // PPIter runs a kmeans++ iteration : draw an element the does not belong to clust
-func PPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) core.Elemt {
+func PPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Elemt, error) {
 	var dists = make([]float64, len(elemts))
 
 	for i, elt := range elemts {
@@ -70,9 +70,11 @@ func PPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.R
 		dists[i] = dist
 	}
 
-	var draw = WeightedChoice(dists, src)
-	return space.Copy(elemts[draw])
+	var draw, err = WeightedChoice(dists, src)
+	return space.Copy(elemts[draw]), err
 }
+
+var ErrNullSet = errors.New("no candidate for ++ iteration")
 
 // RandInitializer initializes a clustering with random testPoints
 func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (centroids core.Clust, err error) {
@@ -99,7 +101,7 @@ func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Ran
 }
 
 // WeightedChoice returns random index given corresponding weights
-func WeightedChoice(weights []float64, rand *rand.Rand) int {
+func WeightedChoice(weights []float64, rand *rand.Rand) (int, error) {
 	var sum float64
 	var idx int
 
@@ -107,10 +109,15 @@ func WeightedChoice(weights []float64, rand *rand.Rand) int {
 		sum += x
 	}
 
+	if sum == 0 {
+		return 0, ErrNullSet
+	}
+
 	var cursor = rand.Float64() * sum
 	for cursor > 0 {
 		cursor -= weights[idx]
 		idx++
 	}
-	return idx - 1
+
+	return idx - 1, nil
 }

@@ -112,8 +112,7 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroid
 }
 
 func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt, time int) proposal {
-	var k = impl.nextK(conf, current.k, data)
-	var centers = impl.store.GetCenters(data, space, k, centroids)
+	k, centers := impl.getKCenters(conf, space, current, centroids, data)
 	centers = impl.alter(conf, space, centers, time)
 	centers = impl.strategy.Iterate(conf, space, centers, data, 1)
 	return proposal{
@@ -122,6 +121,16 @@ func (impl *Impl) propose(conf Conf, space core.Space, current proposal, centroi
 		loss:    impl.strategy.Loss(conf, space, centers, data),
 		pdf:     impl.proba(conf, space, centers, centers, time),
 	}
+}
+
+func (impl *Impl) getKCenters(conf Conf, space core.Space, current proposal, centroids core.Clust, data []core.Elemt) (int, core.Clust) {
+	var k = impl.nextK(conf, current.k, data)
+	var centers, err = impl.store.GetCenters(data, space, k, centroids)
+	if err != nil {
+		k = current.k
+		centers, _ = impl.store.GetCenters(data, space, k, centroids)
+	}
+	return k, centers
 }
 
 func (impl *Impl) accept(conf Conf, current proposal, prop proposal, time int) bool {
@@ -136,7 +145,8 @@ func (impl *Impl) accept(conf Conf, current proposal, prop proposal, time int) b
 }
 
 func (impl *Impl) nextK(conf Conf, k int, data []core.Elemt) int {
-	var newK = k + []int{-1, 0, 1}[kmeans.WeightedChoice(conf.ProbaK, conf.RGen)]
+	var i, _ = kmeans.WeightedChoice(conf.ProbaK, conf.RGen)
+	var newK = k + []int{-1, 0, 1}[i]
 
 	switch {
 	case newK < 1:

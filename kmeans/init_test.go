@@ -71,11 +71,21 @@ func TestWeightedChoice(t *testing.T) {
 	var sum = make([]int, 3)
 	var n = 100000
 	for i := 0; i < n; i++ {
-		sum[kmeans.WeightedChoice(w, src)] += 1
+		var d, _ = kmeans.WeightedChoice(w, src)
+		sum[d] += 1
 	}
 	var diff = sum[2] - 80000
 	if diff < 79000 && diff > 81000 {
 		t.Errorf("Value out of range")
+	}
+}
+
+func TestWeightedChoiceErr(t *testing.T) {
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	var w = []float64{0, 0, 0}
+	var _, err = kmeans.WeightedChoice(w, src)
+	if err != kmeans.ErrNullSet {
+		t.Error("Expected null set error")
 	}
 }
 
@@ -95,6 +105,14 @@ func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 	var clust, _ = kmeans.RandInitializer(14, TestPoints, vectors.Space{}, src)
 	AssertDistinctCentroids(t, clust)
+}
+
+func TestPPIterErr(t *testing.T) {
+	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
+	var _, err = kmeans.PPIter(TestPoints, TestPoints, vectors.Space{}, src)
+	if err != kmeans.ErrNullSet {
+		t.Error("Expected null set error")
+	}
 }
 
 func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {

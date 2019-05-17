@@ -11,14 +11,31 @@ import (
 	"testing"
 )
 
-func Test_StreamingAlgo(t *testing.T) {
+func Test_Async(t *testing.T) {
 	var algo = streaming.NewAlgo(streaming.Conf{}, vectors.Space{}, []core.Elemt{})
 	var distr = mix()
 	_ = algo.Push(distr())
 	_ = algo.Run(true)
-	for i := 0; i < 75; i++ {
+	for i := 0; i < 99; i++ {
 		_ = algo.Push(distr())
 	}
+	_ = algo.Close()
+	var clusters, _ = algo.Centroids()
+	if c := len(clusters); c < 3 {
+		t.Error("3 or more clusters expected got", c)
+	}
+	if len(clusters) > 6 {
+		t.Error("less than 6 clusters expected")
+	}
+}
+
+func Test_Sync(t *testing.T) {
+	var algo = streaming.NewAlgo(streaming.Conf{}, vectors.Space{}, []core.Elemt{})
+	var distr = mix()
+	for i := 0; i < 100; i++ {
+		_ = algo.Push(distr())
+	}
+	_ = algo.Run(false)
 	_ = algo.Close()
 	var clusters, _ = algo.Centroids()
 	if c := len(clusters); c < 3 {

@@ -14,6 +14,7 @@ type Impl struct {
 	conf        Conf
 	norm        distuv.Normal
 	count       int
+	async       bool
 }
 
 func NewImpl(conf Conf, elemts []core.Elemt) Impl {
@@ -46,16 +47,39 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 		impl.AddCenter(centroids[i], 0.)
 	}
 	for loop := true; loop; {
-		select {
-		case <-closing:
-			loop = false
-		case elemt := <-impl.c:
-			impl.Iterate(elemt, space)
-			notifier(impl.clust, nil)
+		if impl.async {
+			loop = impl.iterAsync(space, notifier, closing)
+		} else {
+			loop = impl.iterSync(space, notifier)
 		}
 	}
 	closed <- true
 	return nil
+}
+
+func (impl *Impl) iterAsync(space core.Space, notifier core.Notifier, closing <-chan bool) bool {
+	select {
+	case elemt := <-impl.c:
+		impl.iter(elemt, space, notifier)
+		return true
+	case <-closing:
+		return false
+	}
+}
+
+func (impl *Impl) iterSync(space core.Space, notifier core.Notifier) bool {
+	select {
+	case elemt := <-impl.c:
+		impl.iter(elemt, space, notifier)
+		return true
+	default:
+		return false
+	}
+}
+
+func (impl *Impl) iter(elemt core.Elemt, space core.Space, notifier core.Notifier) {
+	impl.Iterate(elemt, space)
+	notifier(impl.clust, nil)
 }
 
 func (impl *Impl) Push(elemt core.Elemt) error {
@@ -68,6 +92,7 @@ func (impl *Impl) Push(elemt core.Elemt) error {
 }
 
 func (impl *Impl) SetAsync() error {
+	impl.async = true
 	return nil
 }
 

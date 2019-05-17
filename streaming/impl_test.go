@@ -189,6 +189,7 @@ func TestImpl_Run(t *testing.T) {
 	var notifier = func(clusts core.Clust, float64s map[string]float64) {
 		clusters = clusts
 	}
+	_ = impl.SetAsync()
 	go func() {
 		_ = impl.Run(conf, vectors.Space{}, core.Clust{distr()}, notifier, closing, closed)
 	}()

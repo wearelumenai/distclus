@@ -26,3 +26,7 @@ func SetConfigDefaults(conf *Conf) {
 		conf.RGen = rand.New(rand.NewSource(uint64(time.Now().Nanosecond())))
 	}
 }
+
+func Verify(conf Conf) {
+
+}

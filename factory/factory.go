@@ -6,6 +6,7 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/series"
+	"distclus/streaming"
 	"distclus/vectors"
 )
 
@@ -31,6 +32,8 @@ func CreateOC(implConf core.ImplConf, spaceConf core.SpaceConf, data []core.Elem
 		oc = mcmc.NewAlgo(conf, space, data, initializer, args...)
 	case kmeans.Conf:
 		oc = kmeans.NewAlgo(conf, space, data, initializer, args...)
+	case streaming.Conf:
+		oc = streaming.NewAlgo(conf, space, data, args...)
 	}
 	return
 }

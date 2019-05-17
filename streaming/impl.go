@@ -16,10 +16,13 @@ type Impl struct {
 	count       int
 }
 
-func NewImpl(conf Conf) *Impl {
-	SetConfigDefaults(&conf)
-	return &Impl{
-		c:    make(chan core.Elemt, conf.BufferSize),
+func NewImpl(conf Conf, elemts []core.Elemt) Impl {
+	var c = make(chan core.Elemt, conf.BufferSize)
+	for i := range elemts {
+		c <- elemts[i]
+	}
+	return Impl{
+		c:    c,
 		conf: conf,
 		norm: distuv.Normal{
 			Mu:    GetRadius(conf.Lambda),

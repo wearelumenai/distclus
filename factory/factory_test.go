@@ -7,6 +7,7 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"distclus/series"
+	"distclus/streaming"
 	"distclus/vectors"
 	"golang.org/x/exp/rand"
 	"reflect"
@@ -26,6 +27,7 @@ var mcmcConf = mcmc.Conf{
 var ocs = []core.ImplConf{
 	mcmcConf,
 	kmeans.Conf{K: 1, Iter: 1},
+	streaming.Conf{},
 }
 
 var spaces = []core.SpaceConf{

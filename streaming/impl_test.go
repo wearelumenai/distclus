@@ -5,9 +5,6 @@ import (
 	"distclus/streaming"
 	"distclus/vectors"
 	"golang.org/x/exp/rand"
-	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/stat/distmv"
-	"gonum.org/v1/gonum/stat/distuv"
 	"reflect"
 	"testing"
 )
@@ -125,13 +122,14 @@ func TestImpl_InitError(t *testing.T) {
 }
 
 func TestImpl_InitSuccess(t *testing.T) {
-	var impl = streaming.NewImpl(streaming.Conf{})
+	var conf = streaming.Conf{BufferSize: 5}
+	var impl = streaming.NewImpl(conf, []core.Elemt{})
 	var cluster0 = []float64{1.}
 	var err0 = impl.Push(cluster0)
 	if err0 != nil {
 		t.Error("unexpected error", err0)
 	}
-	var clust, err = impl.Init(streaming.Conf{}, vectors.Space{})
+	var clust, err = impl.Init(conf, vectors.Space{})
 	if err != nil {
 		t.Error("unexpected error", err)
 	}
@@ -142,7 +140,7 @@ func TestImpl_InitSuccess(t *testing.T) {
 
 func TestImpl_PushError(t *testing.T) {
 	var conf = streaming.Conf{}
-	var impl = streaming.NewImpl(conf)
+	var impl = streaming.NewImpl(conf, []core.Elemt{})
 
 	var cluster0 = []float64{1.}
 
@@ -158,11 +156,13 @@ func TestImpl_PushError(t *testing.T) {
 }
 
 func TestImpl_Iterate(t *testing.T) {
-	var r = mix()
-	var impl = streaming.NewImpl(streaming.Conf{})
-	impl.AddCenter(r(), 0.)
+	var distr = mix()
+	var conf = streaming.Conf{BufferSize: 5, Lambda: 3, B: 0.95}
+	conf.RGen = rand.New(rand.NewSource(1514613616431))
+	var impl = streaming.NewImpl(conf, []core.Elemt{})
+	impl.AddCenter(distr(), 0.)
 	for i := 0; i < 1000; i++ {
-		var cluster1 = r()
+		var cluster1 = distr()
 		impl.Iterate(cluster1, vectors.Space{})
 	}
 	var clusters = impl.GetClusters()
@@ -175,11 +175,14 @@ func TestImpl_Iterate(t *testing.T) {
 }
 
 func TestImpl_Run(t *testing.T) {
-	var r = mix()
-	conf := streaming.Conf{
-		RGen: rand.New(rand.NewSource(6231645162)),
+	var distr = mix()
+	var conf = streaming.Conf{
+		BufferSize: 5,
+		Lambda:     3,
+		B:          0.95,
+		RGen:       rand.New(rand.NewSource(6231645162)),
 	}
-	var impl = streaming.NewImpl(conf)
+	var impl = streaming.NewImpl(conf, []core.Elemt{})
 	var closing = make(chan bool, 1)
 	var closed = make(chan bool, 1)
 	var clusters core.Clust
@@ -187,10 +190,10 @@ func TestImpl_Run(t *testing.T) {
 		clusters = clusts
 	}
 	go func() {
-		_ = impl.Run(conf, vectors.Space{}, core.Clust{r()}, notifier, closing, closed)
+		_ = impl.Run(conf, vectors.Space{}, core.Clust{distr()}, notifier, closing, closed)
 	}()
 	for i := 0; i < 1000; i++ {
-		_ = impl.Push(r())
+		_ = impl.Push(distr())
 	}
 	closing <- true
 	<-closed
@@ -199,25 +202,5 @@ func TestImpl_Run(t *testing.T) {
 	}
 	if len(clusters) > 6 {
 		t.Error("less than 6 clusters expected")
-	}
-}
-
-func mix() func() []float64 {
-	var norm1, _ = distmv.NewNormal([]float64{1., 1.}, mat.NewDiagDense(2, []float64{2., 2.}), nil)
-	var norm2, _ = distmv.NewNormal([]float64{-23., 9.}, mat.NewDiagDense(2, []float64{4., 2.}), nil)
-	var norm3, _ = distmv.NewNormal([]float64{-12., -25.}, mat.NewDiagDense(2, []float64{2., 4.}), nil)
-	var p = distuv.Uniform{
-		Min: 0.,
-		Max: 1.,
-	}
-	return func() []float64 {
-		switch a := p.Rand(); {
-		case a < .2:
-			return norm1.Rand(nil)
-		case a < .5:
-			return norm2.Rand(nil)
-		default:
-			return norm3.Rand(nil)
-		}
 	}
 }

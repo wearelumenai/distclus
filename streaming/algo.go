@@ -6,7 +6,7 @@ func NewAlgo(conf Conf, space core.Space, data []core.Elemt, args ...interface{}
 	SetConfigDefaults(&conf)
 	Verify(conf)
 	if conf.BufferSize < len(data) {
-		panic("buffer size must be grater than initial data")
+		panic("buffer size must be greater than initial data")
 	}
 	var impl = getImpl(conf, data)
 	return buildAlgo(conf, impl, space)

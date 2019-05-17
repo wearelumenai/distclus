@@ -9,7 +9,6 @@ import (
 	"gonum.org/v1/gonum/stat/distmv"
 	"gonum.org/v1/gonum/stat/distuv"
 	"testing"
-	"time"
 )
 
 func Test_StreamingAlgo(t *testing.T) {
@@ -18,7 +17,6 @@ func Test_StreamingAlgo(t *testing.T) {
 	_ = algo.Push(distr())
 	_ = algo.Run(true)
 	for i := 0; i < 75; i++ {
-		time.Sleep(15 * time.Millisecond)
 		_ = algo.Push(distr())
 	}
 	_ = algo.Close()

@@ -13,7 +13,7 @@ func NewSpace(conf Conf) Space {
 	return Space{}
 }
 
-// Dist computes euclidean distance between two nodes
+// CumCost computes euclidean distance between two nodes
 func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 	var e1 = elemt1.([]float64)
 	var e2 = elemt2.([]float64)

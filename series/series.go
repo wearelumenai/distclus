@@ -2,7 +2,6 @@ package series
 
 import (
 	"distclus/core"
-	"math"
 )
 
 // Space for processing vectors of vectors ([][]float64)
@@ -20,171 +19,20 @@ func NewSpace(conf core.SpaceConf) Space {
 	}
 }
 
-func interpolate(in [][]float64, indices []float64) (out [][]float64) {
-	var dim = len(indices)
-	out = make([][]float64, dim, dim)
-	var lenin = len(in)
-	copy(out[0], in[0])
-	copy(out[dim-1], in[lenin-1])
-	for index := range out[1 : dim-1] {
-		var pos = float64(index * lenin / dim)
-		var ceil = math.Ceil(pos)
-		var p = pos - ceil
-		var iindex = int(ceil)
-		var i0 = in[iindex]
-		var i1 = in[iindex+1]
-
-		for ii, ii0 := range i0 {
-			var ii1 = i1[ii]
-			out[index][ii] = float64((ii0 + ii1) * p)
-		}
-	}
-	return
-}
-
-func (space Space) getMatrix(elemt1, elemt2 core.Elemt) (matrix [][]float64) {
-	var e1 = elemt1.([][]float64)
-	var e2 = elemt2.([][]float64)
-
-	cols := len(e1)
-	rows := len(e2)
-
-	matrix = make([][]float64, cols)
-
-	for col := range matrix {
-		matrix[col] = make([]float64, rows)
-		for row := range matrix {
-			matrix[col][row] = space.innerSpace.Dist(e1[col], e2[row])
-		}
-	}
-
-	return
-}
-
-type entry struct {
-	i, j int
-	cost float64
-}
-
-func (space Space) path(elemt1, elemt2 core.Elemt) (path []entry) {
-	var e1 = elemt1.([][]float64)
-	var e2 = elemt2.([][]float64)
-
-	len1 := len(e1)
-	len2 := len(e2)
-
-	var cols = e1
-	var rows = e2
-
-	var w = space.window
-
-	if len1 > (len2 + w) {
-		var indices = make([]float64, len2+w)
-		for i := range indices {
-			indices[0] = float64(i)
-		}
-		cols = interpolate(e1, indices)
-		rows = e2
-	} else if len2 > (len1 + w) {
-		var indices = make([]float64, len1+w)
-		for i := range indices {
-			indices[0] = float64(i)
-		}
-		cols = interpolate(e2, indices)
-		rows = e1
-	}
-
-	// initialize the matrix
-	var matrix = make([][]float64, len(cols)+1)
-
-	var inf = math.Inf(0)
-
-	for colIndex := range matrix {
-		matrix[colIndex] = make([]float64, len(rows)+1)
-		for rowIndex := range matrix[colIndex] {
-			matrix[colIndex][rowIndex] = inf
-		}
-	}
-	matrix[0][0] = 0
-
-	var Dist = space.innerSpace.Dist
-
-	var lenCols = len(matrix)
-	var lenRows = len(matrix[0])
-	w = int(math.Max(float64(w), math.Abs(float64(lenCols-lenRows))))
-
-	for colIndex := range matrix[1:] {
-		for rowIndex := int(math.Max(1, float64(colIndex-w))); rowIndex < int(math.Min(float64(lenRows), float64(colIndex+w))); rowIndex++ {
-			var insertion = matrix[colIndex-1][rowIndex]
-			var deletion = matrix[colIndex][rowIndex-1]
-			var match = matrix[colIndex-1][rowIndex-1]
-			var dist = Dist(cols[colIndex], rows[rowIndex])
-			var cost = dist + math.Min(insertion, math.Min(deletion, match))
-			matrix[colIndex][rowIndex] = cost
-		}
-	}
-
-	var i = lenCols
-	var j = lenRows
-
-	for i != 0 && j != 0 {
-		var prevCol = (int)(math.Max(0, (float64)(i-1)))
-		var prevRow = (int)(math.Max(0, (float64)(j-1)))
-		var insertion = matrix[prevCol][j]
-		var match = matrix[prevCol][prevRow]
-		var deletion = matrix[i][prevRow]
-		if insertion < match && insertion < deletion {
-			i = prevCol
-		} else if match < insertion && match < deletion {
-			i = prevCol
-			j = prevRow
-		} else if deletion < insertion && deletion < match {
-			j = prevRow
-		}
-		path = append(path, entry{i, j, matrix[i][j]})
-	}
-
-	return
-}
-
-// Dist computes euclidean distance between two nodes
 func (space Space) Dist(elemt1, elemt2 core.Elemt) (sum float64) {
-	var path = space.path(elemt1, elemt2)
-
-	return path[0].cost
-}
-
-// Combine computes combination between two nodes
-func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) core.Elemt {
-	var Combine = space.innerSpace.Combine
-
 	var e1 = elemt1.([][]float64)
 	var e2 = elemt2.([][]float64)
 
-	var path = space.path(elemt1, elemt2)
+	var dtw = NewDTWWindow(e1, e2, space, space.window)
+	return dtw.Dist()
+}
 
-	var result = make([]core.Elemt, len(path))
-	var indices = make([]float64, len(path))
+func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) core.Elemt {
+	var e1 = elemt1.([][]float64)
+	var e2 = elemt2.([][]float64)
 
-	for c, pathEntry := range path {
-		var i = pathEntry.i
-		var j = pathEntry.j
-		result[c] = Combine(e1[i], weight1, e2[j], weight2)
-		indices[c] = float64(i*weight1+j*weight2) / float64(weight1+weight2)
-	}
-
-	var toInterpolate = make([][]float64, len(result))
-	for i, val := range result {
-		toInterpolate[i] = val.([]float64)
-	}
-
-	var interpolation = interpolate(toInterpolate, indices)
-
-	for i, val := range interpolation {
-		result[i] = core.Elemt(val)
-	}
-
-	return result
+	var dtw = NewDTWWindow(e1, e2, space, space.window)
+	return dtw.DBA(weight1, weight2)
 }
 
 // Copy creates a copy of a vector

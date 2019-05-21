@@ -24,8 +24,8 @@ func Test_Async(t *testing.T) {
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)
 	}
-	if len(clusters) > 6 {
-		t.Error("less than 6 clusters expected")
+	if len(clusters) > 9 {
+		t.Error("less than 9 clusters expected")
 	}
 }
 
@@ -41,8 +41,8 @@ func Test_Sync(t *testing.T) {
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)
 	}
-	if len(clusters) > 6 {
-		t.Error("less than 6 clusters expected")
+	if len(clusters) > 9 {
+		t.Error("less than 9 clusters expected")
 	}
 }
 

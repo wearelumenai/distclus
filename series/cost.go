@@ -21,8 +21,7 @@ func NewCumCost(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix 
 		space:  space,
 		window: window,
 	}
-	var l1 = len(s1)
-	var l2 = len(s2)
+	var l1, l2 = len(s1), len(s2)
 	if l1 < l2 {
 		cost.transpose = false
 		cost.setStride(l1, l2)

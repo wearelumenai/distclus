@@ -3,7 +3,6 @@ package series_test
 import (
 	"distclus/series"
 	"math"
-	"reflect"
 	"testing"
 )
 
@@ -18,6 +17,7 @@ var path = [][]int{
 	{0, 0},
 }
 var dba = [][]float64{{0.5}, {1}, {1.5}, {2.5}, {3.5}, {2}}
+var dbaw = [][]float64{{1. / 3}, {1.}, {4. / 3}, {7. / 3}, {10. / 3}, {23. / 9}}
 
 var inf = math.Inf(1)
 var path1 = [][]int{
@@ -30,6 +30,7 @@ var path1 = [][]int{
 	{0, 0},
 }
 var dba1 = [][]float64{{0.5}, {1}, {1.5}, {2.5}, {3}, {2}}
+var dbaw1 = [][]float64{{2. / 3}, {1.}, {5. / 3}, {8. / 3}, {25. / 9}, {4. / 3}}
 
 func Test_DTWDist1(t *testing.T) {
 	var dtw = series.NewDTW(s1, s2, space)
@@ -97,28 +98,30 @@ func Test_DTWPathWindow2(t *testing.T) {
 
 func Test_DTWDBA1(t *testing.T) {
 	var dtw = series.NewDTW(s1, s2, space)
-	if !reflect.DeepEqual(dba, dtw.DBA(1, 1)) {
-		t.Error("dba error")
-	}
+	AssertSeriesAlmostEqual(t, dba, dtw.DBA(1, 1))
 }
 
 func Test_DTWDBAWindow1(t *testing.T) {
 	var dtw = series.NewDTWWindow(s1, s2, space, 1)
-	if !reflect.DeepEqual(dba1, dtw.DBA(1, 1)) {
-		t.Error("dba error")
-	}
+	AssertSeriesAlmostEqual(t, dba1, dtw.DBA(1, 1))
 }
 
 func Test_DTWDBA2(t *testing.T) {
 	var dtw = series.NewDTW(s2, s1, space)
-	if !reflect.DeepEqual(dba, dtw.DBA(1, 1)) {
-		t.Error("dba error")
-	}
+	AssertSeriesAlmostEqual(t, dba, dtw.DBA(1, 1))
 }
 
 func Test_DTWDBAWindow2(t *testing.T) {
 	var dtw = series.NewDTWWindow(s2, s1, space, 1)
-	if !reflect.DeepEqual(dba1, dtw.DBA(1, 1)) {
-		t.Error("dba error")
-	}
+	AssertSeriesAlmostEqual(t, dba1, dtw.DBA(1, 1))
+}
+
+func Test_DTWDBA3(t *testing.T) {
+	var dtw = series.NewDTW(s1, s2, space)
+	AssertSeriesAlmostEqual(t, dbaw, dtw.DBA(1, 2))
+}
+
+func Test_DTWDBAWindow3(t *testing.T) {
+	var dtw = series.NewDTWWindow(s1, s2, space, 1)
+	AssertSeriesAlmostEqual(t, dbaw1, dtw.DBA(2, 1))
 }

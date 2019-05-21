@@ -49,6 +49,5 @@ func (dtw DTW) DBA(w1, w2 int) [][]float64 {
 }
 
 func (dtw *DTW) interpolate(ts [][]float64, idx []int, shrinkFactor int) [][]float64 {
-	result := Interpolate(ts, idx, shrinkFactor, dtw.space)
-	return result
+	return Interpolate(ts, idx, shrinkFactor, dtw.space)
 }

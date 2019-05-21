@@ -1,8 +1,8 @@
 package series_test
 
 import (
+	"distclus/internal/test"
 	"distclus/series"
-	"reflect"
 	"testing"
 )
 
@@ -19,24 +19,16 @@ var iw = 2
 
 func Test_Resize(t *testing.T) {
 	var s11 = series.Resize(s1, 6, space)
-	if !reflect.DeepEqual(s1, s11) {
-		t.Error("resize error")
-	}
+	AssertSeriesAlmostEqual(t, s1, s11)
 	var s21 = series.Resize(s2, 7, space)
-	if !reflect.DeepEqual(s2, s21) {
-		t.Error("resize error")
-	}
+	AssertSeriesAlmostEqual(t, s2, s21)
 	var s12 = series.Resize(s1, 16, space)
-	if !reflect.DeepEqual(se, s12) {
-		t.Error("resize error")
-	}
+	AssertSeriesAlmostEqual(t, se, s12)
 }
 
 func Test_Interpolate(t *testing.T) {
 	var si1 = series.Interpolate(si, ix, iw, space)
-	if !reflect.DeepEqual(dba, si1) {
-		t.Error("interpolate error")
-	}
+	AssertSeriesAlmostEqual(t, dba, si1)
 }
 
 func Test_ShrinkLongest(t *testing.T) {
@@ -54,5 +46,15 @@ func Test_ShrinkLongest(t *testing.T) {
 	}
 	if len(s122) != 10 {
 		t.Error("shrink error")
+	}
+}
+
+func AssertSeriesAlmostEqual(t *testing.T, expected, actual [][]float64) {
+	if len(expected) != len(actual) {
+		t.Error("series length differ")
+		return
+	}
+	for i := range expected {
+		test.AssertArrayAlmostEqual(t, expected[i], actual[i])
 	}
 }

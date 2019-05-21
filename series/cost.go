@@ -5,7 +5,7 @@ import (
 	"math"
 )
 
-type CumCost struct {
+type CumCostMatrix struct {
 	s1, s2    [][]float64
 	values    []float64
 	stride    []int
@@ -14,8 +14,8 @@ type CumCost struct {
 	transpose bool
 }
 
-func NewCumCost(s1, s2 [][]float64, space core.Space, window int) CumCost {
-	var cost = CumCost{
+func NewCumCost(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix {
+	var cost = CumCostMatrix{
 		s1:     s1,
 		s2:     s2,
 		space:  space,
@@ -34,7 +34,7 @@ func NewCumCost(s1, s2 [][]float64, space core.Space, window int) CumCost {
 	return cost
 }
 
-func (cumCost CumCost) Value(i1, i2 int) float64 {
+func (cumCost CumCostMatrix) Get(i1, i2 int) float64 {
 	var i = cumCost.ravel(i1, i2)
 	if i == -1 {
 		return math.Inf(1)
@@ -42,7 +42,7 @@ func (cumCost CumCost) Value(i1, i2 int) float64 {
 	return cumCost.values[i]
 }
 
-func (cumCost *CumCost) setStride(shortest int, longest int) {
+func (cumCost *CumCostMatrix) setStride(shortest int, longest int) {
 	if cumCost.window == 0 {
 		cumCost.window = longest
 	}
@@ -54,7 +54,7 @@ func (cumCost *CumCost) setStride(shortest int, longest int) {
 	}
 }
 
-func (cumCost CumCost) ravel(i1, i2 int) int {
+func (cumCost CumCostMatrix) ravel(i1, i2 int) int {
 	if !cumCost.inWindow(i1, i2) {
 		return -1
 	}
@@ -65,22 +65,22 @@ func (cumCost CumCost) ravel(i1, i2 int) int {
 	}
 }
 
-func (cumCost CumCost) inWindow(i int, j int) bool {
+func (cumCost CumCostMatrix) inWindow(i int, j int) bool {
 	return i-j <= cumCost.window && j-i <= cumCost.window
 }
 
-func (cumCost CumCost) shift(i, j int) int {
+func (cumCost CumCostMatrix) shift(i, j int) int {
 	if i > cumCost.window {
 		return cumCost.index(i, j-i+cumCost.window)
 	}
 	return cumCost.index(i, j)
 }
 
-func (cumCost CumCost) index(i, j int) int {
+func (cumCost CumCostMatrix) index(i, j int) int {
 	return i*cumCost.stride[1] + j
 }
 
-func (cumCost *CumCost) computeCumCost() {
+func (cumCost *CumCostMatrix) computeCumCost() {
 	cumCost.values = make([]float64, cumCost.stride[0]*cumCost.stride[1])
 	for i1 := range cumCost.s1 {
 		for i2 := range cumCost.s2 {
@@ -92,9 +92,9 @@ func (cumCost *CumCost) computeCumCost() {
 				case i1 == 0 && i2 == 0:
 					cost = dist
 				case i1 == 0:
-					cost = cumCost.Value(i1, i2-1) + dist
+					cost = cumCost.Get(i1, i2-1) + dist
 				case i2 == 0:
-					cost = cumCost.Value(i1-1, i2) + dist
+					cost = cumCost.Get(i1-1, i2) + dist
 				default:
 					var l, u, ul = cumCost.neighborCosts(i1, i2)
 					cost = min(ul, u, l) + dist
@@ -105,7 +105,7 @@ func (cumCost *CumCost) computeCumCost() {
 	}
 }
 
-func (cumCost *CumCost) computePath() [][]int {
+func (cumCost *CumCostMatrix) computePath() [][]int {
 	var path = make([][]int, 0)
 	var i1, i2 = len(cumCost.s1) - 1, len(cumCost.s2) - 1
 	for i1 > 0 || i2 > 0 {
@@ -124,10 +124,10 @@ func (cumCost *CumCost) computePath() [][]int {
 	return path
 }
 
-func (cumCost *CumCost) neighborCosts(i1 int, i2 int) (float64, float64, float64) {
-	var l = cumCost.Value(i1-1, i2)
-	var u = cumCost.Value(i1, i2-1)
-	var ul = cumCost.Value(i1-1, i2-1)
+func (cumCost *CumCostMatrix) neighborCosts(i1 int, i2 int) (float64, float64, float64) {
+	var l = cumCost.Get(i1-1, i2)
+	var u = cumCost.Get(i1, i2-1)
+	var ul = cumCost.Get(i1-1, i2-1)
 	return l, u, ul
 }
 

@@ -122,12 +122,3 @@ func Test_DTWDBAWindow2(t *testing.T) {
 		t.Error("dba error")
 	}
 }
-
-func Test_DTWResize(t *testing.T) {
-	var s12 = series.Resize(s1, 16, space)
-	var dtw = series.NewDTW(s12, s2, space)
-	d := dtw.DBA(1, 1)
-	if len(d) != 11 {
-		t.Error("dba error")
-	}
-}

@@ -25,7 +25,7 @@ func NewDTWWindow(s1, s2 [][]float64, space core.Space, window int) DTW {
 	}
 	var cost = NewCumCost(s1, s2, space, window)
 	dtw.path = cost.computePath()
-	dtw.dist = cost.Value(len(cost.s1)-1, len(cost.s2)-1)
+	dtw.dist = cost.Get(len(cost.s1)-1, len(cost.s2)-1)
 	return dtw
 }
 

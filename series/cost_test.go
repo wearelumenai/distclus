@@ -30,7 +30,7 @@ func Test_CumCost1(t *testing.T) {
 	var dtw = series.NewCumCost(s1, s2, space, 0)
 	for i1 := range s1 {
 		for i2 := range s2 {
-			if dtw.Value(i1, i2) != cumCost[i1][i2] {
+			if dtw.Get(i1, i2) != cumCost[i1][i2] {
 				t.Error("distance error for", i1, i2)
 			}
 		}
@@ -41,7 +41,7 @@ func Test_CumCost2(t *testing.T) {
 	var dtw = series.NewCumCost(s2, s1, space, 0)
 	for i2 := range s2 {
 		for i1 := range s1 {
-			if dtw.Value(i2, i1) != cumCost[i1][i2] {
+			if dtw.Get(i2, i1) != cumCost[i1][i2] {
 				t.Error("distance error for", i2, i1)
 			}
 		}
@@ -52,7 +52,7 @@ func Test_CumCostWindow1(t *testing.T) {
 	var dtw = series.NewCumCost(s1, s2, space, 1)
 	for i1 := range s1 {
 		for i2 := range s2 {
-			if dtw.Value(i1, i2) != cumCost1[i1][i2] {
+			if dtw.Get(i1, i2) != cumCost1[i1][i2] {
 				t.Error("distance error for", i1, i2)
 				return
 			}
@@ -64,7 +64,7 @@ func Test_CumCostWindow2(t *testing.T) {
 	var dtw = series.NewCumCost(s2, s1, space, 1)
 	for i2 := range s2 {
 		for i1 := range s1 {
-			if dtw.Value(i2, i1) != cumCost1[i1][i2] {
+			if dtw.Get(i2, i1) != cumCost1[i1][i2] {
 				t.Error("distance error for", i2, i1)
 				return
 			}

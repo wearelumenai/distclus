@@ -16,7 +16,7 @@ func Test_Async(t *testing.T) {
 	var distr = mix()
 	_ = algo.Push(distr())
 	_ = algo.Run(true)
-	for i := 0; i < 299; i++ {
+	for i := 0; i < 999; i++ {
 		_ = algo.Push(distr())
 	}
 	_ = algo.Close()
@@ -32,7 +32,7 @@ func Test_Async(t *testing.T) {
 func Test_Sync(t *testing.T) {
 	var algo = streaming.NewAlgo(streaming.Conf{}, vectors.Space{}, []core.Elemt{})
 	var distr = mix()
-	for i := 0; i < 300; i++ {
+	for i := 0; i < 1000; i++ {
 		_ = algo.Push(distr())
 	}
 	_ = algo.Run(false)

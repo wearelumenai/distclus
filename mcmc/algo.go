@@ -11,15 +11,15 @@ func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.In
 	return buildAlgo(conf, impl, space)
 }
 
-func handleArgs(args []interface{}) (distrib Distrib) {
+func handleArgs(args []interface{}) (distrib func(Conf) Distrib) {
 	if len(args) == 1 {
-		distrib = args[0].(Distrib)
+		distrib = args[0].(func(Conf) Distrib)
 	}
 	return
 }
 
-func getImpl(mcmcConf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) Impl {
-	var implFunc func(Conf, core.Initializer, []core.Elemt, Distrib) Impl
+func getImpl(mcmcConf Conf, initializer core.Initializer, data []core.Elemt, distrib func(Conf) Distrib) Impl {
+	var implFunc func(Conf, core.Initializer, []core.Elemt, func(Conf) Distrib) Impl
 	if mcmcConf.Par {
 		implFunc = NewParImpl
 	} else {

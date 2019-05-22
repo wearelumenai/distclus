@@ -6,7 +6,7 @@ import (
 )
 
 // NewParImpl returns a new parallelized algorithm implementation
-func NewParImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
+func NewParImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib func(Conf) Distrib) (impl Impl) {
 	impl = NewSeqImpl(conf, initializer, data, distrib)
 	impl.strategy = &ParStrategy{
 		Degree: conf.NumCPU,

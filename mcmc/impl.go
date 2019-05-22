@@ -10,13 +10,14 @@ import (
 
 // Impl of MCMC
 type Impl struct {
-	buffer      core.Buffer
-	initializer core.Initializer
-	strategy    Strategy
-	uniform     distuv.Uniform
-	distrib     Distrib
-	store       CenterStore
-	iter, acc   int
+	buffer         core.Buffer
+	initializer    core.Initializer
+	strategy       Strategy
+	uniform        distuv.Uniform
+	distrib        Distrib
+	store          CenterStore
+	iter, acc      int
+	distribBuilder func(Conf) Distrib
 }
 
 // Strategy specifies strategy methods
@@ -37,8 +38,10 @@ func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
 	if conf.Dim == 0 {
 		conf.Dim = space.Dim(data)
 	}
-	if impl.distrib == nil {
+	if impl.distribBuilder == nil {
 		impl.distrib = NewMultivT(MultivTConf{*conf})
+	} else {
+		impl.distrib = impl.distribBuilder(*conf)
 	}
 }
 

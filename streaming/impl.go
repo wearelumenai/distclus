@@ -83,6 +83,19 @@ func (impl *Impl) iter(elemt core.Elemt, space core.Space, notifier core.Notifie
 }
 
 func (impl *Impl) Push(elemt core.Elemt) error {
+	if impl.async {
+		return impl.pushAsync(elemt)
+	} else {
+		return impl.pushSync(elemt)
+	}
+}
+
+func (impl *Impl) pushAsync(elemt core.Elemt) error {
+	impl.c <- elemt
+	return nil
+}
+
+func (impl *Impl) pushSync(elemt core.Elemt) error {
 	select {
 	case impl.c <- elemt:
 		return nil

@@ -70,3 +70,18 @@ func mix() func() []float64 {
 		}
 	}
 }
+
+func Test_AlgoPush(t *testing.T) {
+	var data = mix()
+	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5}, vectors.Space{}, []core.Elemt{})
+	_ = algo.Push(data())
+	_ = algo.Run(true)
+	var d = make([][]float64, 10000)
+	for i := range d {
+		d[i] = data()
+	}
+	for i := range d {
+		_ = algo.Push(d[i])
+	}
+	_ = algo.Close()
+}

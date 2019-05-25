@@ -2,7 +2,6 @@ package mcmc
 
 import (
 	"distclus/core"
-	"reflect"
 )
 
 type Identity struct {
@@ -17,8 +16,6 @@ func (Identity) Sample(mu core.Elemt, time int) core.Elemt {
 }
 
 func (Identity) Pdf(x, mu core.Elemt, time int) float64 {
-	if reflect.DeepEqual(x, mu) {
-		return 1
-	}
-	return 0
+	// this works because x == mu in all cases
+	return 1
 }

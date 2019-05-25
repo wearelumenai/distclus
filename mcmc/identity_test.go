@@ -22,8 +22,4 @@ func Test_IdentityPdf(t *testing.T) {
 	if p1 != 1 {
 		t.Error("identity pdf error")
 	}
-	var p0 = id.Pdf([][]float64{{2.}, {2.}}, mu, 412)
-	if p0 != 0 {
-		t.Error("identity pdf error")
-	}
 }

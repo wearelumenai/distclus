@@ -1,4 +1,4 @@
-package vectors
+package euclid
 
 import (
 	"distclus/core"

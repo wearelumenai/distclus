@@ -1,8 +1,8 @@
-package series_test
+package dtw_test
 
 import (
+	"distclus/dtw"
 	"distclus/internal/test"
-	"distclus/series"
 	"testing"
 )
 
@@ -18,29 +18,29 @@ var ix = []int{0, 1, 3, 5, 7, 8, 10, 11}
 var iw = 2
 
 func Test_Resize(t *testing.T) {
-	var s11 = series.Resize(s1, 6, space)
+	var s11 = dtw.Resize(s1, 6, space)
 	AssertSeriesAlmostEqual(t, s1, s11)
-	var s21 = series.Resize(s2, 7, space)
+	var s21 = dtw.Resize(s2, 7, space)
 	AssertSeriesAlmostEqual(t, s2, s21)
-	var s12 = series.Resize(s1, 16, space)
+	var s12 = dtw.Resize(s1, 16, space)
 	AssertSeriesAlmostEqual(t, se, s12)
 }
 
 func Test_Interpolate(t *testing.T) {
-	var si1 = series.Interpolate(si, ix, iw, space)
+	var si1 = dtw.Interpolate(si, ix, iw, space)
 	AssertSeriesAlmostEqual(t, dba, si1)
 }
 
 func Test_ShrinkLongest(t *testing.T) {
-	var s12 = series.Resize(s1, 16, space)
-	var s211, s121 = series.ShrinkLongest(s2, s12, space, 3)
+	var s12 = dtw.Resize(s1, 16, space)
+	var s211, s121 = dtw.ShrinkLongest(s2, s12, space, 3)
 	if len(s211) != 7 {
 		t.Error("shrink error")
 	}
 	if len(s121) != 10 {
 		t.Error("shrink error")
 	}
-	var s122, s212 = series.ShrinkLongest(s12, s2, space, 3)
+	var s122, s212 = dtw.ShrinkLongest(s12, s2, space, 3)
 	if len(s212) != 7 {
 		t.Error("shrink error")
 	}

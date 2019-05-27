@@ -2,9 +2,9 @@ package streaming_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
 	"distclus/streaming"
-	"distclus/vectors"
 	"gonum.org/v1/gonum/mat"
 	"gonum.org/v1/gonum/stat/distmv"
 	"gonum.org/v1/gonum/stat/distuv"
@@ -12,7 +12,7 @@ import (
 )
 
 func Test_Async(t *testing.T) {
-	var algo = streaming.NewAlgo(streaming.Conf{}, vectors.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
 	_ = algo.Push(distr())
 	_ = algo.Run(true)
@@ -30,7 +30,7 @@ func Test_Async(t *testing.T) {
 }
 
 func Test_Sync(t *testing.T) {
-	var algo = streaming.NewAlgo(streaming.Conf{}, vectors.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
 	for i := 0; i < 1000; i++ {
 		_ = algo.Push(distr())
@@ -48,7 +48,7 @@ func Test_Sync(t *testing.T) {
 
 func Test_AlgoErr(t *testing.T) {
 	defer test.AssertPanic(t)
-	var _ = streaming.NewAlgo(streaming.Conf{BufferSize: 1}, vectors.Space{}, []core.Elemt{[]float64{1.}, []float64{1.}})
+	var _ = streaming.NewAlgo(streaming.Conf{BufferSize: 1}, euclid.Space{}, []core.Elemt{[]float64{1.}, []float64{1.}})
 }
 
 func mix() func() []float64 {
@@ -73,7 +73,7 @@ func mix() func() []float64 {
 
 func Test_AlgoPush(t *testing.T) {
 	var data = mix()
-	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5}, vectors.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5}, euclid.Space{}, []core.Elemt{})
 	_ = algo.Push(data())
 	_ = algo.Run(true)
 	var d = make([][]float64, 10000)

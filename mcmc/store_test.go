@@ -2,10 +2,10 @@ package mcmc_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/vectors"
 	"reflect"
 	"testing"
 	"time"
@@ -20,7 +20,7 @@ func Test_getCenters(t *testing.T) {
 	var buffer = core.NewDataBuffer([]core.Elemt{}, -1)
 	var seed = uint64(time.Now().UTC().Unix())
 	var rgen = rand.New(rand.NewSource(seed))
-	var space = vectors.Space{}
+	var space = euclid.Space{}
 	var store = mcmc.NewCenterStore(rgen)
 
 	for _, elemt := range test.Vectors {

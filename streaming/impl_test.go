@@ -2,8 +2,8 @@ package streaming_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/streaming"
-	"distclus/vectors"
 	"golang.org/x/exp/rand"
 	"reflect"
 	"testing"
@@ -86,8 +86,8 @@ func TestImpl_UpdateCenter(t *testing.T) {
 	var impl = streaming.Impl{}
 
 	impl.AddCenter(core.Elemt([]float64{1.}), 1.2)
-	impl.UpdateCenter(0, core.Elemt([]float64{2.}), 1.3, vectors.Space{})
-	impl.UpdateCenter(0, core.Elemt([]float64{3.}), 1.1, vectors.Space{})
+	impl.UpdateCenter(0, core.Elemt([]float64{2.}), 1.3, euclid.Space{})
+	impl.UpdateCenter(0, core.Elemt([]float64{3.}), 1.1, euclid.Space{})
 	if c0 := impl.GetClusters()[0]; !reflect.DeepEqual([]float64{2.}, c0) {
 		t.Error("expected cluster: ", []float64{2.})
 	}
@@ -115,7 +115,7 @@ func TestImpl_Interface(t *testing.T) {
 
 func TestImpl_InitError(t *testing.T) {
 	var impl = streaming.Impl{}
-	var _, err = impl.Init(streaming.Conf{}, vectors.Space{})
+	var _, err = impl.Init(streaming.Conf{}, euclid.Space{})
 	if err == nil {
 		t.Error("an error was expected (initialization is not possible)")
 	}
@@ -129,7 +129,7 @@ func TestImpl_InitSuccess(t *testing.T) {
 	if err0 != nil {
 		t.Error("unexpected error", err0)
 	}
-	var clust, err = impl.Init(conf, vectors.Space{})
+	var clust, err = impl.Init(conf, euclid.Space{})
 	if err != nil {
 		t.Error("unexpected error", err)
 	}
@@ -163,7 +163,7 @@ func TestImpl_Iterate(t *testing.T) {
 	impl.AddCenter(distr(), 0.)
 	for i := 0; i < 1000; i++ {
 		var cluster1 = distr()
-		impl.Iterate(cluster1, vectors.Space{})
+		impl.Iterate(cluster1, euclid.Space{})
 	}
 	var clusters = impl.GetClusters()
 	if c := len(clusters); c < 3 {
@@ -191,7 +191,7 @@ func TestImpl_Run(t *testing.T) {
 	}
 	_ = impl.SetAsync()
 	go func() {
-		_ = impl.Run(conf, vectors.Space{}, core.Clust{distr()}, notifier, closing, closed)
+		_ = impl.Run(conf, euclid.Space{}, core.Clust{distr()}, notifier, closing, closed)
 	}()
 	for i := 0; i < 1000; i++ {
 		_ = impl.Push(distr())

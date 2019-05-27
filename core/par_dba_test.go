@@ -2,8 +2,8 @@ package core_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
-	"distclus/vectors"
 	"testing"
 )
 
@@ -15,8 +15,8 @@ func TestClust_ParReduceDBA(t *testing.T) {
 	}
 
 	for degree := 1; degree < 100; degree++ {
-		var seqDbas, seqCards = centroids.ReduceDBA(data, vectors.Space{})
-		var parDbas, parCards = centroids.ParReduceDBA(data, vectors.Space{}, degree)
+		var seqDbas, seqCards = centroids.ReduceDBA(data, euclid.Space{})
+		var parDbas, parCards = centroids.ParReduceDBA(data, euclid.Space{}, degree)
 
 		test.AssertCentroids(t, seqDbas, parDbas)
 		test.AssertArrayEqual(t, seqCards, parCards)

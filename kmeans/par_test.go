@@ -2,13 +2,13 @@ package kmeans_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
 	"distclus/kmeans"
-	"distclus/vectors"
 	"testing"
 )
 
-var space = vectors.Space{}
+var space = euclid.Space{}
 
 func Test_ParPredictGiven(t *testing.T) {
 	kmeansConf := kmeans.Conf{K: 3, Iter: 0, Par: true}

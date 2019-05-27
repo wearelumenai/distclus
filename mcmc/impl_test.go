@@ -2,9 +2,9 @@ package mcmc_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/vectors"
 	"reflect"
 	"testing"
 )
@@ -30,7 +30,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 		MaxK:     50,
 	}
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, vectors.Space{}, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, euclid.Space{}, []core.Elemt{}, initializer)
 
 	for _, v := range ints {
 		_ = algo.Push(v)

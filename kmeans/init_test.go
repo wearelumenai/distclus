@@ -2,8 +2,8 @@ package kmeans_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/kmeans"
-	"distclus/vectors"
 	"reflect"
 	"testing"
 	"time"
@@ -17,7 +17,7 @@ var TestPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []flo
 
 func TestInitializers(t *testing.T) {
 	k := 1
-	space := vectors.Space{}
+	space := euclid.Space{}
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
 
 	initializers := map[string]bool{
@@ -50,7 +50,7 @@ func TestInitializers(t *testing.T) {
 
 func TestWrongElementCount(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	_, err := kmeans.GivenInitializer(1, nil, vectors.Space{}, src)
+	_, err := kmeans.GivenInitializer(1, nil, euclid.Space{}, src)
 	if err == nil {
 		t.Error("Expected not check")
 	}
@@ -59,7 +59,7 @@ func TestWrongElementCount(t *testing.T) {
 func TestCheckK(t *testing.T) {
 	// defer test.AssertPanic(t)
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	_, err := kmeans.GivenInitializer(0, TestPoints, vectors.Space{}, src)
+	_, err := kmeans.GivenInitializer(0, TestPoints, euclid.Space{}, src)
 	if err == nil {
 		t.Error("initialization without errors")
 	}
@@ -91,25 +91,25 @@ func TestWeightedChoiceErr(t *testing.T) {
 
 func TestGivenInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.GivenInitializer(4, TestPoints, vectors.Space{}, src)
+	var clust, _ = kmeans.GivenInitializer(4, TestPoints, euclid.Space{}, src)
 	AssertCentroids(t, TestPoints[:4], clust)
 }
 
 func TestPPInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.PPInitializer(14, TestPoints, vectors.Space{}, src)
+	var clust, _ = kmeans.PPInitializer(14, TestPoints, euclid.Space{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 
 func TestRandInitializer(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var clust, _ = kmeans.RandInitializer(14, TestPoints, vectors.Space{}, src)
+	var clust, _ = kmeans.RandInitializer(14, TestPoints, euclid.Space{}, src)
 	AssertDistinctCentroids(t, clust)
 }
 
 func TestPPIterErr(t *testing.T) {
 	var src = rand.New(rand.NewSource(uint64(time.Now().UTC().Unix())))
-	var _, err = kmeans.PPIter(TestPoints, TestPoints, vectors.Space{}, src)
+	var _, err = kmeans.PPIter(TestPoints, TestPoints, euclid.Space{}, src)
 	if err != kmeans.ErrNullSet {
 		t.Error("Expected null set error")
 	}

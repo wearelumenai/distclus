@@ -1,3 +1,4 @@
+// Package mcmc provides MCMC based implementation of online clustering (cf https://hal.inria.fr/hal-01264233).
 package mcmc
 
 import "distclus/core"

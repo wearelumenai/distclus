@@ -1,3 +1,4 @@
+// Package core proposes a generic framework that executes online clustering algorithm.
 package core
 
 import (

@@ -2,19 +2,19 @@ package cosinus
 
 import (
 	"distclus/core"
-	"distclus/vectors"
+	"distclus/euclid"
 	"math"
 )
 
 // Space represents a space that uses cosinus distance
 type Space struct {
-	vspace vectors.Space
+	vspace euclid.Space
 }
 
 // NewSpace creates a new Space instance
 func NewSpace(conf Conf) Space {
 	return Space{
-		vspace: vectors.NewSpace(conf.Conf),
+		vspace: euclid.NewSpace(conf.Conf),
 	}
 }
 

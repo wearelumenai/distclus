@@ -2,8 +2,8 @@ package core_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
-	"distclus/vectors"
 	"reflect"
 	"testing"
 )
@@ -17,7 +17,7 @@ func TestClust_Assign(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 	var c, ix, d = clust.Assign(testPoints[0], sp)
 
 	if c.([]float64)[0] != clust[0].([]float64)[0] || ix != 0 || d != 2. {
@@ -30,7 +30,7 @@ func TestClust_ReduceDBA(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 	var result, cards = clust.ReduceDBA(testPoints, sp)
 
 	for i, e := range result {
@@ -58,7 +58,7 @@ func TestClust_MapLabel(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 	var result = clust.MapLabel(testPoints, sp)
 
 	for i, label := range result {
@@ -76,7 +76,7 @@ func TestClust_Loss(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 
 	var expected = 0.
 	for _, e := range testPoints {
@@ -101,7 +101,7 @@ func Distance2Mean(elemt core.Elemt) float64 {
 }
 
 func TestDBA(t *testing.T) {
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 
 	var _, err = core.DBA([]core.Elemt{}, sp)
 
@@ -125,7 +125,7 @@ func TestDBA(t *testing.T) {
 }
 
 func TestWeightedDBA(t *testing.T) {
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 
 	var average = 0.
 	var n = len(testPoints)
@@ -140,7 +140,7 @@ func TestWeightedDBA(t *testing.T) {
 	AssertWeightedDBA(t, testPoints, weights, sp, []float64{average})
 }
 
-func AssertDBA(t *testing.T, elemts []core.Elemt, sp vectors.Space, average []float64) {
+func AssertDBA(t *testing.T, elemts []core.Elemt, sp euclid.Space, average []float64) {
 	var dba, _ = core.DBA(elemts, sp)
 	for i := range average {
 		if value := dba.([]float64)[i]; value != average[i] {
@@ -149,7 +149,7 @@ func AssertDBA(t *testing.T, elemts []core.Elemt, sp vectors.Space, average []fl
 	}
 }
 
-func AssertWeightedDBA(t *testing.T, elemts []core.Elemt, weights []int, sp vectors.Space, average []float64) {
+func AssertWeightedDBA(t *testing.T, elemts []core.Elemt, weights []int, sp euclid.Space, average []float64) {
 	var dba, _ = core.WeightedDBA(elemts, weights, sp)
 	for i := range average {
 		if value := dba.([]float64)[i]; value != average[i] {
@@ -163,7 +163,7 @@ func TestClust_Initializer(t *testing.T) {
 		[]float64{0.},
 		[]float64{-1.},
 	}
-	var sp = vectors.Space{}
+	var sp = euclid.Space{}
 	var c, _ = clust.Initializer(2, testPoints, sp, nil)
 
 	if !reflect.DeepEqual(clust, c) {
@@ -175,14 +175,14 @@ func TestClust_Empty(t *testing.T) {
 	func() {
 		defer test.AssertPanic(t)
 		var clust = core.Clust{}
-		clust.MapLabel(testPoints, vectors.Space{})
+		clust.MapLabel(testPoints, euclid.Space{})
 	}()
 }
 
 func TestClust_ReduceDBA2(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
-	var dbas, cards = centroids.ReduceDBA(data, vectors.NewSpace(vectors.Conf{}))
+	var dbas, cards = centroids.ReduceDBA(data, euclid.NewSpace(euclid.Conf{}))
 
 	var dbasAverage = test.Mean(dbas, cards)
 	var dataAverage = test.Mean(data, nil)
@@ -194,7 +194,7 @@ func TestClust_LossForLabels(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
 	var labels = make([]int, 10000)
-	var space = vectors.NewSpace(vectors.Conf{})
+	var space = euclid.NewSpace(euclid.Conf{})
 	var loss, cards = centroids.ReduceLossForLabels(data, labels, space, 2.)
 
 	if cards[0] != 10000 {

@@ -2,16 +2,16 @@ package mcmc_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/vectors"
 	"testing"
 
 	"golang.org/x/exp/rand"
 )
 
-var space = vectors.Space{}
+var space = euclid.Space{}
 
 func Test_Initialization(t *testing.T) {
 	var implConf = mcmc.Conf{

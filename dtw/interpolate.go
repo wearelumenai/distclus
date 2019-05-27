@@ -1,4 +1,4 @@
-package series
+package dtw
 
 import (
 	"distclus/core"

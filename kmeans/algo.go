@@ -1,3 +1,4 @@
+// Package kmeans provides k-means based implementation of online clustering
 package kmeans
 
 import "distclus/core"

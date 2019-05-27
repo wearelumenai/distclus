@@ -2,9 +2,9 @@ package main
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/vectors"
 	"testing"
 	"time"
 
@@ -23,7 +23,7 @@ func b1(log func(args ...interface{})) {
 	var initializer = kmeans.RandInitializer
 	var seed = int(time.Now().UTC().Unix())
 	var conf = mcmc.Conf{}
-	var space = vectors.Space{}
+	var space = euclid.Space{}
 	in := "bf.csv"
 	data, conf.Dim = parseFloatCsv(&in)
 	conf.FrameSize = 0

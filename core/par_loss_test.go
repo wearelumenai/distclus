@@ -2,8 +2,8 @@ package core_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
-	"distclus/vectors"
 	"testing"
 )
 
@@ -15,8 +15,8 @@ func TestClust_ParLosses(t *testing.T) {
 	}
 
 	for degree := 1; degree < 100; degree++ {
-		var seqLosses, seqCards = centroids.ReduceLoss(data, vectors.Space{}, 2.)
-		var parLosses, parCards = centroids.ParReduceLoss(data, vectors.Space{}, 2., degree)
+		var seqLosses, seqCards = centroids.ReduceLoss(data, euclid.Space{}, 2.)
+		var parLosses, parCards = centroids.ParReduceLoss(data, euclid.Space{}, 2., degree)
 
 		test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
 		test.AssertArrayEqual(t, seqCards, parCards)
@@ -31,8 +31,8 @@ func TestClust_ParLoss(t *testing.T) {
 	}
 
 	for degree := 1; degree < 100; degree++ {
-		var seqLoss = centroids.TotalLoss(data, vectors.Space{}, 2.)
-		var parLoss = centroids.ParTotalLoss(data, vectors.Space{}, 2., degree)
+		var seqLoss = centroids.TotalLoss(data, euclid.Space{}, 2.)
+		var parLoss = centroids.ParTotalLoss(data, euclid.Space{}, 2., degree)
 
 		test.AssertAlmostEqual(t, seqLoss, parLoss)
 	}
@@ -50,8 +50,8 @@ func TestClust_ParLossForLabels(t *testing.T) {
 	}
 
 	for degree := 1; degree < 100; degree++ {
-		var seqLosses, seqCards = centroids.ReduceLossForLabels(data, labels, vectors.Space{}, 2.)
-		var parLosses, parCards = centroids.ParReduceLossForLabels(data, labels, vectors.Space{}, 2., degree)
+		var seqLosses, seqCards = centroids.ReduceLossForLabels(data, labels, euclid.Space{}, 2.)
+		var parLosses, parCards = centroids.ParReduceLossForLabels(data, labels, euclid.Space{}, 2., degree)
 
 		test.AssertArrayAlmostEqual(t, seqLosses, parLosses)
 		test.AssertArrayEqual(t, seqCards, parCards)

@@ -2,8 +2,8 @@ package core_test
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/internal/test"
-	"distclus/vectors"
 	"testing"
 )
 
@@ -15,8 +15,8 @@ func TestClust_ParMapLabel(t *testing.T) {
 	var centroids = core.Clust(test.Vectors[0:3])
 
 	for i := 1; i < 100; i++ {
-		var seqLabels = centroids.MapLabel(data, vectors.Space{})
-		var parLabels = centroids.ParMapLabel(data, vectors.Space{}, i)
+		var seqLabels = centroids.MapLabel(data, euclid.Space{})
+		var parLabels = centroids.ParMapLabel(data, euclid.Space{}, i)
 
 		test.AssertArrayEqual(t, seqLabels, parLabels)
 	}

@@ -1,3 +1,4 @@
+// Package streaming provides streaming based implementation of online clustering.
 package streaming
 
 import "distclus/core"

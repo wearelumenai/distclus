@@ -2,9 +2,9 @@ package main
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"distclus/vectors"
 	"encoding/csv"
 	"fmt"
 	"io"
@@ -86,7 +86,7 @@ func runMcmc() {
 
 	switch *dtype {
 	case "vectors":
-		space = vectors.Space{}
+		space = euclid.Space{}
 		data, conf.Dim = parseFloatCsv(fdata)
 		// because the configuration is copied it must not be modified after object initialization
 		if conf.FrameSize < 1 {

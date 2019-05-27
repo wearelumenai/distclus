@@ -74,7 +74,8 @@ func PPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.R
 	return space.Copy(elemts[draw]), err
 }
 
-var ErrNullSet = errors.New("no candidate for ++ iteration")
+// ErrNullSet indicates that a draw over an empty set was attempted
+var ErrNullSet = errors.New("cannot draw over an empty set")
 
 // RandInitializer initializes a clustering with random testPoints
 func RandInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand) (centroids core.Clust, err error) {

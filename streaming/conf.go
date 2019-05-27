@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Conf represents the cofiguration of a streaming algorithm.
 type Conf struct {
 	BufferSize int
 	B          float64
@@ -12,6 +13,7 @@ type Conf struct {
 	RGen       *rand.Rand
 }
 
+// SetConfigDefaults applies default values to the given configuration.
 func SetConfigDefaults(conf *Conf) {
 	if conf.BufferSize == 0 {
 		conf.BufferSize = 100
@@ -27,6 +29,7 @@ func SetConfigDefaults(conf *Conf) {
 	}
 }
 
+// Verify checks if the given configuration is valid.
 func Verify(conf Conf) {
 
 }

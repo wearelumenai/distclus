@@ -264,7 +264,7 @@ func AssertCentroids(t *testing.T, expected core.Clust, actual core.Clust) {
 	}
 }
 
-// AssertAssignation test
+// AssertArrayEqual test
 func AssertArrayEqual(t *testing.T, expected []int, actual []int) {
 	if !reflect.DeepEqual(actual, expected) {
 		t.Error("Expected", expected, "got", actual)
@@ -310,6 +310,7 @@ func AssertArrayAlmostEqual(t *testing.T, expected []float64, actual []float64) 
 	}
 }
 
+// AssertAlmostEqual test
 func AssertAlmostEqual(t *testing.T, expected float64, actual float64) {
 	if math.Abs(expected-actual) > 1e-6 {
 		t.Error("Expected", expected, "got", actual)
@@ -337,6 +338,7 @@ func AssertPanic(t *testing.T) {
 	}
 }
 
+// GenerateData returns centers and sample clusters following normal distributions
 func GenerateData(n int) (core.Clust, []core.Elemt) {
 	var rgen = rand.New(rand.NewSource(6305689164243))
 	var sigma = mat.NewDiagDense(3, []float64{1., 1., 1.})
@@ -370,6 +372,7 @@ func GenerateData(n int) (core.Clust, []core.Elemt) {
 	return centroids, data
 }
 
+// Mean calculates the weighted mean of the given elements
 func Mean(data []core.Elemt, weights []int) []float64 {
 	var s = make([]float64, len(data[0].([]float64)))
 	var w = 0.

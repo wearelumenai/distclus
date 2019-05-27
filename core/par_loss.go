@@ -5,7 +5,7 @@ type partitionLosses struct {
 	cards  []int
 }
 
-func ParLossesForLabels(centroids Clust, data []Elemt, labels []int, space Space, norm float64, degree int) ([]float64, []int) {
+func parLossForLabels(centroids Clust, data []Elemt, labels []int, space Space, norm float64, degree int) ([]float64, []int) {
 	var parts = make([]partitionLosses, degree)
 
 	var process = func(start int, end int, rank int) {
@@ -18,7 +18,7 @@ func ParLossesForLabels(centroids Clust, data []Elemt, labels []int, space Space
 	return aggr.losses, aggr.cards
 }
 
-func ParLosses(centroids Clust, data []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
+func parLoss(centroids Clust, data []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
 	var parts = make([]partitionLosses, degree)
 
 	var process = func(start int, end int, rank int) {

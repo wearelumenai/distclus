@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"github.com/gonum/floats"
 	"math"
 
 	"golang.org/x/exp/rand"
@@ -24,7 +25,31 @@ type Clust []Elemt
 // Initializer function initializes k centroids from the given elements.
 type Initializer func(k int, elemts []Elemt, space Space, src *rand.Rand) (centroids Clust, err error)
 
-// ReduceDBA returns centroids and cardinalities in each clusters.
+// Assign returns the element nearest centroid, its label and the distance to the centroid
+func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dist float64) {
+	label, dist = c.nearest(elemt, space)
+	centroid = (*c)[label]
+	return
+}
+
+// MapLabel assigns elements to each centroids
+func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int) {
+	labels = make([]int, len(elemts))
+
+	for i, elemt := range elemts {
+		var label, _ = c.nearest(elemt, space)
+		labels[i] = label
+	}
+
+	return
+}
+
+// ParMapLabel assigns elements to each centroids in parallel
+func (c *Clust) ParMapLabel(elemts []Elemt, space Space, degree int) (labels []int) {
+	return parMapLabel(*c, elemts, space, degree)
+}
+
+// ReduceDBA computes centroids and cardinality of each clusters for given elements.
 func (c *Clust) ReduceDBA(elemts []Elemt, space Space) (centroids Clust, cards []int) {
 	centroids = make(Clust, len(*c))
 	cards = make([]int, len(*c))
@@ -44,85 +69,59 @@ func (c *Clust) ReduceDBA(elemts []Elemt, space Space) (centroids Clust, cards [
 	return
 }
 
+// ParReduceDBA computes centroids and cardinality of each clusters for given elements in parallel.
 func (c *Clust) ParReduceDBA(elemts []Elemt, space Space, degree int) (Clust, []int) {
 	return parReduceDBA(*c, elemts, space, degree)
-}
-
-// MapLabel assignes elemts to each centroids
-func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int) {
-	labels = make([]int, len(elemts))
-
-	for i, elemt := range elemts {
-		var label, _ = c.nearest(elemt, space)
-		labels[i] = label
-	}
-
-	return
-}
-
-// MapLabel assignes elemts to each centroids
-func (c *Clust) ParMapLabel(elemts []Elemt, space Space, degree int) (labels []int) {
-	return parMapLabel(*c, elemts, space, degree)
-}
-
-// Assign returns the element nearest centroid, its label and the distance to the centroid
-func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dist float64) {
-	label, dist = c.nearest(elemt, space)
-	centroid = (*c)[label]
-	return
 }
 
 // TotalLoss computes loss from distances between elements and their nearest centroid
 func (c *Clust) TotalLoss(elemts []Elemt, space Space, norm float64) float64 {
 	losses, _ := c.ReduceLoss(elemts, space, norm)
-	return sumLosses(losses)
+	return floats.Sum(losses)
 }
 
+// ParTotalLoss computes loss from distances between elements and their nearest centroid in parallel
 func (c *Clust) ParTotalLoss(elemts []Elemt, space Space, norm float64, degree int) float64 {
 	losses, _ := c.ParReduceLoss(elemts, space, norm, degree)
-	return sumLosses(losses)
+	return floats.Sum(losses)
 }
 
-func sumLosses(losses []float64) float64 {
-	var sum = 0.
-	for _, loss := range losses {
-		sum += loss
-	}
-	return sum
-}
-
+// ReduceLoss computes loss and cardinality in each cluster for the given elements
 func (c *Clust) ReduceLoss(elemts []Elemt, space Space, norm float64) ([]float64, []int) {
 	var losses = make([]float64, len(*c))
 	var cards = make([]int, len(*c))
 	for _, elemt := range elemts {
 		var label, min = c.nearest(elemt, space)
-		cards[label] += 1
+		cards[label]++
 		losses[label] += math.Pow(min, norm)
 	}
 	return losses, cards
 }
 
+// ParReduceLoss computes loss and cardinality in each cluster for the given elements in parallel
 func (c *Clust) ParReduceLoss(elemts []Elemt, space Space, norm float64, degree int) ([]float64, []int) {
-	return ParLosses(*c, elemts, space, norm, degree)
+	return parLoss(*c, elemts, space, norm, degree)
 }
 
+// ReduceLossForLabels computes loss and cardinality in each cluster for the given labels
 func (c *Clust) ReduceLossForLabels(elemts []Elemt, labels []int, space Space, norm float64) ([]float64, []int) {
 	var losses = make([]float64, len(*c))
 	var cards = make([]int, len(*c))
 	for i := range elemts {
 		var label = labels[i]
 		var dist = space.Dist(elemts[i], (*c)[label])
-		cards[label] += 1
+		cards[label]++
 		losses[label] += math.Pow(dist, norm)
 	}
 	return losses, cards
 }
 
+// ParReduceLossForLabels computes loss and cardinality in each cluster for the given labels in parallel
 func (c *Clust) ParReduceLossForLabels(elemts []Elemt, labels []int, space Space, norm float64, degree int) ([]float64, []int) {
-	return ParLossesForLabels(*c, elemts, labels, space, norm, degree)
+	return parLossForLabels(*c, elemts, labels, space, norm, degree)
 }
 
-// Returns the label of element nearest centroid and the distance
+// nearest Returns the label of element nearest centroid and the distance
 func (c *Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
 	min = space.Dist(elemt, (*c)[0])
 	label = 0
@@ -156,6 +155,7 @@ func DBA(elemts []Elemt, space Space) (dba Elemt, err error) {
 	return
 }
 
+// WeightedDBA computes the average of given elements with given weights
 func WeightedDBA(elemts []Elemt, weights []int, space Space) (dba Elemt, err error) {
 
 	if len(elemts) == 0 {

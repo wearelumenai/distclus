@@ -1,5 +1,6 @@
 package core
 
+// Notifier represents a callback used when a clustering configuration evolves because of an algorithm
 type Notifier = func(Clust, map[string]float64)
 
 // Impl concrete algorithms

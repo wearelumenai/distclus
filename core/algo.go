@@ -113,7 +113,7 @@ func (algo *Algo) Close() (err error) {
 	return
 }
 
-// runtimeFigures returns specific algo properties
+// RuntimeFigures returns specific algo properties
 func (algo *Algo) RuntimeFigures() (figures map[string]float64, err error) {
 	switch algo.status {
 	case Created:
@@ -136,6 +136,7 @@ func (algo *Algo) Impl() Impl {
 	return algo.impl
 }
 
+// Status returns the status of the algorithm
 func (algo *Algo) Status() ClustStatus {
 	var status = atomic.LoadInt64(&algo.status)
 	return status

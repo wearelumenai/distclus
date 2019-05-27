@@ -7,7 +7,7 @@ import (
 )
 
 func Test_IdentitySample(t *testing.T) {
-	var id = mcmc.NewIdentity()
+	var id = mcmc.NewDirac()
 	var mu = [][]float64{{1.}, {2.}}
 	var x = id.Sample(mu, 321)
 	if !reflect.DeepEqual(x, mu) {
@@ -16,7 +16,7 @@ func Test_IdentitySample(t *testing.T) {
 }
 
 func Test_IdentityPdf(t *testing.T) {
-	var id = mcmc.NewIdentity()
+	var id = mcmc.NewDirac()
 	var mu = [][]float64{{1.}, {2.}}
 	var p1 = id.Pdf(mu, mu, 325)
 	if p1 != 1 {

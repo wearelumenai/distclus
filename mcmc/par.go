@@ -36,7 +36,7 @@ func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core
 	return result
 }
 
-// ReduceLoss aclculates the losses distance of input centroids
+// Loss calculates loss for the given proposal and data in parallel
 func (strategy *ParStrategy) Loss(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt) float64 {
 	return centroids.ParTotalLoss(data, space, conf.Norm, strategy.Degree)
 }

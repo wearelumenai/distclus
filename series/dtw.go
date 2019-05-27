@@ -4,6 +4,7 @@ import (
 	"distclus/core"
 )
 
+// DTW represents the Dynamic Time Warping distance between 2 series
 type DTW struct {
 	s1, s2 [][]float64
 	space  core.Space
@@ -12,10 +13,12 @@ type DTW struct {
 	dist   float64
 }
 
+// NewDTW creates a new DTW instance
 func NewDTW(s1, s2 [][]float64, space core.Space) DTW {
 	return NewDTWWindow(s1, s2, space, 0)
 }
 
+// NewDTWWindow creates a new DTW instance constrained to the given window
 func NewDTWWindow(s1, s2 [][]float64, space core.Space, window int) DTW {
 	var dtw = DTW{
 		s1:     s1,
@@ -23,20 +26,23 @@ func NewDTWWindow(s1, s2 [][]float64, space core.Space, window int) DTW {
 		space:  space,
 		window: window,
 	}
-	var cost = NewCumCost(s1, s2, space, window)
+	var cost = NewCumCostMatrix(s1, s2, space, window)
 	dtw.path = cost.computePath()
 	dtw.dist = cost.Get(len(cost.s1)-1, len(cost.s2)-1)
 	return dtw
 }
 
+// Path returns the minimal cost path computed by Dynamic Time Warping
 func (dtw DTW) Path() [][]int {
 	return dtw.path
 }
 
+// Dist returns the Dynamic Time Warping distance value
 func (dtw DTW) Dist() float64 {
 	return dtw.dist
 }
 
+// DBA computes the average between series with the given weights
 func (dtw DTW) DBA(w1, w2 int) [][]float64 {
 	var dba = make([][]float64, len(dtw.path))
 	var idx = make([]int, len(dtw.path))

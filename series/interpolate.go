@@ -4,6 +4,8 @@ import (
 	"distclus/core"
 )
 
+// Interpolate applies a shrink factor and reshapes the given series to integral index.
+// The given series may not have consecutive indexes, given by the idx parameter.
 func Interpolate(s [][]float64, idx []int, shrinkFactor int, space core.Space) [][]float64 {
 	var last = idx[len(s)-1] / shrinkFactor
 	if idx[len(s)-1]%shrinkFactor > 0 {
@@ -24,6 +26,7 @@ func Interpolate(s [][]float64, idx []int, shrinkFactor int, space core.Space) [
 	return result
 }
 
+// Resize shrinks or extends a series to a new size
 func Resize(s [][]float64, size int, space core.Space) [][]float64 {
 	var idx = make([]int, len(s))
 	for i := range idx {
@@ -33,6 +36,7 @@ func Resize(s [][]float64, size int, space core.Space) [][]float64 {
 	return append(resized, s[len(s)-1])
 }
 
+// ShrinkLongest returns two series by resizing the longest one to the shortest one plus the window
 func ShrinkLongest(s1, s2 [][]float64, space core.Space, window int) (sl1, sl2 [][]float64) {
 	var l1, l2 = len(s1), len(s2)
 	switch {

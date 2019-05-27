@@ -5,6 +5,7 @@ import (
 	"math"
 )
 
+// CumCostMatrix represents the accumulated cost matrix needed to compute DTW distance.
 type CumCostMatrix struct {
 	s1, s2    [][]float64
 	values    []float64
@@ -14,7 +15,8 @@ type CumCostMatrix struct {
 	transpose bool
 }
 
-func NewCumCost(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix {
+// NewCumCostMatrix creates at new CumCostMatrix instance.
+func NewCumCostMatrix(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix {
 	var cost = CumCostMatrix{
 		s1:     s1,
 		s2:     s2,
@@ -33,6 +35,7 @@ func NewCumCost(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix 
 	return cost
 }
 
+// Get returns the accumulated cost at position (i1,i2)
 func (cumCost CumCostMatrix) Get(i1, i2 int) float64 {
 	var i = cumCost.ravel(i1, i2)
 	if i == -1 {
@@ -59,9 +62,8 @@ func (cumCost CumCostMatrix) ravel(i1, i2 int) int {
 	}
 	if cumCost.transpose {
 		return cumCost.shift(i2, i1)
-	} else {
-		return cumCost.shift(i1, i2)
 	}
+	return cumCost.shift(i1, i2)
 }
 
 func (cumCost CumCostMatrix) inWindow(i int, j int) bool {

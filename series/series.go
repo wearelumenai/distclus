@@ -19,12 +19,14 @@ func NewSpace(conf core.SpaceConf) Space {
 	}
 }
 
+// Dist computes the DTW distance between the given series
 func (space Space) Dist(elemt1, elemt2 core.Elemt) (sum float64) {
 	var s1, s2 = space.getSeries(elemt1, elemt2)
 	var dtw = NewDTWWindow(s1, s2, space.innerSpace, space.window)
 	return dtw.Dist()
 }
 
+// Combine computes the DTW based average of the given series
 func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, weight2 int) core.Elemt {
 	var s1, s2 = space.getSeries(elemt1, elemt2)
 	var dtw = NewDTWWindow(s1, s2, space.innerSpace, space.window)

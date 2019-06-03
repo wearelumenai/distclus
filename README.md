@@ -44,6 +44,31 @@ Where
 - initializer: algorithm initialization (random, given, etc.)
 - args...: aditional parameters specific to algorithm (mcmc distrib, etc.)
 
+## Advanced usage
+
+Given clustering centers, it is possible to obtain internal loss and cardinality for each cluster :
+
+```go
+var space = euclid.NewSpace(euclid.Conf{})
+var norm = 2.0
+var losses, cards = centers.ReduceLoss(observations, space, norm)
+```
+
+The same could be performed in parallel :
+```go
+var space = euclid.NewSpace(euclid.Conf{})
+var norm = 2.0
+var degree = runtime.NumCPU()
+var losses, cards = centers.ParReduceLoss(observations, space, norm)
+```
+
+In some cases you'll want to predict labels upon fixed cluster centers :
+```go
+var space = euclid.NewSpace(euclid.Conf{})
+var labels = centers.MapLabel(observations, space, norm)
+```
+This is useful when the clustering is done online because the centers are continually changing.
+
 ## Contribute
 
 ### OnlineClust

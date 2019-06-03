@@ -14,7 +14,14 @@ func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.In
 
 func handleArgs(args []interface{}) (distrib func(Conf) Distrib) {
 	if len(args) == 1 {
-		distrib = args[0].(func(Conf) Distrib)
+		switch v := args[0].(type) {
+		case func(Conf) Distrib:
+			distrib = v
+		case Distrib:
+			distrib = func(Conf) Distrib { return v }
+		default:
+			panic("unable to convert first argument to distribution builder")
+		}
 	}
 	return
 }

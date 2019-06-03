@@ -32,7 +32,7 @@ func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dis
 	return
 }
 
-// MapLabel assigns elements to each centroids
+// MapLabel assigns elements to centroids
 func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int) {
 	labels = make([]int, len(elemts))
 
@@ -44,7 +44,7 @@ func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int) {
 	return
 }
 
-// ParMapLabel assigns elements to each centroids in parallel
+// ParMapLabel assigns elements to centroids in parallel
 func (c *Clust) ParMapLabel(elemts []Elemt, space Space, degree int) (labels []int) {
 	return parMapLabel(*c, elemts, space, degree)
 }

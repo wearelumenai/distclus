@@ -11,45 +11,59 @@ import (
 	"time"
 )
 
-const Forever = int(^uint(0) >> 1)
-
 var conf = mcmc.Conf{
-	InitK:    2,
-	Amp:      1.,
-	Dim:      2,
-	Nu:       3,
-	McmcIter: Forever,
-	RGen:     rand.New(rand.NewSource(uint64(time.Now().UnixNano()))),
+	InitK: 1,
+	Amp:   100,
+	B:     1,
+	Dim:   2,
+	Nu:    3,
+	RGen:  rand.New(rand.NewSource(uint64(time.Now().UnixNano()))),
 }
 
 func Example() {
 	var centers, observations = Sample()
 	var labels = centers.MapLabel(observations, space)
 
-	var algo, space = buildAlgo()
+	var algo, space = Build()
 
-	RunAndFeed(algo, observations)
-	time.Sleep(time.Second)
-
-	var rmse = RMSE(algo, centers, labels, observations, space)
-	var result, _ = algo.Centroids()
-
-	fmt.Println(len(result) < 4)
-	fmt.Println(rmse < 1)
-	// Output: true
-	// true
+	var errRun = RunAndFeed(algo, observations)
+	if errRun == nil {
+		time.Sleep(time.Second)
+		var result, rmse, errEval = Eval(algo, centers, labels, observations, space)
+		fmt.Printf("%v %v %v\n", errEval, len(result) < 4, rmse < 1)
+	}
 
 	_ = algo.Close()
+	// Output: <nil> true true
 }
 
-func RunAndFeed(algo *core.Algo, observations []core.Elemt) {
-	for _, obs := range observations[:10] {
-		_ = algo.Push(obs)
+func Eval(algo *core.Algo, centers core.Clust, labels []int, observations []core.Elemt, space euclid.Space) (result core.Clust, rmse float64, err error) {
+	rmse = RMSE(algo, centers, labels, observations, space)
+	result, err = algo.Centroids()
+	return
+}
+
+func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
+	err = Feed(algo, observations[:10])
+	if err != nil {
+		return
 	}
-	_ = algo.Run(true)
-	for _, obs := range observations[10:] {
-		_ = algo.Push(obs)
+	err = algo.Run(true)
+	if err != nil {
+		return
 	}
+	err = Feed(algo, observations[10:])
+	return
+}
+
+func Feed(algo *core.Algo, observations []core.Elemt) (err error) {
+	for _, obs := range observations {
+		err = algo.Push(obs)
+		if err != nil {
+			return
+		}
+	}
+	return
 }
 
 func Sample() (centers core.Clust, observations []core.Elemt) {
@@ -67,7 +81,7 @@ func Sample() (centers core.Clust, observations []core.Elemt) {
 			copy(obs, centers[1].([]float64))
 		}
 		for j := range obs {
-			obs[j] += rand.Float64()*2 - 1
+			obs[j] += rand.Float64() - 1
 		}
 		observations[i] = obs
 	}
@@ -84,7 +98,7 @@ func RMSE(algo *core.Algo, centers core.Clust, labels []int, observations []core
 	return math.Sqrt(mse)
 }
 
-func buildAlgo() (*core.Algo, euclid.Space) {
+func Build() (*core.Algo, euclid.Space) {
 	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{conf})
 	var space = euclid.NewSpace(euclid.Conf{})
 	var algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)

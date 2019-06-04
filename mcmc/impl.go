@@ -17,6 +17,7 @@ type Impl struct {
 	distrib        Distrib
 	store          CenterStore
 	iter, acc      int
+	forever        bool
 	distribBuilder func(Conf) Distrib
 }
 
@@ -58,21 +59,24 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 	}
 
 	var start = time.Now()
-	for i, loop := 0, true; i < mcmcConf.McmcIter && loop; i++ {
+	for loop := impl.forever || impl.iter < mcmcConf.McmcIter; loop; {
 		select {
 		case <-closing:
-			loop = false
 			closed <- true
 			time.Sleep(300 * time.Millisecond)
+			loop = false
 
 		default:
+			impl.iter++
 			data = impl.buffer.Data()
 			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data, impl.getCurrentTime(data))
 			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
 			if time.Now().Sub(start).Seconds() > float64(mcmcConf.Timeout) {
-				loop = false
 				err = core.ErrTimeOut
+				loop = false
+			} else {
+				loop = impl.forever || impl.iter < mcmcConf.McmcIter
 			}
 		}
 	}
@@ -85,6 +89,7 @@ func (impl *Impl) getCurrentTime(data []core.Elemt) int {
 
 // SetAsync changes the status of impl buffer to async
 func (impl *Impl) SetAsync() error {
+	impl.forever = true
 	return impl.buffer.SetAsync()
 }
 
@@ -110,7 +115,6 @@ func (impl *Impl) doIter(conf Conf, space core.Space, current proposal, centroid
 		impl.acc++
 	}
 
-	impl.iter++
 	return current, centroids
 }
 

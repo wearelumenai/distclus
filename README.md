@@ -38,6 +38,11 @@ Constructors need at least :
  
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
 
+### Configuration
+
+
+### Run the algorithm
+
 ### A toy example
 
 For testing purpose the following function can be used to generate trivial sample data :

@@ -11,6 +11,7 @@ type Impl struct {
 	buffer      core.Buffer
 	initializer core.Initializer
 	iter        int
+	forever     bool
 }
 
 // Strategy Abstract Impl strategy to be implemented by concrete algorithms
@@ -29,18 +30,19 @@ func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error)
 // Run the algorithm until signal received on closing channel or iteration number is reached
 func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) (err error) {
 	var kmeansConf = conf.(Conf)
-	for iter, loop := 0, true; iter < kmeansConf.Iter && loop; iter++ {
+	for loop := impl.forever || impl.iter < kmeansConf.Iter; loop; {
 		select {
 		case <-closing:
-			loop = false
 			closed <- true
 			time.Sleep(300 * time.Millisecond)
+			loop = false
 
 		default:
 			impl.iter++
 			centroids = impl.strategy.Iterate(space, centroids, impl.buffer.Data())
 			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
+			loop = impl.forever || impl.iter < kmeansConf.Iter
 		}
 	}
 	return
@@ -53,6 +55,7 @@ func (impl *Impl) Push(elemt core.Elemt) error {
 
 // SetAsync changes the status of impl buffer to async
 func (impl *Impl) SetAsync() error {
+	impl.forever = true
 	return impl.buffer.SetAsync()
 }
 

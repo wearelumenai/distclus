@@ -18,12 +18,18 @@ func Test_Initialization(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 0.1,
-		Norm: 2, Nu: 3, McmcIter: 0,
+		B:         100, Amp: 0.1,
+		Norm: 2, McmcIter: 0,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.DoTestInitialization(t, algo)
 }
@@ -33,12 +39,18 @@ func Test_DefaultConf(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      nil,
-		Dim:       5, B: 100, Amp: 1,
-		Norm: 2, Nu: 3, McmcIter: 0,
+		B:         100, Amp: 1,
+		Norm: 2, McmcIter: 0,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.DoTestInitialization(t, algo)
 }
@@ -48,12 +60,18 @@ func Test_RunSyncGiven(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 1,
-		Norm: 2, Nu: 3, McmcIter: 0,
+		B:         100, Amp: 1,
+		Norm: 2, McmcIter: 0,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.DoTestRunSyncGiven(t, algo)
 }
@@ -65,11 +83,17 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 		ProbaK:    []float64{1, 8, 1},
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 0.1,
-		Norm: 2, Nu: 3, McmcIter: 1,
+		Norm: 2, McmcIter: 1,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.PPInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.DoTestRunSyncPP(t, algo)
 }
@@ -79,13 +103,19 @@ func Test_RunAsync(t *testing.T) {
 		InitK: 3,
 		// FrameSize: 8,
 		RGen: rand.New(rand.NewSource(6305689164243)),
-		Dim:  5, B: 100, Amp: 0.1,
-		Norm: 2, Nu: 3, McmcIter: 20,
+		B:    100, Amp: 0.1,
+		Norm: 2, McmcIter: 20,
 		InitIter: 0,
 		ProbaK:   []float64{1, 8, 1},
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.DoTestRunAsync(t, algo)
 	test.DoTestRunAsyncPush(t, algo)
@@ -96,12 +126,18 @@ func Test_Workflow(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 1,
-		Norm: 2, Nu: 3, McmcIter: 20,
+		B:         100, Amp: 1,
+		Norm: 2, McmcIter: 20,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.PPInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.DoTestWorkflow(t, algo)
 }
@@ -111,13 +147,19 @@ func Test_MaxK(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 1e6,
-		Norm: 2, Nu: 3, McmcIter: 10,
+		B:         100, Amp: 1e6,
+		Norm: 2, McmcIter: 10,
 		MaxK:     6,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.PushAndRunSync(algo)
 
@@ -132,12 +174,18 @@ func Test_AcceptRatio(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 1,
-		Norm: 2, Nu: 3, McmcIter: 20,
+		B:         100, Amp: 1,
+		Norm: 2, McmcIter: 20,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.PushAndRunSync(algo)
 	var rf, _ = algo.RuntimeFigures()
@@ -152,13 +200,19 @@ func Test_TimeOut(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		Dim:       5, B: 100, Amp: 1,
-		Norm: 2, Nu: 3, McmcIter: 2000000,
+		B:         100, Amp: 1,
+		Norm: 2, McmcIter: 2000000,
 		Timeout:  1,
 		InitIter: 0,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: implConf,
+		Dim:  5,
+		Nu:   3,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	for _, elemt := range test.Vectors {
 		_ = algo.Push(elemt)

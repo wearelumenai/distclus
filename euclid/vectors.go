@@ -2,6 +2,7 @@ package euclid
 
 import (
 	"distclus/core"
+	"log"
 	"math"
 )
 
@@ -15,6 +16,11 @@ func NewSpace(conf Conf) Space {
 
 // Dist computes euclidean distance between two nodes
 func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatal(elemt1, elemt2)
+		}
+	}()
 	var e1 = elemt1.([]float64)
 	var e2 = elemt2.([]float64)
 	var sum = 0.

@@ -16,10 +16,8 @@ type Conf struct {
 	InitK              int
 	FrameSize          int
 	RGen               *rand.Rand
-	Dim                int
 	B, Amp, R          float64
 	Norm               float64
-	Nu                 float64
 	MaxK               int
 	McmcIter, InitIter int
 	Timeout            int
@@ -45,9 +43,6 @@ func SetConfigDefaults(conf *Conf) {
 	}
 	if conf.B == 0 {
 		conf.B = 1
-	}
-	if conf.Nu == 0 {
-		conf.Nu = 3
 	}
 	if conf.Iter == 0 {
 		conf.Iter = 1

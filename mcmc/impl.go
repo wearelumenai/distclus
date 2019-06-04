@@ -10,15 +10,15 @@ import (
 
 // Impl of MCMC
 type Impl struct {
-	buffer         core.Buffer
-	initializer    core.Initializer
-	strategy       Strategy
-	uniform        distuv.Uniform
-	distrib        Distrib
-	store          CenterStore
-	iter, acc      int
-	forever        bool
-	distribBuilder func(Conf) Distrib
+	buffer      core.Buffer
+	initializer core.Initializer
+	strategy    Strategy
+	uniform     distuv.Uniform
+	distrib     Distrib
+	store       CenterStore
+	iter, acc   int
+	forever     bool
+	dim         int
 }
 
 // Strategy specifies strategy methods
@@ -35,22 +35,11 @@ func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error)
 	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 }
 
-func (impl *Impl) initRun(conf *Conf, space core.Space, data []core.Elemt) {
-	if conf.Dim == 0 {
-		conf.Dim = space.Dim(data)
-	}
-	if impl.distribBuilder == nil {
-		impl.distrib = NewMultivT(MultivTConf{*conf})
-	} else {
-		impl.distrib = impl.distribBuilder(*conf)
-	}
-}
-
 // Run executes the algorithm
 func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) (err error) {
 	var mcmcConf = conf.(Conf)
 	var data = impl.buffer.Data()
-	impl.initRun(&mcmcConf, space, data)
+	impl.dim = space.Dim(centroids)
 	var current = proposal{
 		k:       mcmcConf.InitK,
 		centers: centroids,
@@ -143,8 +132,8 @@ func (impl *Impl) getKCenters(conf Conf, space core.Space, current proposal, cen
 func (impl *Impl) accept(conf Conf, current proposal, prop proposal, time int) bool {
 	var rProp = current.pdf - prop.pdf
 	var l2b = math.Log(2 * conf.B)
-	var rInit = l2b * float64(conf.Dim*(current.k-prop.k))
-	var lambda = conf.Amp * math.Sqrt(float64(conf.Dim+3)/float64(time))
+	var rInit = l2b * float64(impl.dim*(current.k-prop.k))
+	var lambda = conf.Amp * math.Sqrt(float64(impl.dim+3)/float64(time))
 	var rGibbs = lambda * (current.loss - prop.loss)
 
 	var rho = math.Exp(rGibbs + rInit + rProp)

@@ -29,8 +29,13 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 		McmcIter: 2000,
 		MaxK:     50,
 	}
+	var tConf = mcmc.MultivTConf{
+		Conf: conf,
+		Dim:  1,
+	}
+	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, euclid.Space{}, []core.Elemt{}, initializer)
+	var algo = mcmc.NewAlgo(implConf, euclid.Space{}, []core.Elemt{}, initializer, distrib)
 
 	for _, v := range ints {
 		_ = algo.Push(v)

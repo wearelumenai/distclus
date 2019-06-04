@@ -37,6 +37,5 @@ func Test_Defaults(t *testing.T) {
 	test.AssertTrue(t, conf.Norm == 2)
 	test.AssertTrue(t, conf.MaxK == 16)
 	test.AssertTrue(t, conf.B == 1)
-	test.AssertTrue(t, conf.Nu == 3)
 	test.AssertTrue(t, conf.Iter == 1)
 }

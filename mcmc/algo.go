@@ -4,30 +4,15 @@ package mcmc
 import "distclus/core"
 
 // NewAlgo creates a new kmeans algo
-func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) *core.Algo {
+func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.Initializer, distrib Distrib) *core.Algo {
 	SetConfigDefaults(&conf)
 	Verify(conf)
-	var distrib = handleArgs(args)
 	var impl = getImpl(conf, initializer, data, distrib)
 	return buildAlgo(conf, impl, space)
 }
 
-func handleArgs(args []interface{}) (distrib func(Conf) Distrib) {
-	if len(args) == 1 {
-		switch v := args[0].(type) {
-		case func(Conf) Distrib:
-			distrib = v
-		case Distrib:
-			distrib = func(Conf) Distrib { return v }
-		default:
-			panic("unable to convert first argument to distribution builder")
-		}
-	}
-	return
-}
-
-func getImpl(mcmcConf Conf, initializer core.Initializer, data []core.Elemt, distrib func(Conf) Distrib) Impl {
-	var implFunc func(Conf, core.Initializer, []core.Elemt, func(Conf) Distrib) Impl
+func getImpl(mcmcConf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) Impl {
+	var implFunc func(Conf, core.Initializer, []core.Elemt, Distrib) Impl
 	if mcmcConf.Par {
 		implFunc = NewParImpl
 	} else {

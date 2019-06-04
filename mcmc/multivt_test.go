@@ -13,9 +13,15 @@ var mcmcConf = mcmc.Conf{
 	InitK:     3,
 	FrameSize: 8,
 	RGen:      rand.New(rand.NewSource(6305689164243)),
-	Dim:       3, B: 100, Amp: 1,
-	Norm: 2, Nu: 3, McmcIter: 20,
+	B:         100, Amp: 1,
+	Norm: 2, McmcIter: 20,
 	InitIter: 1,
+}
+
+var mvtConf = mcmc.MultivTConf{
+	Conf: conf,
+	Dim:  3,
+	Nu:   3,
 }
 
 func TestMultivT_Pdf(t *testing.T) {
@@ -31,7 +37,7 @@ func TestMultivT_Pdf(t *testing.T) {
 		[]float64{-4.4, -1.9, -2.3},
 	}
 
-	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: mcmcConf})
+	var distrib = mcmc.NewMultivT(mvtConf)
 	var d0 = math.Exp(distrib.Pdf(mu[0], x[0], 8))
 
 	if math.Abs(d0-0.319520) > 1e-6 {
@@ -52,7 +58,7 @@ func TestMultivT_Pdf(t *testing.T) {
 }
 
 func TestMultivT_Sample(t *testing.T) {
-	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{Conf: mcmcConf})
+	var distrib = mcmc.NewMultivT(mvtConf)
 
 	// var mu = []float64{1.2, 3.1, 5.8}
 	var mu = []float64{0., 0., 0.}
@@ -67,7 +73,7 @@ func TestMultivT_Sample(t *testing.T) {
 	}
 
 	for j := 0; j < len(m); j++ {
-		if math.Abs(m[j]-mu[j]) > 1e-4 {
+		if math.Abs(m[j]-mu[j]) > 1e-3 {
 			t.Error("Expected", mu[j], "got", m[j])
 		}
 	}

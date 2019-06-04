@@ -13,10 +13,14 @@ import (
 
 var conf = mcmc.Conf{
 	InitK: 1,
-	Dim:   2,
-	Amp:   100,
-	B:     1,
-	Nu:    3,
+	Amp:   1000,
+	B:     .1,
+}
+
+var tConf = mcmc.MultivTConf{
+	Conf: conf,
+	Dim:  2,
+	Nu:   3,
 }
 
 func Example() {
@@ -98,7 +102,7 @@ func RMSE(algo *core.Algo, centers core.Clust, labels []int, observations []core
 }
 
 func Build() (*core.Algo, euclid.Space) {
-	var distrib = mcmc.NewMultivT(mcmc.MultivTConf{conf})
+	var distrib = mcmc.NewMultivT(tConf)
 	var space = euclid.NewSpace(euclid.Conf{})
 	var algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
 	return algo, space

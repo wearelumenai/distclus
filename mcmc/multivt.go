@@ -14,6 +14,8 @@ import (
 // MultivTConf Configuration for multivariateT distribution
 type MultivTConf struct {
 	Conf
+	Dim int
+	Nu  float64
 }
 
 // MultivT Vectors(float64[]) distribution wrapping StudentsT of Gonum
@@ -39,9 +41,9 @@ func NewMultivT(conf MultivTConf) MultivT {
 	var m = MultivT{}
 	m.setConf(conf)
 	m.normal, _ = distmv.NewNormal(mu, sigma, m.RGen)
-	m.chi2 = &distuv.ChiSquared{K: conf.Nu, Src: m.RGen}
-	m.power = (float64(conf.Dim) + conf.Nu) / 2.
-	m.gammaFactor = math.Log(math.Gamma(m.power) / math.Gamma(float64(conf.Nu)/2.))
+	m.chi2 = &distuv.ChiSquared{K: m.Nu, Src: m.RGen}
+	m.power = (float64(m.Dim) + m.Nu) / 2.
+	m.gammaFactor = math.Log(math.Gamma(m.power) / math.Gamma(float64(m.Nu)/2.))
 
 	return m
 }
@@ -49,11 +51,11 @@ func NewMultivT(conf MultivTConf) MultivT {
 func (m *MultivT) setConf(conf MultivTConf) {
 	m.MultivTConf = conf
 	if conf.Nu == 0 {
-		conf.Nu = 3
+		m.MultivTConf.Nu = 3
 	}
 	if m.RGen == nil {
 		var seed = uint64(time.Now().Unix())
-		m.RGen = rand.New(rand.NewSource(seed))
+		m.MultivTConf.RGen = rand.New(rand.NewSource(seed))
 	}
 }
 

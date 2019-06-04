@@ -7,14 +7,14 @@ import (
 )
 
 // NewSeqImpl returns a sequantial mcmc implementation
-func NewSeqImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib func(Conf) Distrib) Impl {
+func NewSeqImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) Impl {
 	return Impl{
-		buffer:         core.NewDataBuffer(data, conf.FrameSize),
-		initializer:    initializer,
-		distribBuilder: distrib,
-		uniform:        distuv.Uniform{Max: 1, Min: 0, Src: conf.RGen},
-		store:          NewCenterStore(conf.RGen),
-		strategy:       &SeqStrategy{},
+		buffer:      core.NewDataBuffer(data, conf.FrameSize),
+		initializer: initializer,
+		uniform:     distuv.Uniform{Max: 1, Min: 0, Src: conf.RGen},
+		store:       NewCenterStore(conf.RGen),
+		strategy:    &SeqStrategy{},
+		distrib:     distrib,
 	}
 }
 

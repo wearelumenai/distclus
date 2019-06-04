@@ -39,7 +39,25 @@ Constructors need at least :
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
 
 ### Configuration
+An algorithm is configured with a configuration object. A minimal configuration for the MCMC algorithm is
+```go
+package main
 
+import "distclus/mcmc"
+
+var conf = mcmc.Conf{
+	InitK: 1,
+	Dim:   2,
+	Amp:   100,
+	B:     1,
+	Nu:    3,
+}
+```
+where :
+ - ```InitK``` is the starting number of clusters
+ - ```Amp``` and ```B``` are used in the accept ratio computation
+ - ```Dim``` and ```Nu``` are used for the alteration distribution
+For more information about the parameters, please refer to https://hal.inria.fr/hal-01264233
 
 ### Run the algorithm
 
@@ -47,6 +65,8 @@ The result of a clustering is of type ```core.Clust``` which is an array of ```c
 
 For testing purpose the following function can be used to generate trivial sample data :
 ```go
+package main
+
 import (
 	"distclus/core"
 	"golang.org/x/exp/rand"
@@ -67,7 +87,7 @@ func Sample() (centers core.Clust, observations []core.Elemt) {
 			copy(obs, centers[1].([]float64))
 		}
 		for j := range obs {
-			obs[j] += rand.Float64()*2 - 1
+			obs[j] += rand.Float64() - 1
 		}
 		observations[i] = obs
 	}

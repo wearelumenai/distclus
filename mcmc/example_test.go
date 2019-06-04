@@ -13,11 +13,10 @@ import (
 
 var conf = mcmc.Conf{
 	InitK: 1,
+	Dim:   2,
 	Amp:   100,
 	B:     1,
-	Dim:   2,
 	Nu:    3,
-	RGen:  rand.New(rand.NewSource(uint64(time.Now().UnixNano()))),
 }
 
 func Example() {

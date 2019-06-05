@@ -18,9 +18,8 @@ var conf = mcmc.Conf{
 }
 
 var tConf = mcmc.MultivTConf{
-	Conf: conf,
-	Dim:  2,
-	Nu:   3,
+	Dim: 2,
+	Nu:  3,
 }
 
 func Example() {

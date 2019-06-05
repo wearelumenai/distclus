@@ -24,9 +24,8 @@ func Test_ParPredict_Given(t *testing.T) {
 		Par:      true,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -46,9 +45,8 @@ func Test_ParPredictPP(t *testing.T) {
 		InitIter: 0, Par: true,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.PPInitializer
@@ -69,9 +67,8 @@ func Test_ParRunAsync(t *testing.T) {
 		Par:      true,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -92,9 +89,8 @@ func TestParStrategy_Loss(t *testing.T) {
 		Par:      true,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -126,9 +122,8 @@ func Test_Normal(t *testing.T) {
 		Par:      true,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  3,
-		Nu:   3,
+		Dim: 3,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.RandInitializer

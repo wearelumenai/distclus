@@ -13,9 +13,9 @@ import (
 
 // MultivTConf Configuration for multivariateT distribution
 type MultivTConf struct {
-	Conf
-	Dim int
-	Nu  float64
+	Dim  int
+	Nu   float64
+	RGen *rand.Rand
 }
 
 // MultivT Vectors(float64[]) distribution wrapping StudentsT of Gonum

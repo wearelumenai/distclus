@@ -19,9 +19,8 @@ var mcmcConf = mcmc.Conf{
 }
 
 var mvtConf = mcmc.MultivTConf{
-	Conf: conf,
-	Dim:  3,
-	Nu:   3,
+	Dim: 3,
+	Nu:  3,
 }
 
 func TestMultivT_Pdf(t *testing.T) {

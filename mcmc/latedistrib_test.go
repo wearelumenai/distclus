@@ -7,35 +7,34 @@ import (
 	"testing"
 )
 
-var lazySpace = euclid.NewSpace(euclid.Conf{})
+var lateSpace = euclid.NewSpace(euclid.Conf{})
 
 func initializer(elemt core.Elemt) mcmc.Distrib {
 	var tConf = mcmc.MultivTConf{
-		Conf: mcmcConf,
-		Dim:  lazySpace.Dim([]core.Elemt{elemt}),
-		Nu:   3,
+		Dim: lateSpace.Dim([]core.Elemt{elemt}),
+		Nu:  3,
 	}
 	return mcmc.NewMultivT(tConf)
 }
 
-func TestLazyDistrib_New(t *testing.T) {
-	var distrib = mcmc.NewLazyDistrib(initializer)
+func TestLateDistrib_New(t *testing.T) {
+	var distrib = mcmc.NewLateDistrib(initializer)
 	var _, ok = interface{}(distrib).(mcmc.Distrib)
 	if !ok {
 		t.Error("mcmc.Distrib not implemented")
 	}
 }
 
-func TestLazyDistrib_Sample(t *testing.T) {
-	var distrib = mcmc.NewLazyDistrib(initializer)
+func TestLateDistrib_Sample(t *testing.T) {
+	var distrib = mcmc.NewLateDistrib(initializer)
 	var x = distrib.Sample([]float64{1.2, 1.1}, 3)
 	if len(x.([]float64)) != 2 {
 		t.Error("sample should have dimension 2")
 	}
 }
 
-func TestLazyDistrib_Pdf(t *testing.T) {
-	var distrib = mcmc.NewLazyDistrib(initializer)
+func TestLateDistrib_Pdf(t *testing.T) {
+	var distrib = mcmc.NewLateDistrib(initializer)
 	var mu = []float64{1.2, 1.1}
 	var x = distrib.Sample(mu, 3)
 	var p = distrib.Pdf(x, mu, 3)

@@ -13,8 +13,7 @@ func Test_Distrib(t *testing.T) {
 		InitK: 3,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  3,
+		Dim: 3,
 	}
 	var initializer = kmeans.GivenInitializer
 	var distrib = mcmc.NewMultivT(tConf)

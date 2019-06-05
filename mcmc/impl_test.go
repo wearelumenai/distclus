@@ -30,8 +30,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 		MaxK:     50,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: conf,
-		Dim:  1,
+		Dim: 1,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer

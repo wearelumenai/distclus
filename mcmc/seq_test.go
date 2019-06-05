@@ -23,9 +23,8 @@ func Test_Initialization(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -44,9 +43,8 @@ func Test_DefaultConf(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -65,9 +63,8 @@ func Test_RunSyncGiven(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -87,9 +84,8 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.PPInitializer
@@ -109,9 +105,8 @@ func Test_RunAsync(t *testing.T) {
 		ProbaK:   []float64{1, 8, 1},
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -131,9 +126,8 @@ func Test_Workflow(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.PPInitializer
@@ -153,9 +147,8 @@ func Test_MaxK(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -179,9 +172,8 @@ func Test_AcceptRatio(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer
@@ -206,9 +198,8 @@ func Test_TimeOut(t *testing.T) {
 		InitIter: 0,
 	}
 	var tConf = mcmc.MultivTConf{
-		Conf: implConf,
-		Dim:  5,
-		Nu:   3,
+		Dim: 5,
+		Nu:  3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
 	var initializer = kmeans.GivenInitializer

@@ -285,7 +285,7 @@ for name, value := range rt {
 
 The ```mcmc.MutlivT``` implements a multivariate T distribution. The dimension of the data must be known and set
 in the ```mcmc.MultivTConf``` configuration object. In some situation this information is not known until the first
-data arrive. This can be handled using a ```LateDistrib``` instance. It implements the ```Distrib``` interface and
+data arrives. This can be handled using a ```LateDistrib``` instance. It implements the ```Distrib``` interface and
 its responsibility is to initialize and wrap another ```Distrib``` instance. The ```Build``` function above
 may be modified like this:
 ```go
@@ -311,14 +311,14 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *cor
 
 The functor passed to ```mcmc.NewLateDistrib``` is executed only once with minimal locking to ensure parallel safety.
 
-### Online clustering
+## Online clustering
 
-The algorithm can be executed online, accepting new data pushed during execution.
+The algorithm can be executed online, allowing new data to be pushed during execution.
 This is achieved by passing ```true``` to the ```Run``` method
 which will launch the algorithm execution as a background routine.
 
 When the algorithm starts, it first initializes the starting centers.
-The number of centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
+The number of initial centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
 Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
 otherwise an error is returned by the ```Run``` method.
 
@@ -356,7 +356,7 @@ and data will be pushed gradually when they arrive.
 In the example above the observations where vectors of R<sup>2</sup> and the distance used was the Euclid distance.
 The data types and distance are defined by objects that implement the ```core.Space``` interface.
 
-Actually the library provide 3 different data types :
+The library provides 3 different data types :
  - ```euclid.Space``` built with ```euclid.NewSpace``` constructor, used for vectors with Euclid distance
  - ```cosinus.Space``` built with ```cosinus.NewSpace``` constructor, used for vectors with cosinus distance
  - ```dtw.Space``` built with ```dtw.NewSpace``` constructor, used for time series of vectors with dtw distance

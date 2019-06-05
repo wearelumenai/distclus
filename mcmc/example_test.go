@@ -78,7 +78,7 @@ func Sample() (centers core.Clust, observations []core.Elemt) {
 	centers = core.Clust(
 		[]core.Elemt{
 			[]float64{1.4, 1.2},
-			[]float64{3.6, 3.6},
+			[]float64{7.6, 7.6},
 		})
 	observations = make([]core.Elemt, 1000)
 	for i := range observations {

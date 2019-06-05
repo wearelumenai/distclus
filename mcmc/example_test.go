@@ -24,14 +24,11 @@ var tConf = mcmc.MultivTConf{
 
 func Example() {
 	var centers, observations = Sample()
-	var labels = centers.MapLabel(observations, space)
-
 	var algo, space = Build()
-
 	var errRun = RunAndFeed(algo, observations)
+
 	if errRun == nil {
-		time.Sleep(time.Second)
-		var result, rmse, errEval = Eval(algo, centers, labels, observations, space)
+		var result, rmse, errEval = Eval(algo, centers, observations, space)
 		fmt.Printf("%v %v %v\n", errEval, len(result) < 4, rmse < 1)
 	}
 
@@ -39,9 +36,10 @@ func Example() {
 	// Output: <nil> true true
 }
 
-func Eval(algo *core.Algo, centers core.Clust, labels []int, observations []core.Elemt, space euclid.Space) (result core.Clust, rmse float64, err error) {
-	rmse = RMSE(algo, centers, labels, observations, space)
-	result, err = algo.Centroids()
+func Build() (algo *core.Algo, space euclid.Space) {
+	space = euclid.NewSpace(euclid.Conf{})
+	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
+	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
 	return
 }
 
@@ -50,11 +48,19 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	if err != nil {
 		return
 	}
-	err = algo.Run(true)
+	err = algo.Run(true) // run the algorithm in background
 	if err != nil {
 		return
 	}
 	err = Feed(algo, observations[10:])
+	time.Sleep(300 * time.Millisecond) // let the background algorithm converge
+	return
+}
+
+func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space euclid.Space) (result core.Clust, rmse float64, err error) {
+	var labels = centers.MapLabel(observations, space)
+	rmse = RMSE(algo, centers, labels, observations, space)
+	result, err = algo.Centroids()
 	return
 }
 
@@ -98,11 +104,4 @@ func RMSE(algo *core.Algo, centers core.Clust, labels []int, observations []core
 		mse += dist * dist / float64(len(labels))
 	}
 	return math.Sqrt(mse)
-}
-
-func Build() (*core.Algo, euclid.Space) {
-	var distrib = mcmc.NewMultivT(tConf)
-	var space = euclid.NewSpace(euclid.Conf{})
-	var algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
-	return algo, space
 }

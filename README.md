@@ -17,6 +17,7 @@ $ make test
 ## How to
 
 ### Main abstractions
+
 The distclus library intend to be polymorphic :
 any element type can be used provided a distance and a barycenter can be computed between 2 elements.
 
@@ -39,27 +40,56 @@ Constructors need at least :
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
 
 ### Configuration
-An algorithm is configured with a configuration object. A minimal configuration for the MCMC algorithm is
+
+Algorithm are configured with configuration objects. A minimal configuration for the MCMC algorithm requires 
+two objects, one for the Metropolis Hastings and the other for the alteration distribution:
 ```go
 package main
-
 import "distclus/mcmc"
 
 var conf = mcmc.Conf{
 	InitK: 1,
-	Dim:   2,
 	Amp:   100,
 	B:     1,
+}
+
+var tConf = mcmc.MultivTConf{
+	Dim:   2,
 	Nu:    3,
 }
 ```
 where :
  - ```InitK``` is the starting number of clusters
- - ```Amp``` and ```B``` are used in the accept ratio computation
- - ```Dim``` and ```Nu``` are used for the alteration distribution
-For more information about the parameters, please refer to https://hal.inria.fr/hal-01264233
+ - ```Amp``` and ```B``` are used in the Metropolis Hastings accept ratio computation
+ - ```Dim``` and ```Nu``` are used by the alteration distribution
+ 
+For more information on setting these parameters refer to https://hal.inria.fr/hal-01264233
 
-### Run the algorithm
+### Build the algorithm
+
+The algorithm is built using the ```mcmc.NewAlgo``` function. It takes the following parameters :
+ - ```conf mcmc.Conf``` : configuration object
+ - ```space core.Space``` : distance and barycenter computation
+ - ```data []core.Elemt``` : observations known at build time, if any (```nil``` otherwise)
+ - ```initializer kmeans.Initializer``` : a functor that returns the initialization centers
+ - ```distrib mcmc.Distrib``` : alteration distribution
+ 
+ ```go
+package main
+import (
+	"distclus/core"
+	"distclus/euclid"
+	"distclus/kmeans"
+	"distclus/mcmc"
+)
+
+func Build() (algo *core.Algo, space euclid.Space) {
+	space = euclid.NewSpace(euclid.Conf{})
+	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
+	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
+	return
+}
+```
 
 ### A toy example
 

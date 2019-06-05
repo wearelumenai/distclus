@@ -262,7 +262,7 @@ var labels = centers.ParMapLabel(observations, space, norm)
 ```
 This is useful when the clustering is done online because the centers are continually changing.
 
-### ```OnlineClust``` interface
+### ```core.OnlineClust``` interface
 
 The ```OnlineClust``` interface is implemented by the ```core.Algo``` struct. We have covered almost all methods so far.
  - ```Centroids() (Clust, error)```
@@ -281,7 +281,7 @@ for name, value := range rt {
 }
 ```
 
-### ```LateDistrib``` struct
+### ```mcmc.LateDistrib``` struct
 
 The ```mcmc.MutlivT``` implements a multivariate T distribution. The dimension of the data must be known and set
 in the ```mcmc.MultivTConf``` configuration object. In some situation this information is not known until the first

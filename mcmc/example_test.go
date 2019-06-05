@@ -24,8 +24,8 @@ var tConf = mcmc.MultivTConf{
 
 func Example() {
 	var centers, observations = Sample()
-	var algo, space = Build()
-	var errRun = RunAndFeed(algo, observations)
+	var algo, space = Build(conf, tConf)
+	var errRun = RunAndFeed(algo, observations, 10)
 
 	if errRun == nil {
 		var result, rmse, errEval = Eval(algo, centers, observations, space)
@@ -36,15 +36,15 @@ func Example() {
 	// Output: <nil> true true
 }
 
-func Build() (algo *core.Algo, space euclid.Space) {
+func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space euclid.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
 	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
 	return
 }
 
-func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
-	err = Feed(algo, observations[:10])
+func RunAndFeed(algo *core.Algo, observations []core.Elemt, startOffset int) (err error) {
+	err = Feed(algo, observations[:startOffset])
 	if err != nil {
 		return
 	}
@@ -52,7 +52,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	if err != nil {
 		return
 	}
-	err = Feed(algo, observations[10:])
+	err = Feed(algo, observations[startOffset:])
 	time.Sleep(300 * time.Millisecond) // let the background algorithm converge
 	return
 }
@@ -77,7 +77,7 @@ func Feed(algo *core.Algo, observations []core.Elemt) (err error) {
 func Sample() (centers core.Clust, observations []core.Elemt) {
 	centers = core.Clust(
 		[]core.Elemt{
-			[]float64{1.4, 1.2},
+			[]float64{1.4, 0.7},
 			[]float64{7.6, 7.6},
 		})
 	observations = make([]core.Elemt, 1000)

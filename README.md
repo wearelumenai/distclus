@@ -83,10 +83,50 @@ import (
 	"distclus/mcmc"
 )
 
-func Build() (algo *core.Algo, space euclid.Space) {
+func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space euclid.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
 	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
+	return
+}
+```
+
+### Run and feed the algorithm
+
+The algorithm can be run in two modes :
+ - synchronous : all data must be pushed before stating the algorithm
+ - asynchronous (or online) : further data can be pushed after the algorithm is statrted
+ 
+The following function pushes ```startOffset``` observations, start the algorithm in asynchronous mode
+then pushes the remaining observations
+```go
+package main
+import (
+	"time"
+	"distclus/core"
+)
+
+func RunAndFeed(algo *core.Algo, observations []core.Elemt, startOffset int) (err error) {
+	err = Feed(algo, observations[:startOffset])
+	if err != nil {
+		return
+	}
+	err = algo.Run(true) // run the algorithm in background
+	if err != nil {
+		return
+	}
+	err = Feed(algo, observations[startOffset:])
+	time.Sleep(300 * time.Millisecond) // let the background algorithm converge
+	return
+}
+
+func Feed(algo *core.Algo, observations []core.Elemt) (err error) {
+	for _, obs := range observations {
+		err = algo.Push(obs)
+		if err != nil {
+			return
+		}
+	}
 	return
 }
 ```
@@ -105,8 +145,8 @@ import (
 func Sample() (centers core.Clust, observations []core.Elemt) {
 	centers = core.Clust(
 		[]core.Elemt{
-			[]float64{1.4, 1.2},
-			[]float64{3.6, 3.6},
+			[]float64{1.4, 0.7},
+			[]float64{7.6, 7.6},
 		})
 	observations = make([]core.Elemt, 1000)
 	for i := range observations {

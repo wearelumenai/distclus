@@ -53,8 +53,9 @@ import "distclus/mcmc"
 
 var conf = mcmc.Conf{
 	InitK: 1,
-	Amp:   100,
+	Amp:   .5,
 	B:     1,
+	McmcIter: 20,
 }
 
 var tConf = mcmc.MultivTConf{
@@ -68,7 +69,7 @@ where :
  - ```Amp``` and ```B``` are used in the Metropolis Hastings accept ratio computation
  - ```Dim``` and ```Nu``` are used by the alteration distribution
  
-For more information on setting these parameters refer to https://hal.inria.fr/hal-01264233
+For more information on setting these parameters refer to https://hal.inria.fr/hal-01264233.
 
 ## Build the algorithm
 
@@ -88,10 +89,10 @@ import (
 	"distclus/mcmc"
 )
 
-func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *core.Algo, space euclid.Space) {
+func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
-	algo = mcmc.NewAlgo(conf, space, data, kmeans.PPInitializer, distrib)
+	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
 	return
 }
 ```
@@ -112,35 +113,29 @@ import (
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
-	err = algo.Run(true) // run the algorithm in background
 	for i := 0; i<len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
+	err = algo.Run(false) // run the algorithm in synchronous mode
 	return
 }
 ```
 
-*Note :* when the algorithm starts, it first initializes the starting centers.
-The number of centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
-Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
-otherwise an error is returned by the ```Run``` method.
-
 ## Prediction
 
-Once the algorithm was started, either in synchronous or online mode, 
+Once the algorithm is started, either in synchronous or online mode, 
 the ```Predict``` method can be used to make predictions.
 The following function uses predictions to calculate the root mean squared error 
-for observations which real output is known.
+for observations for which real output is known.
 
 ```go
 package main
 import (
 	"distclus/core"
-	"distclus/euclid"
 	"math"
 )
 
-func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space euclid.Space) float64 {
+func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space core.Space) float64 {
 	var mse = 0.
 	for i := range observations {
 		var prediction, _, _ = algo.Predict(observations[i])
@@ -158,17 +153,16 @@ The ```core.Clust``` object method ```MapLabel``` is used to compute the real ou
 package main
 import (
 	"distclus/core"
-	"distclus/euclid"
 )
 
-func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space euclid.Space) (result core.Clust, rmse float64, err error) {
+func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space core.Space) (result core.Clust, rmse float64, err error) {
 	var output = getOutput(centers, observations, space)
 	rmse = RMSE(algo, observations, output, space)
 	result, err = algo.Centroids()
 	return
 }
 
-func getOutput(centers core.Clust, observations []core.Elemt, space euclid.Space) (output []core.Elemt) {
+func getOutput(centers core.Clust, observations []core.Elemt, space core.Space) (output []core.Elemt) {
 	var labels = centers.MapLabel(observations, space)
 	output = make([]core.Elemt, len(labels))
 	for i := range labels {
@@ -180,7 +174,8 @@ func getOutput(centers core.Clust, observations []core.Elemt, space euclid.Space
 
 ## Sample data
 
-For testing purpose we need data. The following function returns real centers with a train and a test set.
+For testing purpose we need data.
+The following function returns real centers with the given number of sample observations.
 
 ```go
 package main
@@ -189,13 +184,13 @@ import (
 	"golang.org/x/exp/rand"
 )
 
-func Sample() (core.Clust, []core.Elemt, []core.Elemt) {
-	var centers = core.Clust(
+func Sample(n int) (centers core.Clust, observations []core.Elemt) {
+	centers = core.Clust(
 		[]core.Elemt{
 			[]float64{1.4, 0.7},
 			[]float64{7.6, 7.6},
 		})
-	var observations = make([]core.Elemt, 1000)
+	observations = make([]core.Elemt, n)
 	for i := range observations {
 		var obs = make([]float64, 2)
 		if rand.Intn(2) == 1 {
@@ -208,13 +203,13 @@ func Sample() (core.Clust, []core.Elemt, []core.Elemt) {
 		}
 		observations[i] = obs
 	}
-	return centers, observations[:800], observations[800:]
+	return
 }
 ```
 
 ## Putting all together
 
-We will now glue the pieces we have built so far. The algorithm must be closed to stop online execution.
+We will now glue the pieces we have built so far. The algorithm must be closed to stop online execution if necessary.
 In the following example it is deferred to the end of the function.
 
 ```go
@@ -225,25 +220,21 @@ import (
 )
 
 func Example() {
-	var centers, train, test = Sample()
+	var centers, observations = Sample(1000)
+	var train, test = observations[:800], observations[800:]
 	
-	var algo, space = Build(conf, tConf, train[:10])
+	var algo, space = Build(conf, tConf)
 	defer algo.Close()
 
-	var errRun = RunAndFeed(algo, test[10:])
+	var errRun = RunAndFeed(algo, train)
 
 	if errRun == nil {
-		time.Sleep(300 * time.Millisecond) // let the background algorithm converge
 		var result, rmse, errEval = Eval(algo, centers, test, space)
 		fmt.Printf("%v %v %v\n", len(result) < 4, rmse < 1, errEval)
 	}
 	// Output: true true <nil>
 }
 ```
-
-The timer is used to let the background algorithm converge. In a real life situation of course this is not needed:
-The online algorithm will be closed only when the service is shutdown
-and data will be pushed gradually when they arrive.
 
 ## Advanced usage
 
@@ -319,3 +310,113 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *cor
 ```
 
 The functor passed to ```mcmc.NewLateDistrib``` is executed only once with minimal locking to ensure parallel safety.
+
+### Online clustering
+
+The algorithm can be executed online, accepting new data pushed during execution.
+This is achieved by passing ```true``` to the ```Run``` method
+which will launch the algorithm execution as a background routine.
+
+When the algorithm starts, it first initializes the starting centers.
+The number of centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
+Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
+otherwise an error is returned by the ```Run``` method.
+
+The ```RunAndFeed``` function above may be modified like this:
+
+```go
+package main
+import (
+	"distclus/core"
+	"time"
+)
+
+func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
+    for i := 0; i < conf.InitK && err == nil; i++ {
+        err = algo.Push(observations[i])
+    }
+    if err != nil {
+        err = algo.Run(true)
+        for i := conf.initK; i < len(observations) && err == nil; i++ {
+            err = algo.Push(observations[i])
+        }
+        time.Sleep(time.Second) // let the algorithm converge
+    }
+    return
+}
+
+```
+
+The timer is used to let the background algorithm converge. In a real life situation of course this is not needed:
+The online algorithm will be closed only when the service is shutdown
+and data will be pushed gradually when they arrive.
+
+## More data types
+
+In the example above the observations where vectors of R<sup>2</sup> and the distance used was the Euclid distance.
+The data types and distance are defined by objects that implement the ```core.Space``` interface.
+
+Actually the library provide 3 different data types :
+ - ```euclid.Space``` built with ```euclid.NewSpace``` constructor, used for vectors with Euclid distance
+ - ```cosinus.Space``` built with ```cosinus.NewSpace``` constructor, used for vectors with cosinus distance
+ - ```dtw.Space``` built with ```dtw.NewSpace``` constructor, used for time series of vectors with dtw distance
+ 
+ ### Time series
+ 
+ In order to manipulate time series instead of simple vectors,
+ all the specific stuff has to be done at construction time.
+ In our example above the ```Build``` function should be modified as follow :
+ 
+ ```go
+package main
+import (
+	"distclus/core"
+	"distclus/euclid"
+	"distclus/dtw"
+	"distclus/kmeans"
+	"distclus/mcmc"
+)
+
+func Build(conf mcmc.Conf) (algo *core.Algo, space core.Space) {
+	var inner = euclid.NewSpace(euclid.Conf{})
+	space = dtw.NewSpace(dtw.Conf{InnerSpace: inner})
+	var distrib = mcmc.NewDirac()
+	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
+	return
+}
+```
+
+The ```dtw.Space``` object uses internally an ```euclid.Space```
+but it could use another space as well (such as the cosinus space).
+
+The library does not provide a distribution that handle time series,
+the generic Dirac distribution (which actually does not alter the centers) can be used instead.
+
+Of course the ```Sample``` function should be also modified to sample time series instead of vectors.
+
+## More algorithms
+
+We have seen above that 3 algorithms are provided with the library. In the example we saw the MCMC algorithm in depth.
+
+### The streaming algorithm
+
+The streaming algorithm requires few computing resources. It is especially suitable for online usage.
+Once again the modification is done at build time. The following modification of the ```Build``` function build
+a streaming algorithm for time series:
+
+```go
+package main
+import (
+	"distclus/core"
+	"distclus/euclid"
+	"distclus/dtw"
+	"distclus/streaming"
+)
+
+func Build(conf streaming.Conf) (algo *core.Algo, space core.Space) {
+	var inner = euclid.NewSpace(euclid.Conf{})
+	space = dtw.NewSpace(dtw.Conf{InnerSpace: inner})
+	algo = streaming.NewAlgo(conf, space, nil)
+	return
+}
+```

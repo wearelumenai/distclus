@@ -8,13 +8,13 @@ import (
 	"fmt"
 	"golang.org/x/exp/rand"
 	"math"
-	"time"
 )
 
 var conf = mcmc.Conf{
-	InitK: 1,
-	Amp:   1000,
-	B:     .1,
+	InitK:    1,
+	Amp:      .5,
+	B:        1,
+	McmcIter: 20,
 }
 
 var tConf = mcmc.MultivTConf{
@@ -23,43 +23,43 @@ var tConf = mcmc.MultivTConf{
 }
 
 func Example() {
-	var centers, train, test = Sample()
-	var algo, space = Build(conf, tConf, train[:10])
+	var centers, observations = Sample(1000)
+	var train, test = observations[:800], observations[800:]
+	var algo, space = Build(conf, tConf)
 	defer algo.Close()
 
-	var errRun = RunAndFeed(algo, test[10:])
+	var errRun = RunAndFeed(algo, train)
 
 	if errRun == nil {
-		time.Sleep(300 * time.Millisecond) // let the background algorithm converge
 		var result, rmse, errEval = Eval(algo, centers, test, space)
 		fmt.Printf("%v %v %v\n", len(result) < 4, rmse < 1, errEval)
 	}
 	// Output: true true <nil>
 }
 
-func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *core.Algo, space euclid.Space) {
+func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
-	algo = mcmc.NewAlgo(conf, space, data, kmeans.PPInitializer, distrib)
+	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
 	return
 }
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
-	err = algo.Run(true) // run the algorithm in background
 	for i := 0; i < len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
+	err = algo.Run(false)
 	return
 }
 
-func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space euclid.Space) (result core.Clust, rmse float64, err error) {
+func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space core.Space) (result core.Clust, rmse float64, err error) {
 	var output = getOutput(centers, observations, space)
 	rmse = RMSE(algo, observations, output, space)
 	result, err = algo.Centroids()
 	return
 }
 
-func getOutput(centers core.Clust, observations []core.Elemt, space euclid.Space) (output []core.Elemt) {
+func getOutput(centers core.Clust, observations []core.Elemt, space core.Space) (output []core.Elemt) {
 	var labels = centers.MapLabel(observations, space)
 	output = make([]core.Elemt, len(labels))
 	for i := range labels {
@@ -68,7 +68,7 @@ func getOutput(centers core.Clust, observations []core.Elemt, space euclid.Space
 	return
 }
 
-func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space euclid.Space) float64 {
+func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space core.Space) float64 {
 	var mse = 0.
 	for i := range observations {
 		var prediction, _, _ = algo.Predict(observations[i])
@@ -78,13 +78,13 @@ func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space
 	return math.Sqrt(mse)
 }
 
-func Sample() (core.Clust, []core.Elemt, []core.Elemt) {
-	var centers = core.Clust(
+func Sample(n int) (centers core.Clust, observations []core.Elemt) {
+	centers = core.Clust(
 		[]core.Elemt{
 			[]float64{1.4, 0.7},
 			[]float64{7.6, 7.6},
 		})
-	var observations = make([]core.Elemt, 1000)
+	observations = make([]core.Elemt, n)
 	for i := range observations {
 		var obs = make([]float64, 2)
 		if rand.Intn(2) == 1 {
@@ -97,5 +97,5 @@ func Sample() (core.Clust, []core.Elemt, []core.Elemt) {
 		}
 		observations[i] = obs
 	}
-	return centers, observations[:800], observations[800:]
+	return
 }

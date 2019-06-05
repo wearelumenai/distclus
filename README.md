@@ -2,6 +2,10 @@
 
 > Distributed online distance based clustering library
 
+## Introduction
+
+This library implements the concepts and theoretical results described in the article https://hal.inria.fr/hal-01264233.
+
 ## Installation
 
 ```bash
@@ -19,20 +23,21 @@ $ make test
 The distclus library intend to be polymorphic :
 any element type can be used provided a distance and a barycenter can be computed between 2 elements.
 
-A data type than can be clustered must implement the ```core.Elemt``` interface. Distance and barycenter are calculated
-using a corresponding object that implements ```core.Space```.
+A data type that can be clustered must implement the ```core.Elemt``` interface.
+Distance and barycenter are calculated using a suitable object that implements ```core.Space```.
 
-An algorithm is implemented by a ```core.Algo``` object which has the ```core.OnlineClust``` interface.
+An algorithm is represented by a ```core.Algo``` object.
 Actually several algorithm are provided by the library and more can be implemented by providing a specific
-implementation to the ```core.Algo``` object. An implementation must follow the ```core.Impl``` interface.
+implementation to the ```core.Algo``` object.
+An implementation is an objects that respects the ```core.Impl``` interface.
 
 Three implementations are provided :
- - kmeans using the ```kmeans.NewAlgo``` constructor
- - mcmc using the ```mcmc.NewAlgo``` constructor
- - streaming using the ```streaming.NewAlgo``` constructor
+ - kmeans is built with the ```kmeans.NewAlgo``` constructor
+ - mcmc is built with the ```mcmc.NewAlgo``` constructor
+ - streaming is built with the ```streaming.NewAlgo``` constructor
  
 Constructors need at least :
- - a configuration object of the right type with the proper algorithm parameters
+ - a configuration object which holds the algorithm parameters
  - a ```core.Space``` object used for distance and center computations
  
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
@@ -70,8 +75,8 @@ For more information on setting these parameters refer to https://hal.inria.fr/h
 The algorithm is built using the ```mcmc.NewAlgo``` function. It takes the following parameters :
  - ```conf mcmc.Conf``` : configuration object
  - ```space core.Space``` : distance and barycenter computation
- - ```data []core.Elemt``` : observations known at build time, if any (```nil``` otherwise)
- - ```initializer kmeans.Initializer``` : a functor that returns the initialization centers
+ - ```data []core.Elemt``` : observations known at build time if any (```nil``` otherwise)
+ - ```initializer kmeans.Initializer``` : a functor that returns the starting centers
  - ```distrib mcmc.Distrib``` : alteration distribution
  
  ```go
@@ -91,14 +96,13 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *cor
 }
 ```
 
-## Run and feed the algorithm
+## Run and feed
 
 The algorithm can be run in two modes :
  - synchronous : all data must be pushed before stating the algorithm
  - asynchronous (or online) : further data can be pushed after the algorithm is statrted
  
-The following function pushes ```startOffset``` observations, start the algorithm in asynchronous mode
-then pushes the remaining observations
+The following function starts the algorithm in asynchronous mode then pushes the observations
 
 ```go
 package main
@@ -116,17 +120,17 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 }
 ```
 
-*Note :* when the algorithm starts, it first initializes the starting cluster centroids.
+*Note :* when the algorithm starts, it first initializes the starting centers.
 The number of centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
 Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
 otherwise an error is returned by the ```Run``` method.
 
-## Evaluate algorithm result
+## Prediction
 
-Once the algorithm was started, etiher in synchronous or online mode, 
+Once the algorithm was started, either in synchronous or online mode, 
 the ```Predict``` method can be used to make predictions.
 The following function uses predictions to calculate the root mean squared error 
-for observations which real outputs are known.
+for observations which real output is known.
 
 ```go
 package main
@@ -149,6 +153,7 @@ func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space
 
 The following functions help in evaluating the algorithm.
 The ```core.Clust``` object method ```MapLabel``` is used to compute the real output (see below: Advanced usage).
+
 ```go
 package main
 import (
@@ -171,7 +176,6 @@ func getOutput(centers core.Clust, observations []core.Elemt, space euclid.Space
 	}
 	return
 }
-
 ```
 
 ## Sample data
@@ -238,10 +242,12 @@ func Example() {
 ```
 
 The timer is used to let the background algorithm converge. In a real life situation of course this is not needed:
-The online algorithm will be closed only when the service is shutdown and data will be pushed at their arrival.
+The online algorithm will be closed only when the service is shutdown
+and data will be pushed gradually when they arrive.
 
 ## Advanced usage
 
+### ```core.Clust``` struct
 Given clustering centers, it is possible to obtain internal loss and cardinality for each cluster :
 
 ```go
@@ -261,15 +267,55 @@ var losses, cards = centers.ParReduceLoss(observations, space, norm)
 In some cases you'll want to predict labels upon fixed cluster centers :
 ```go
 var space = euclid.NewSpace(euclid.Conf{})
-var labels = centers.MapLabel(observations, space, norm)
+var labels = centers.ParMapLabel(observations, space, norm)
 ```
 This is useful when the clustering is done online because the centers are continually changing.
 
+### ```OnlineClust``` interface
+
+The ```OnlineClust``` interface is implemented by the ```core.Algo``` struct. We have covered almost all methods so far.
+ - ```Centroids() (Clust, error)```
+ - ```Push(elemt Elemt) error```
+ - ```Predict(elemt Elemt) (Elemt, int, error)```
+ - ```Run(async bool) error```
+ - ```Close() error```
+ - ```RuntimeFigures() (map[string]float64, error)```
+ 
 Algorithms may return specific figures that describes their running state. These can be obtained by the
-```RuntimeFigures``` method of the ```OnlineClust``` interface. 
+```RuntimeFigures``` method.
 ```go
 var rt = algo.RuntimeFigures()
 for name, value := range rt {
 	fmt.Printf("%v: %v\n", name, value)
 }
 ```
+
+### ```LateDistrib``` struct
+
+The ```mcmc.MutlivT``` implements a multivariate T distribution. The dimension of the data must be known and set
+in the ```mcmc.MultivTConf``` configuration object. In some situation this information is not known until the first
+data arrive. This can be handled using a ```LateDistrib``` instance. It implements the ```Distrib``` interface and
+its responsibility is to initialize and wrap another ```Distrib``` instance. The ```Build``` function above
+may be modified like this:
+```go
+package main
+import (
+	"distclus/core"
+	"distclus/euclid"
+	"distclus/kmeans"
+	"distclus/mcmc"
+)
+
+func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *core.Algo, space euclid.Space) {
+	space = euclid.NewSpace(euclid.Conf{})
+	var buildDistrib = func(data core.Elemt) mcmc.Distrib {
+		tConf.Dim = space.Dim([]core.Elemt{data})
+		return mcmc.NewMultivT(tConf) 
+	}
+	var distrib = mcmc.NewLateDistrib(buildDistrib) // the alteration distribution
+	algo = mcmc.NewAlgo(conf, space, data, kmeans.PPInitializer, distrib)
+	return
+}
+```
+
+The functor passed to ```mcmc.NewLateDistrib``` is executed only once with minimal locking to ensure parallel safety.

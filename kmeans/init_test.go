@@ -34,11 +34,12 @@ func TestInitializers(t *testing.T) {
 				t.Error("miss an initializer")
 			}
 			centroids, err := initializer(k, TestPoints, space, src)
-			if centroids == nil {
-				t.Error("initializer does not return a centroid")
-			}
 			if err != nil {
 				t.Error("an error has been raised")
+				return
+			}
+			if centroids == nil {
+				t.Error("initializer does not return a centroid")
 			}
 		} else {
 			if initializer != nil {

@@ -1,6 +1,6 @@
 # Distclus
 
-> Distributed online clustering library
+> Distributed online distance based clustering library
 
 ## Installation
 
@@ -14,9 +14,7 @@ $ make build
 $ make test
 ```
 
-## How to
-
-### Main abstractions
+## Main abstractions
 
 The distclus library intend to be polymorphic :
 any element type can be used provided a distance and a barycenter can be computed between 2 elements.
@@ -39,10 +37,11 @@ Constructors need at least :
  
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
 
-### Configuration
+## Configuration
 
 Algorithm are configured with configuration objects. A minimal configuration for the MCMC algorithm requires 
 two objects, one for the Metropolis Hastings and the other for the alteration distribution:
+
 ```go
 package main
 import "distclus/mcmc"
@@ -58,6 +57,7 @@ var tConf = mcmc.MultivTConf{
 	Nu:    3,
 }
 ```
+
 where :
  - ```InitK``` is the starting number of clusters
  - ```Amp``` and ```B``` are used in the Metropolis Hastings accept ratio computation
@@ -65,7 +65,7 @@ where :
  
 For more information on setting these parameters refer to https://hal.inria.fr/hal-01264233
 
-### Build the algorithm
+## Build the algorithm
 
 The algorithm is built using the ```mcmc.NewAlgo``` function. It takes the following parameters :
  - ```conf mcmc.Conf``` : configuration object
@@ -83,15 +83,15 @@ import (
 	"distclus/mcmc"
 )
 
-func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space euclid.Space) {
+func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *core.Algo, space euclid.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
-	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
+	algo = mcmc.NewAlgo(conf, space, data, kmeans.PPInitializer, distrib)
 	return
 }
 ```
 
-### Run and feed the algorithm
+## Run and feed the algorithm
 
 The algorithm can be run in two modes :
  - synchronous : all data must be pushed before stating the algorithm
@@ -99,6 +99,7 @@ The algorithm can be run in two modes :
  
 The following function pushes ```startOffset``` observations, start the algorithm in asynchronous mode
 then pushes the remaining observations
+
 ```go
 package main
 import (
@@ -106,49 +107,91 @@ import (
 	"distclus/core"
 )
 
-func RunAndFeed(algo *core.Algo, observations []core.Elemt, startOffset int) (err error) {
-	err = Feed(algo, observations[:startOffset])
-	if err != nil {
-		return
-	}
+func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	err = algo.Run(true) // run the algorithm in background
-	if err != nil {
-		return
-	}
-	err = Feed(algo, observations[startOffset:])
-	time.Sleep(300 * time.Millisecond) // let the background algorithm converge
-	return
-}
-
-func Feed(algo *core.Algo, observations []core.Elemt) (err error) {
-	for _, obs := range observations {
-		err = algo.Push(obs)
-		if err != nil {
-			return
-		}
+	for i := 0; i<len(observations) && err == nil; i++ {
+		err = algo.Push(observations[i])
 	}
 	return
 }
 ```
 
-### A toy example
+*Note :* when the algorithm starts, it first initializes the starting cluster centroids.
+The number of centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
+Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
+otherwise an error is returned by the ```Run``` method.
 
-For testing purpose the following function can be used to generate trivial sample data :
+## Evaluate algorithm result
+
+Once the algorithm was started, etiher in synchronous or online mode, 
+the ```Predict``` method can be used to make predictions.
+The following function uses predictions to calculate the root mean squared error 
+for observations which real outputs are known.
+
 ```go
 package main
+import (
+	"distclus/core"
+	"distclus/euclid"
+	"math"
+)
 
+func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space euclid.Space) float64 {
+	var mse = 0.
+	for i := range observations {
+		var prediction, _, _ = algo.Predict(observations[i])
+		var dist = space.Dist(prediction, output[i])
+		mse += dist * dist / float64(len(observations))
+	}
+	return math.Sqrt(mse)
+}
+```
+
+The following functions help in evaluating the algorithm.
+The ```core.Clust``` object method ```MapLabel``` is used to compute the real output (see below: Advanced usage).
+```go
+package main
+import (
+	"distclus/core"
+	"distclus/euclid"
+)
+
+func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space euclid.Space) (result core.Clust, rmse float64, err error) {
+	var output = getOutput(centers, observations, space)
+	rmse = RMSE(algo, observations, output, space)
+	result, err = algo.Centroids()
+	return
+}
+
+func getOutput(centers core.Clust, observations []core.Elemt, space euclid.Space) (output []core.Elemt) {
+	var labels = centers.MapLabel(observations, space)
+	output = make([]core.Elemt, len(labels))
+	for i := range labels {
+		output[i] = centers[labels[i]]
+	}
+	return
+}
+
+```
+
+## Sample data
+
+For testing purpose we need data. The following function returns real centers with a train and a test set.
+
+```go
+package main
 import (
 	"distclus/core"
 	"golang.org/x/exp/rand"
 )
 
-func Sample() (centers core.Clust, observations []core.Elemt) {
-	centers = core.Clust(
+func Sample() (core.Clust, []core.Elemt, []core.Elemt) {
+	var centers = core.Clust(
 		[]core.Elemt{
 			[]float64{1.4, 0.7},
 			[]float64{7.6, 7.6},
 		})
-	observations = make([]core.Elemt, 1000)
+	var observations = make([]core.Elemt, 1000)
 	for i := range observations {
 		var obs = make([]float64, 2)
 		if rand.Intn(2) == 1 {
@@ -161,37 +204,41 @@ func Sample() (centers core.Clust, observations []core.Elemt) {
 		}
 		observations[i] = obs
 	}
-	return
+	return centers, observations[:800], observations[800:]
 }
 ```
 
-Create an online clustering algorithm `oc`:
+## Putting all together
+
+We will now glue the pieces we have built so far. The algorithm must be closed to stop online execution.
+In the following example it is deferred to the end of the function.
 
 ```go
 package main
 import (
-	"distclus/core"
-	"distclus/factory"
+	"fmt"
+	"time"
 )
 
-conf := core.Conf{...}
+func Example() {
+	var centers, train, test = Sample()
+	
+	var algo, space = Build(conf, tConf, train[:10])
+	defer algo.Close()
 
-space := factory.CreateSpace(space, conf)
+	var errRun = RunAndFeed(algo, test[10:])
 
-oc := factory.CreateOC(name, conf, space, data, initializer, args...)
-
-oc.Fit()
+	if errRun == nil {
+		time.Sleep(300 * time.Millisecond) // let the background algorithm converge
+		var result, rmse, errEval = Eval(algo, centers, test, space)
+		fmt.Printf("%v %v %v\n", len(result) < 4, rmse < 1, errEval)
+	}
+	// Output: true true <nil>
+}
 ```
 
-Where
-
-- conf: algorithm configuration
-- space: space name among "vectors", "series", etc.
-- name: an algorithm name (among kmeans, mcmc, etc.)
-- conf: configuration algorithm
-- space: space interface dedicated to process distance between data and centroids
-- initializer: algorithm initialization (random, given, etc.)
-- args...: aditional parameters specific to algorithm (mcmc distrib, etc.)
+The timer is used to let the background algorithm converge. In a real life situation of course this is not needed:
+The online algorithm will be closed only when the service is shutdown and data will be pushed at their arrival.
 
 ## Advanced usage
 
@@ -218,20 +265,11 @@ var labels = centers.MapLabel(observations, space, norm)
 ```
 This is useful when the clustering is done online because the centers are continually changing.
 
-## Contribute
-
-### OnlineClust
-
-According to a configuration and a space interface, the OnlineClust interface executes an algorithm.
-
-#### Development
-
-1. create a folder named with your algorithm name. I.e, `mcmc/` for the MCMC algorithm.
-2. implement the interface `core.OnlineClust`. I.e., mcmc.Algo
-3. add this implementation in the `factory.CreateOC` function in `factory/factory.go`
-
-### Space
-
-1. create a folder named with your space name. I.e, `vectors/` for the vectors space.
-2. implement the interface `core.Space`. I.e., `vectors.Space`
-3. add this implementation in the `factory.CreateSpace` function in `factory/factory.go`
+Algorithms may return specific figures that describes their running state. These can be obtained by the
+```RuntimeFigures``` method of the ```OnlineClust``` interface. 
+```go
+var rt = algo.RuntimeFigures()
+for name, value := range rt {
+	fmt.Printf("%v: %v\n", name, value)
+}
+```

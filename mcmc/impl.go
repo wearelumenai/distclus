@@ -2,6 +2,7 @@ package mcmc
 
 import (
 	"distclus/core"
+	"distclus/figures"
 	"distclus/kmeans"
 	"gonum.org/v1/gonum/stat/distuv"
 	"math"
@@ -176,6 +177,6 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 
 // runtimeFigures returns specific kmeans properties
 func (impl Impl) runtimeFigures() map[string]float64 {
-	return map[string]float64{"iterations": float64(impl.iter), "acceptations": float64(impl.acc)}
+	return map[string]float64{figures.Iterations: float64(impl.iter), figures.Acceptations: float64(impl.acc)}
 
 }

@@ -26,6 +26,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 	var implConf = mcmc.Conf{
 		InitK:    2,
 		Amp:      1000000,
+		B:        .00001,
 		McmcIter: 2000,
 		MaxK:     50,
 	}

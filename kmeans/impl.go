@@ -2,6 +2,7 @@ package kmeans
 
 import (
 	"distclus/core"
+	"distclus/figures"
 	"time"
 )
 
@@ -61,5 +62,5 @@ func (impl *Impl) SetAsync() error {
 
 // runtimeFigures returns specific kmeans properties
 func (impl Impl) runtimeFigures() map[string]float64 {
-	return map[string]float64{"iterations": float64(impl.iter)}
+	return map[string]float64{figures.Iterations: float64(impl.iter)}
 }

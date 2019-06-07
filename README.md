@@ -1,6 +1,6 @@
 # Distclus
 
-> Distributed online distance based clustering library
+> Multi-threaded online distance based clustering library
 
 ## Introduction
 

@@ -11,19 +11,19 @@ import (
 
 // Conf is the mcmc configuration object
 type Conf struct {
-	Par                bool
-	Iter               int
-	InitK              int
-	FrameSize          int
-	RGen               *rand.Rand
-	B, Amp, R          float64
-	Norm               float64
-	MaxK               int
-	McmcIter, InitIter int
-	Timeout            int
-	ProbaK             []float64
-	lamb, l2b, tau     float64
-	NumCPU             int
+	Par            bool
+	Iter           int
+	InitK          int
+	FrameSize      int
+	RGen           *rand.Rand
+	B, Amp, R      float64
+	Norm           float64
+	MaxK           int
+	McmcIter       int
+	Timeout        int
+	ProbaK         []float64
+	lamb, l2b, tau float64
+	NumCPU         int
 }
 
 // SetConfigDefaults initializes nil parameter values

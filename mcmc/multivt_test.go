@@ -15,7 +15,6 @@ var mcmcConf = mcmc.Conf{
 	RGen:      rand.New(rand.NewSource(6305689164243)),
 	B:         100, Amp: 1,
 	Norm: 2, McmcIter: 20,
-	InitIter: 1,
 }
 
 var mvtConf = mcmc.MultivTConf{

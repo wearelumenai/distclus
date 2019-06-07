@@ -31,6 +31,12 @@ func Test_Interpolate(t *testing.T) {
 	AssertSeriesAlmostEqual(t, dba, si1)
 }
 
+func Test_InterpolateId(t *testing.T) {
+	var id = []int{0, 1, 2, 3, 4, 5, 6, 7}
+	var si1 = dtw.Interpolate(si, id, 1, space)
+	AssertSeriesAlmostEqual(t, si, si1)
+}
+
 func Test_ShrinkLongest(t *testing.T) {
 	var s12 = dtw.Resize(s1, 16, space)
 	var s211, s121 = dtw.ShrinkLongest(s2, s12, space, 3)

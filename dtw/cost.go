@@ -36,7 +36,7 @@ func NewCumCostMatrix(s1, s2 [][]float64, space core.Space, window int) CumCostM
 }
 
 // Get returns the accumulated cost at position (i1,i2)
-func (cumCost CumCostMatrix) Get(i1, i2 int) float64 {
+func (cumCost *CumCostMatrix) Get(i1, i2 int) float64 {
 	var i = cumCost.ravel(i1, i2)
 	if i == -1 {
 		return math.Inf(1)
@@ -56,7 +56,7 @@ func (cumCost *CumCostMatrix) setStride(shortest int, longest int) {
 	}
 }
 
-func (cumCost CumCostMatrix) ravel(i1, i2 int) int {
+func (cumCost *CumCostMatrix) ravel(i1, i2 int) int {
 	if !cumCost.inWindow(i1, i2) {
 		return -1
 	}
@@ -66,18 +66,18 @@ func (cumCost CumCostMatrix) ravel(i1, i2 int) int {
 	return cumCost.shift(i1, i2)
 }
 
-func (cumCost CumCostMatrix) inWindow(i int, j int) bool {
+func (cumCost *CumCostMatrix) inWindow(i int, j int) bool {
 	return i-j <= cumCost.window && j-i <= cumCost.window
 }
 
-func (cumCost CumCostMatrix) shift(i, j int) int {
+func (cumCost *CumCostMatrix) shift(i, j int) int {
 	if i > cumCost.window {
 		return cumCost.index(i, j-i+cumCost.window)
 	}
 	return cumCost.index(i, j)
 }
 
-func (cumCost CumCostMatrix) index(i, j int) int {
+func (cumCost *CumCostMatrix) index(i, j int) int {
 	return i*cumCost.stride[1] + j
 }
 

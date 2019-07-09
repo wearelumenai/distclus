@@ -2,8 +2,9 @@ package core
 
 import (
 	"errors"
-	"github.com/gonum/floats"
 	"math"
+
+	"github.com/gonum/floats"
 
 	"golang.org/x/exp/rand"
 )
@@ -67,6 +68,30 @@ func (c *Clust) ReduceDBA(elemts []Elemt, space Space) (centroids Clust, cards [
 	}
 
 	return
+}
+
+// ReduceDBAForLabels computes loss and cardinality in each cluster for the given labels
+func (c *Clust) ReduceDBAForLabels(elemts []Elemt, labels []int, space Space) (means []Elemt, cards []int) {
+	means = make([]Elemt, len(*c))
+	cards = make([]int, len(*c))
+	for i, elemt := range elemts {
+
+		var label = labels[i]
+
+		if cards[label] == 0 {
+			means[label] = space.Copy(elemt)
+			cards[label] = 1
+		} else {
+			means[label] = space.Combine(means[label], cards[label], elemt, 1)
+			cards[label]++
+		}
+	}
+	return
+}
+
+// ParReduceDBAForLabels computes loss and cardinality in each cluster for the given labels in parallel
+func (c *Clust) ParReduceDBAForLabels(elemts []Elemt, labels []int, space Space, degree int) ([]Elemt, []int) {
+	return parDBAForLabels(*c, elemts, labels, space, degree)
 }
 
 // ParReduceDBA computes centroids and cardinality of each clusters for given elements in parallel.

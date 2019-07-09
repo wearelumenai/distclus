@@ -8,13 +8,13 @@ This library implements the concepts and theoretical results described in the ar
 
 ## Installation
 
-```bash
+```
 $ make build
 ```
 
 ## Test
 
-```bash
+```
 $ make test
 ```
 

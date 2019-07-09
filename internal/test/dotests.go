@@ -3,13 +3,14 @@ package test
 import (
 	"distclus/core"
 	"distclus/euclid"
-	"golang.org/x/exp/rand"
-	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/gonum/stat/distmv"
 	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"golang.org/x/exp/rand"
+	"gonum.org/v1/gonum/mat"
+	"gonum.org/v1/gonum/stat/distmv"
 )
 
 // Vectors are values to test
@@ -377,13 +378,15 @@ func Mean(data []core.Elemt, weights []int) []float64 {
 	var s = make([]float64, len(data[0].([]float64)))
 	var w = 0.
 	for i := 0; i < len(data); i++ {
-		var weight = 1.
-		if weights != nil {
-			weight = float64(weights[i])
-		}
-		w += weight
-		for j := 0; j < len(s); j++ {
-			s[j] += data[i].([]float64)[j] * weight
+		if data[i] != nil {
+			var weight = 1.
+			if weights != nil {
+				weight = float64(weights[i])
+			}
+			w += weight
+			for j := 0; j < len(s); j++ {
+				s[j] += data[i].([]float64)[j] * weight
+			}
 		}
 	}
 	for j := 0; j < len(s); j++ {

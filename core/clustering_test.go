@@ -190,6 +190,19 @@ func TestClust_ReduceDBA2(t *testing.T) {
 	test.AssertArrayAlmostEqual(t, dataAverage, dbasAverage)
 }
 
+func TestClust_DBAForLabels(t *testing.T) {
+	var centroids, data = test.GenerateData(10000)
+
+	var labels = make([]int, 10000)
+	var space = euclid.NewSpace(euclid.Conf{})
+	var means, cards = centroids.ReduceDBAForLabels(data, labels, space)
+
+	var meansAverage = test.Mean(means, cards)
+	var dataAverage = test.Mean(data, nil)
+
+	test.AssertArrayAlmostEqual(t, dataAverage, meansAverage)
+}
+
 func TestClust_LossForLabels(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 

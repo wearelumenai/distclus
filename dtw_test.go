@@ -7,32 +7,32 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"gonum.org/v1/gonum/stat/distuv"
-	"log"
 	"testing"
 )
 
 func BenchmarkSeries(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		err := runSeries(n)
+		centroids, err := runSeries()
 		if err != nil {
 			b.Fatal(err)
 		}
+		b.Logf("run #%v: %v centers", n, len(centroids))
 	}
 }
 
 func TestSeries(t *testing.T) {
-	err := runSeries(0)
+	centroids, err := runSeries()
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("%v centers", len(centroids))
 }
 
-func runSeries(n int) error {
+func runSeries() ([]core.Elemt, error) {
 	var series = makeSeries()
 	var mcmcConf, space = getSeriesConf()
 	var algo = getSeriesAlgo(space, mcmcConf)
-	var err = runSeriesAlgo(algo, series, n)
-	return err
+	return runSeriesAlgo(algo, series)
 }
 
 func getSeriesConf() (mcmc.Conf, dtw.Space) {
@@ -55,20 +55,18 @@ func getSeriesAlgo(space dtw.Space, mcmcConf mcmc.Conf) *core.Algo {
 	return mcmc.NewAlgo(mcmcConf, space, []core.Elemt{}, initializer, distrib)
 }
 
-func runSeriesAlgo(algo *core.Algo, series [][][]float64, n int) error {
+func runSeriesAlgo(algo *core.Algo, series [][][]float64) ([]core.Elemt, error) {
 	for s := range series {
 		if err := algo.Push(series[s]); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := algo.Run(false); err != nil {
-		return err
+		return nil, err
 	}
 
-	var centroids, _ = algo.Centroids()
-	log.Printf("run %v: %v centers", n, len(centroids))
-	return nil
+	return algo.Centroids()
 }
 
 func makeSeries() [][][]float64 {

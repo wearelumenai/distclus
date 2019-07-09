@@ -6,32 +6,32 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"gonum.org/v1/gonum/stat/distuv"
-	"log"
 	"testing"
 )
 
 func BenchmarkVectors(b *testing.B) {
 	for n := 0; n < b.N; n++ {
-		err := runVectors(n)
+		centroids, err := runVectors()
 		if err != nil {
 			b.Fatal(err)
 		}
+		b.Logf("run #%v: %v centers", n, len(centroids))
 	}
 }
 
 func TestVectors(t *testing.T) {
-	err := runVectors(0)
+	centroids, err := runVectors()
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Logf("%v centers", len(centroids))
 }
 
-func runVectors(n int) error {
+func runVectors() ([]core.Elemt, error) {
 	var vectors = makeVectors()
 	var mcmcConf, space = getVectorsConf()
 	var algo = getVectorsAlgo(space, mcmcConf)
-	var err = runVectorsAlgo(algo, vectors, n)
-	return err
+	return runVectorsAlgo(algo, vectors)
 }
 
 func getVectorsConf() (mcmc.Conf, euclid.Space) {
@@ -51,20 +51,18 @@ func getVectorsAlgo(space euclid.Space, mcmcConf mcmc.Conf) *core.Algo {
 	return mcmc.NewAlgo(mcmcConf, space, []core.Elemt{}, initializer, distrib)
 }
 
-func runVectorsAlgo(algo *core.Algo, series [][]float64, n int) error {
+func runVectorsAlgo(algo *core.Algo, series [][]float64) ([]core.Elemt, error) {
 	for s := range series {
 		if err := algo.Push(series[s]); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	if err := algo.Run(false); err != nil {
-		return err
+		return nil, err
 	}
 
-	var centroids, _ = algo.Centroids()
-	log.Printf("run %v: %v centers", n, len(centroids))
-	return nil
+	return algo.Centroids()
 }
 
 func makeVectors() [][]float64 {
@@ -76,8 +74,8 @@ func makeVectors() [][]float64 {
 		{Mu: 50.0, Sigma: 1.0},
 	}
 	var mix = distuv.NewCategorical([]float64{.2, .2, .2, .2, .2}, nil)
-	var vectors = make([][]float64, 10000)
-	for n := 0; n < 10000; n++ {
+	var vectors = make([][]float64, 100000)
+	for n := 0; n < 100000; n++ {
 		var i = int(mix.Rand())
 		vectors[n] = []float64{components[i].Rand()}
 	}

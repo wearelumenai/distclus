@@ -7,7 +7,7 @@ import (
 // Space for processing vectors of vectors ([][]float64)
 type Space struct {
 	window     int
-	innerSpace core.Space
+	innerSpace PointSpace
 }
 
 // NewSpace create a new series space

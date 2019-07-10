@@ -1,8 +1,6 @@
 package dtw
 
 import (
-	"distclus/core"
-	"distclus/euclid"
 	"math"
 )
 
@@ -11,15 +9,13 @@ type CumCostMatrix struct {
 	s1, s2    [][]float64
 	values    []float64
 	stride    []int
-	space     core.Space
+	space     PointSpace
 	window    int
 	transpose bool
 }
 
-var space = euclid.NewSpace(euclid.Conf{})
-
 // NewCumCostMatrix creates at new CumCostMatrix instance.
-func NewCumCostMatrix(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix {
+func NewCumCostMatrix(s1, s2 [][]float64, space PointSpace, window int) CumCostMatrix {
 	var cost = CumCostMatrix{
 		s1:     s1,
 		s2:     s2,
@@ -88,6 +84,7 @@ func (cumCost *CumCostMatrix) index(i, j int) int {
 }
 
 func (cumCost *CumCostMatrix) computeCumCost() {
+	var space = cumCost.space
 	cumCost.values = make([]float64, cumCost.stride[0]*cumCost.stride[1])
 	for i1 := range cumCost.s1 {
 		var i2l = 0
@@ -101,7 +98,7 @@ func (cumCost *CumCostMatrix) computeCumCost() {
 		for i2 := i2l; i2 < i2r; i2++ {
 			var i = cumCost.ravel(i1, i2)
 			var cost = 0.
-			var dist = space.Dist(cumCost.s1[i1], cumCost.s2[i2])
+			var dist = space.PointDist(cumCost.s1[i1], cumCost.s2[i2])
 			switch {
 			case i1 == 0 && i2 == 0:
 				cost = dist
@@ -119,8 +116,8 @@ func (cumCost *CumCostMatrix) computeCumCost() {
 }
 
 func (cumCost *CumCostMatrix) computePath() [][]int {
-	var path = make([][]int, 0)
 	var i1, i2 = len(cumCost.s1) - 1, len(cumCost.s2) - 1
+	var path = make([][]int, 0, i1+i2)
 	for i1 > 0 || i2 > 0 {
 		path = append(path, []int{i1, i2})
 		switch {

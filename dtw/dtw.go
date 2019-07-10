@@ -1,25 +1,21 @@
 package dtw
 
-import (
-	"distclus/core"
-)
-
 // DTW represents the Dynamic Time Warping distance between 2 series
 type DTW struct {
 	s1, s2 [][]float64
-	space  core.Space
+	space  PointSpace
 	window int
 	path   [][]int
 	dist   float64
 }
 
 // NewDTW creates a new DTW instance
-func NewDTW(s1, s2 [][]float64, space core.Space) DTW {
+func NewDTW(s1, s2 [][]float64, space PointSpace) DTW {
 	return NewDTWWindow(s1, s2, space, 0)
 }
 
 // NewDTWWindow creates a new DTW instance constrained to the given window
-func NewDTWWindow(s1, s2 [][]float64, space core.Space, window int) DTW {
+func NewDTWWindow(s1, s2 [][]float64, space PointSpace, window int) DTW {
 	var dtw = DTW{
 		s1:     s1,
 		s2:     s2,
@@ -48,7 +44,7 @@ func (dtw DTW) DBA(w1, w2 int) [][]float64 {
 	var idx = make([]int, len(dtw.path))
 	for i := range dtw.path {
 		var ends = dtw.path[len(dtw.path)-1-i]
-		dba[i] = space.Combine(dtw.s1[ends[0]], w1, dtw.s2[ends[1]], w2).([]float64)
+		dba[i] = dtw.space.Combine(dtw.s1[ends[0]], w1, dtw.s2[ends[1]], w2).([]float64)
 		idx[i] = ends[0]*w1 + ends[1]*w2
 	}
 	return dtw.interpolate(dba, idx, w1+w2)

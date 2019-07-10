@@ -44,7 +44,7 @@ func (dtw DTW) DBA(w1, w2 int) [][]float64 {
 	var idx = make([]int, len(dtw.path))
 	for i := range dtw.path {
 		var ends = dtw.path[len(dtw.path)-1-i]
-		dba[i] = dtw.space.Combine(dtw.s1[ends[0]], w1, dtw.s2[ends[1]], w2).([]float64)
+		dba[i] = dtw.space.PointCombine(dtw.s1[ends[0]], w1, dtw.s2[ends[1]], w2)
 		idx[i] = ends[0]*w1 + ends[1]*w2
 	}
 	return dtw.interpolate(dba, idx, w1+w2)

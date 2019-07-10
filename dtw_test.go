@@ -41,6 +41,7 @@ func getSeriesConf() (mcmc.Conf, dtw.Space) {
 		Amp:      .001,
 		B:        200,
 		McmcIter: 50,
+		Par:      true,
 	}
 	var space = dtw.NewSpace(dtw.Conf{
 		InnerSpace: euclid.NewSpace(euclid.Conf{}),
@@ -78,8 +79,8 @@ func makeSeries() [][][]float64 {
 		{Mu: 50.0, Sigma: 1.0},
 	}
 	var mix = distuv.NewCategorical([]float64{.2, .2, .2, .2, .2}, nil)
-	var series = make([][][]float64, 100)
-	for n := 0; n < 100; n++ {
+	var series = make([][][]float64, 300)
+	for n := 0; n < 300; n++ {
 		series[n] = make([][]float64, 100)
 		var i = int(mix.Rand())
 		for t := 0; t < 100; t++ {

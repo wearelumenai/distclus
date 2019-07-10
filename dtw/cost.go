@@ -2,6 +2,7 @@ package dtw
 
 import (
 	"distclus/core"
+	"distclus/euclid"
 	"math"
 )
 
@@ -14,6 +15,8 @@ type CumCostMatrix struct {
 	window    int
 	transpose bool
 }
+
+var space = euclid.NewSpace(euclid.Conf{})
 
 // NewCumCostMatrix creates at new CumCostMatrix instance.
 func NewCumCostMatrix(s1, s2 [][]float64, space core.Space, window int) CumCostMatrix {
@@ -37,10 +40,10 @@ func NewCumCostMatrix(s1, s2 [][]float64, space core.Space, window int) CumCostM
 
 // Get returns the accumulated cost at position (i1,i2)
 func (cumCost *CumCostMatrix) Get(i1, i2 int) float64 {
-	var i = cumCost.ravel(i1, i2)
-	if i == -1 {
+	if !cumCost.inWindow(i1, i2) {
 		return math.Inf(1)
 	}
+	var i = cumCost.ravel(i1, i2)
 	return cumCost.values[i]
 }
 
@@ -57,9 +60,6 @@ func (cumCost *CumCostMatrix) setStride(shortest int, longest int) {
 }
 
 func (cumCost *CumCostMatrix) ravel(i1, i2 int) int {
-	if !cumCost.inWindow(i1, i2) {
-		return -1
-	}
 	if cumCost.transpose {
 		return cumCost.shift(i2, i1)
 	}
@@ -67,7 +67,13 @@ func (cumCost *CumCostMatrix) ravel(i1, i2 int) int {
 }
 
 func (cumCost *CumCostMatrix) inWindow(i int, j int) bool {
-	return i-j <= cumCost.window && j-i <= cumCost.window
+	if i-j > cumCost.window {
+		return false
+	}
+	if j-i > cumCost.window {
+		return false
+	}
+	return true
 }
 
 func (cumCost *CumCostMatrix) shift(i, j int) int {
@@ -84,24 +90,30 @@ func (cumCost *CumCostMatrix) index(i, j int) int {
 func (cumCost *CumCostMatrix) computeCumCost() {
 	cumCost.values = make([]float64, cumCost.stride[0]*cumCost.stride[1])
 	for i1 := range cumCost.s1 {
-		for i2 := range cumCost.s2 {
+		var i2l = 0
+		var i2r = len(cumCost.s2)
+		if i2 := i1 - cumCost.window; i2 > i2l {
+			i2l = i2
+		}
+		if i2 := i1 + cumCost.window + 1; i2 < i2r {
+			i2r = i2
+		}
+		for i2 := i2l; i2 < i2r; i2++ {
 			var i = cumCost.ravel(i1, i2)
-			if i >= 0 {
-				var cost = 0.
-				var dist = cumCost.space.Dist(cumCost.s1[i1], cumCost.s2[i2])
-				switch {
-				case i1 == 0 && i2 == 0:
-					cost = dist
-				case i1 == 0:
-					cost = cumCost.Get(i1, i2-1) + dist
-				case i2 == 0:
-					cost = cumCost.Get(i1-1, i2) + dist
-				default:
-					var l, u, ul = cumCost.neighborCosts(i1, i2)
-					cost = min(ul, u, l) + dist
-				}
-				cumCost.values[i] = cost
+			var cost = 0.
+			var dist = space.Dist(cumCost.s1[i1], cumCost.s2[i2])
+			switch {
+			case i1 == 0 && i2 == 0:
+				cost = dist
+			case i1 == 0:
+				cost = cumCost.Get(i1, i2-1) + dist
+			case i2 == 0:
+				cost = cumCost.Get(i1-1, i2) + dist
+			default:
+				var l, u, ul = cumCost.neighborCosts(i1, i2)
+				cost = min(ul, u, l) + dist
 			}
+			cumCost.values[i] = cost
 		}
 	}
 }

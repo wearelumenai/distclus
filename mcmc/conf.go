@@ -33,7 +33,7 @@ func SetConfigDefaults(conf *Conf) {
 		conf.RGen = rand.New(rand.NewSource(seed))
 	}
 	if len(conf.ProbaK) == 0 {
-		conf.ProbaK = []float64{1, 0, 9}
+		conf.ProbaK = []float64{1, 8, 1}
 	}
 	if conf.Norm == 0 {
 		conf.Norm = 2

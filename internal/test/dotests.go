@@ -35,7 +35,7 @@ func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
 // DoTestRunSyncGiven Algorithm must be configured with GivenInitializer with 3 centers
 func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.MapLabel(Vectors, euclid.Space{})
+	var actual, _ = clust.MapLabel(Vectors, euclid.Space{})
 
 	var expected = []int{0, 1, 2, 0, 0, 1, 2, 2}
 	AssertArrayEqual(t, expected, actual)
@@ -44,7 +44,7 @@ func DoTestRunSyncGiven(t *testing.T, algo core.OnlineClust) {
 // DoTestRunSyncPP Algorithm must be configured with PP with 3 centers
 func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
-	var actual = clust.MapLabel(Vectors, euclid.Space{})
+	var actual, _ = clust.MapLabel(Vectors, euclid.Space{})
 
 	_, i0, _ := algo.Predict(Vectors[0])
 	_, i1, _ := algo.Predict(Vectors[1])

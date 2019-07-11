@@ -60,7 +60,7 @@ func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space 
 }
 
 func getOutput(centers core.Clust, observations []core.Elemt, space core.Space) (output []core.Elemt) {
-	var labels = centers.MapLabel(observations, space)
+	var labels, _ = centers.MapLabel(observations, space)
 	output = make([]core.Elemt, len(labels))
 	for i := range labels {
 		output[i] = centers[labels[i]]

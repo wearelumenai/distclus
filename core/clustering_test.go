@@ -59,7 +59,7 @@ func TestClust_MapLabel(t *testing.T) {
 		[]float64{-1.},
 	}
 	var sp = euclid.Space{}
-	var result = clust.MapLabel(testPoints, sp)
+	var result, dists = clust.MapLabel(testPoints, sp)
 
 	for i, label := range result {
 		if label == 0 && testPoints[i].([]float64)[0] < 0 {
@@ -67,6 +67,9 @@ func TestClust_MapLabel(t *testing.T) {
 		}
 		if label == 1 && testPoints[i].([]float64)[0] >= 0 {
 			t.Error("Expected negative elements")
+		}
+		if dists[i] > 10 {
+			t.Error("Expected distance to be < 10")
 		}
 	}
 }

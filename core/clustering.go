@@ -34,19 +34,19 @@ func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dis
 }
 
 // MapLabel assigns elements to centroids
-func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int) {
+func (c *Clust) MapLabel(elemts []Elemt, space Space) (labels []int, dists []float64) {
 	labels = make([]int, len(elemts))
+	dists = make([]float64, len(elemts))
 
 	for i, elemt := range elemts {
-		var label, _ = c.nearest(elemt, space)
-		labels[i] = label
+		labels[i], dists[i] = c.nearest(elemt, space)
 	}
 
 	return
 }
 
 // ParMapLabel assigns elements to centroids in parallel
-func (c *Clust) ParMapLabel(elemts []Elemt, space Space, degree int) (labels []int) {
+func (c *Clust) ParMapLabel(elemts []Elemt, space Space, degree int) (labels []int, dists []float64) {
 	return parMapLabel(*c, elemts, space, degree)
 }
 

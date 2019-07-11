@@ -3,6 +3,7 @@ package kmeans
 import (
 	"distclus/core"
 	"errors"
+	"runtime"
 	"strings"
 
 	"golang.org/x/exp/rand"
@@ -63,13 +64,7 @@ func PPInitializer(k int, elemts []core.Elemt, space core.Space, src *rand.Rand)
 
 // PPIter runs a kmeans++ iteration : draw an element the does not belong to clust
 func PPIter(clust core.Clust, elemts []core.Elemt, space core.Space, src *rand.Rand) (core.Elemt, error) {
-	var dists = make([]float64, len(elemts))
-
-	for i, elt := range elemts {
-		var _, _, dist = clust.Assign(elt, space)
-		dists[i] = dist
-	}
-
+	var _, dists = clust.ParMapLabel(elemts, space, runtime.NumCPU())
 	var draw, err = WeightedChoice(dists, src)
 	return space.Copy(elemts[draw]), err
 }

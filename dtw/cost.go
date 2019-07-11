@@ -6,12 +6,12 @@ import (
 
 // CumCostMatrix represents the accumulated cost matrix needed to compute DTW distance.
 type CumCostMatrix struct {
-	s1, s2    [][]float64
-	values    []float64
-	stride    []int
-	space     PointSpace
-	window    int
-	transpose bool
+	s1, s2           [][]float64
+	values           []float64
+	space            PointSpace
+	window           int
+	stride0, stride1 int
+	tr0, tr1         int
 }
 
 // NewCumCostMatrix creates at new CumCostMatrix instance.
@@ -24,10 +24,10 @@ func NewCumCostMatrix(s1, s2 [][]float64, space PointSpace, window int) CumCostM
 	}
 	var l1, l2 = len(s1), len(s2)
 	if l1 < l2 {
-		cost.transpose = false
+		cost.tr0, cost.tr1 = 1, 0
 		cost.setStride(l1, l2)
 	} else {
-		cost.transpose = true
+		cost.tr0, cost.tr1 = 0, 1
 		cost.setStride(l2, l1)
 	}
 	cost.computeCumCost()
@@ -48,52 +48,25 @@ func (cumCost *CumCostMatrix) setStride(shortest int, longest int) {
 		cumCost.window = longest
 	}
 	var maxWindow = 2*cumCost.window + 1
+	cumCost.stride0 = shortest
 	if maxWindow < longest {
-		cumCost.stride = []int{shortest, maxWindow}
+		cumCost.stride1 = maxWindow
 	} else {
-		cumCost.stride = []int{shortest, longest}
+		cumCost.stride1 = longest
 	}
-}
-
-func (cumCost *CumCostMatrix) ravel(i1, i2 int) int {
-	if cumCost.transpose {
-		return cumCost.shift(i2, i1)
-	}
-	return cumCost.shift(i1, i2)
-}
-
-func (cumCost *CumCostMatrix) inWindow(i int, j int) bool {
-	if i-j > cumCost.window {
-		return false
-	}
-	if j-i > cumCost.window {
-		return false
-	}
-	return true
-}
-
-func (cumCost *CumCostMatrix) shift(i, j int) int {
-	if i > cumCost.window {
-		return cumCost.index(i, j-i+cumCost.window)
-	}
-	return cumCost.index(i, j)
-}
-
-func (cumCost *CumCostMatrix) index(i, j int) int {
-	return i*cumCost.stride[1] + j
 }
 
 func (cumCost *CumCostMatrix) computeCumCost() {
 	var space = cumCost.space
-	cumCost.values = make([]float64, cumCost.stride[0]*cumCost.stride[1])
+	cumCost.values = make([]float64, cumCost.stride0*cumCost.stride1)
 	for i1 := range cumCost.s1 {
 		var i2l = 0
 		var i2r = len(cumCost.s2)
-		if i2 := i1 - cumCost.window; i2 > i2l {
-			i2l = i2
+		if !cumCost.inWindow(i1, i2l) {
+			i2l = i1 - cumCost.window
 		}
-		if i2 := i1 + cumCost.window + 1; i2 < i2r {
-			i2r = i2
+		if !cumCost.inWindow(i1, i2r-1) {
+			i2r = i1 + cumCost.window + 1
 		}
 		for i2 := i2l; i2 < i2r; i2++ {
 			var i = cumCost.ravel(i1, i2)
@@ -139,6 +112,34 @@ func (cumCost *CumCostMatrix) neighborCosts(i1 int, i2 int) (float64, float64, f
 	var u = cumCost.Get(i1, i2-1)
 	var ul = cumCost.Get(i1-1, i2-1)
 	return l, u, ul
+}
+
+func (cumCost *CumCostMatrix) ravel(i1, i2 int) int {
+	var r1 = cumCost.tr0*i1 + cumCost.tr1*i2
+	var r2 = cumCost.tr0*i2 + cumCost.tr1*i1
+	return cumCost.shift(r1, r2)
+}
+
+func (cumCost *CumCostMatrix) shift(i, j int) int {
+	if i > cumCost.window {
+		return cumCost.index(i, j-i+cumCost.window)
+	}
+	return cumCost.index(i, j)
+}
+
+func (cumCost *CumCostMatrix) index(i, j int) int {
+	return i*cumCost.stride1 + j
+}
+
+//go:inline
+func (cumCost *CumCostMatrix) inWindow(i int, j int) bool {
+	if i-j > cumCost.window {
+		return false
+	}
+	if j-i > cumCost.window {
+		return false
+	}
+	return true
 }
 
 func min(v1 float64, v2 float64, v3 float64) float64 {

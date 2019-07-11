@@ -63,7 +63,7 @@ func Test_DTWDistWindow2(t *testing.T) {
 func Test_DTWPath1(t *testing.T) {
 	var dist = dtw.NewDTW(s1, s2, space)
 	for i, p := range dist.Path() {
-		if p[0] != path[i][0] || p[1] != path[i][1] {
+		if p.End0 != path[i][0] || p.End1 != path[i][1] {
 			t.Error("path error")
 		}
 	}
@@ -72,7 +72,7 @@ func Test_DTWPath1(t *testing.T) {
 func Test_DTWPathWindow1(t *testing.T) {
 	var dist = dtw.NewDTWWindow(s1, s2, space, 1)
 	for i, p := range dist.Path() {
-		if p[0] != path1[i][0] || p[1] != path1[i][1] {
+		if p.End0 != path1[i][0] || p.End1 != path1[i][1] {
 			t.Error("path error")
 		}
 	}
@@ -81,7 +81,7 @@ func Test_DTWPathWindow1(t *testing.T) {
 func Test_DTWPath2(t *testing.T) {
 	var dist = dtw.NewDTW(s2, s1, space)
 	for i, p := range dist.Path() {
-		if p[0] != path[i][1] || p[1] != path[i][0] {
+		if p.End0 != path[i][1] || p.End1 != path[i][0] {
 			t.Error("path error")
 		}
 	}
@@ -90,7 +90,7 @@ func Test_DTWPath2(t *testing.T) {
 func Test_DTWPathWindow2(t *testing.T) {
 	var dist = dtw.NewDTWWindow(s2, s1, space, 1)
 	for i, p := range dist.Path() {
-		if p[0] != path1[i][1] || p[1] != path1[i][0] {
+		if p.End0 != path1[i][1] || p.End1 != path1[i][0] {
 			t.Error("path error")
 		}
 	}

@@ -5,7 +5,7 @@ type DTW struct {
 	s1, s2 [][]float64
 	space  PointSpace
 	window int
-	path   [][]int
+	path   []Ends
 	dist   float64
 }
 
@@ -29,7 +29,7 @@ func NewDTWWindow(s1, s2 [][]float64, space PointSpace, window int) DTW {
 }
 
 // Path returns the minimal cost path computed by Dynamic Time Warping
-func (dtw DTW) Path() [][]int {
+func (dtw DTW) Path() []Ends {
 	return dtw.path
 }
 
@@ -44,8 +44,8 @@ func (dtw DTW) DBA(w1, w2 int) [][]float64 {
 	var idx = make([]int, len(dtw.path))
 	for i := range dtw.path {
 		var ends = dtw.path[len(dtw.path)-1-i]
-		dba[i] = dtw.space.PointCombine(dtw.s1[ends[0]], w1, dtw.s2[ends[1]], w2)
-		idx[i] = ends[0]*w1 + ends[1]*w2
+		dba[i] = dtw.space.PointCombine(dtw.s1[ends.End0], w1, dtw.s2[ends.End1], w2)
+		idx[i] = ends.End0*w1 + ends.End1*w2
 	}
 	return dtw.interpolate(dba, idx, w1+w2)
 }

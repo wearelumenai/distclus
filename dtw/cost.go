@@ -4,6 +4,10 @@ import (
 	"math"
 )
 
+type Ends struct {
+	End0, End1 int
+}
+
 // CumCostMatrix represents the accumulated cost matrix needed to compute DTW distance.
 type CumCostMatrix struct {
 	s1, s2           [][]float64
@@ -11,8 +15,7 @@ type CumCostMatrix struct {
 	space            PointSpace
 	window           int
 	stride0, stride1 int
-	tr0, tr1         int
-	path             [][]int
+	path             []Ends
 }
 
 // NewCumCostMatrix creates at new CumCostMatrix instance.
@@ -24,7 +27,6 @@ func NewCumCostMatrix(s1, s2 [][]float64, space PointSpace, window int) CumCostM
 		window: window,
 	}
 	var l1, l2 = len(s1), len(s2)
-	cost.tr0, cost.tr1 = 1, 0
 	cost.setStride(l1, l2)
 	cost.computeCumCost()
 	cost.computePath()
@@ -40,7 +42,7 @@ func (cumCost *CumCostMatrix) Get(i1, i2 int) float64 {
 	return cumCost.values[i]
 }
 
-func (cumCost *CumCostMatrix) Path() [][]int {
+func (cumCost *CumCostMatrix) Path() []Ends {
 	return cumCost.path
 }
 
@@ -91,9 +93,9 @@ func (cumCost *CumCostMatrix) computeCumCost() {
 
 func (cumCost *CumCostMatrix) computePath() {
 	var i1, i2 = len(cumCost.s1) - 1, len(cumCost.s2) - 1
-	cumCost.path = make([][]int, 0, i1+i2)
+	cumCost.path = make([]Ends, 0, i1+i2)
 	for i1 > 0 || i2 > 0 {
-		cumCost.path = append(cumCost.path, []int{i1, i2})
+		cumCost.path = append(cumCost.path, Ends{i1, i2})
 		switch {
 		case i1 == 0:
 			i2--
@@ -104,7 +106,7 @@ func (cumCost *CumCostMatrix) computePath() {
 			i1, i2 = decrPath(ul, u, l, i1, i2)
 		}
 	}
-	cumCost.path = append(cumCost.path, []int{0, 0})
+	cumCost.path = append(cumCost.path, Ends{0, 0})
 }
 
 func (cumCost *CumCostMatrix) neighborCosts(i1 int, i2 int) (float64, float64, float64) {

@@ -23,8 +23,8 @@ func NewDTWWindow(s1, s2 [][]float64, space PointSpace, window int) DTW {
 		window: window,
 	}
 	var cost = NewCumCostMatrix(s1, s2, space, window)
-	dtw.path = cost.computePath()
-	dtw.dist = cost.Get(len(cost.s1)-1, len(cost.s2)-1)
+	dtw.path = cost.Path()
+	dtw.dist = cost.Get(len(s1)-1, len(s2)-1)
 	return dtw
 }
 

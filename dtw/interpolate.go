@@ -1,12 +1,8 @@
 package dtw
 
-import (
-	"distclus/core"
-)
-
 // Interpolate applies a shrink factor and reshapes the given series to integral index.
 // The given series may not have consecutive indexes, given by the idx parameter.
-func Interpolate(s [][]float64, idx []int, shrinkFactor int, space core.Space) [][]float64 {
+func Interpolate(s [][]float64, idx []int, shrinkFactor int, space PointSpace) [][]float64 {
 	var last = idx[len(s)-1]/shrinkFactor + 1
 	var result = make([][]float64, last)
 	result[0] = s[0]
@@ -17,14 +13,14 @@ func Interpolate(s [][]float64, idx []int, shrinkFactor int, space core.Space) [
 		if idx[j] == x {
 			result[i] = s[j]
 		} else {
-			result[i] = space.Combine(s[j-1], idx[j]-x, s[j], x-idx[j-1]).([]float64)
+			result[i] = space.PointCombine(s[j-1], idx[j]-x, s[j], x-idx[j-1])
 		}
 	}
 	return result
 }
 
 // Resize shrinks or extends a series to a new size
-func Resize(s [][]float64, size int, space core.Space) [][]float64 {
+func Resize(s [][]float64, size int, space PointSpace) [][]float64 {
 	var idx = make([]int, len(s))
 	for i := range idx {
 		idx[i] = i * (size - 1)
@@ -34,7 +30,7 @@ func Resize(s [][]float64, size int, space core.Space) [][]float64 {
 }
 
 // ShrinkLongest returns two series by resizing the longest one to the shortest one plus the window
-func ShrinkLongest(s1, s2 [][]float64, space core.Space, window int) (sl1, sl2 [][]float64) {
+func ShrinkLongest(s1, s2 [][]float64, space PointSpace, window int) (sl1, sl2 [][]float64) {
 	var l1, l2 = len(s1), len(s2)
 	switch {
 	case window > 0 && l1 > l2+window:

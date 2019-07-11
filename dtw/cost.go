@@ -12,6 +12,7 @@ type CumCostMatrix struct {
 	window           int
 	stride0, stride1 int
 	tr0, tr1         int
+	path             [][]int
 }
 
 // NewCumCostMatrix creates at new CumCostMatrix instance.
@@ -23,14 +24,10 @@ func NewCumCostMatrix(s1, s2 [][]float64, space PointSpace, window int) CumCostM
 		window: window,
 	}
 	var l1, l2 = len(s1), len(s2)
-	if l1 < l2 {
-		cost.tr0, cost.tr1 = 1, 0
-		cost.setStride(l1, l2)
-	} else {
-		cost.tr0, cost.tr1 = 0, 1
-		cost.setStride(l2, l1)
-	}
+	cost.tr0, cost.tr1 = 1, 0
+	cost.setStride(l1, l2)
 	cost.computeCumCost()
+	cost.computePath()
 	return cost
 }
 
@@ -41,6 +38,10 @@ func (cumCost *CumCostMatrix) Get(i1, i2 int) float64 {
 	}
 	var i = cumCost.ravel(i1, i2)
 	return cumCost.values[i]
+}
+
+func (cumCost *CumCostMatrix) Path() [][]int {
+	return cumCost.path
 }
 
 func (cumCost *CumCostMatrix) setStride(shortest int, longest int) {
@@ -61,14 +62,14 @@ func (cumCost *CumCostMatrix) computeCumCost() {
 	cumCost.values = make([]float64, cumCost.stride0*cumCost.stride1)
 	for i1 := range cumCost.s1 {
 		var i2l = 0
-		var i2r = len(cumCost.s2)
+		var i2r = len(cumCost.s2) - 1
 		if !cumCost.inWindow(i1, i2l) {
 			i2l = i1 - cumCost.window
 		}
-		if !cumCost.inWindow(i1, i2r-1) {
-			i2r = i1 + cumCost.window + 1
+		if !cumCost.inWindow(i1, i2r) {
+			i2r = i1 + cumCost.window
 		}
-		for i2 := i2l; i2 < i2r; i2++ {
+		for i2 := i2l; i2 <= i2r; i2++ {
 			var i = cumCost.ravel(i1, i2)
 			var cost = 0.
 			var dist = space.PointDist(cumCost.s1[i1], cumCost.s2[i2])
@@ -88,11 +89,11 @@ func (cumCost *CumCostMatrix) computeCumCost() {
 	}
 }
 
-func (cumCost *CumCostMatrix) computePath() [][]int {
+func (cumCost *CumCostMatrix) computePath() {
 	var i1, i2 = len(cumCost.s1) - 1, len(cumCost.s2) - 1
-	var path = make([][]int, 0, i1+i2)
+	cumCost.path = make([][]int, 0, i1+i2)
 	for i1 > 0 || i2 > 0 {
-		path = append(path, []int{i1, i2})
+		cumCost.path = append(cumCost.path, []int{i1, i2})
 		switch {
 		case i1 == 0:
 			i2--
@@ -103,8 +104,7 @@ func (cumCost *CumCostMatrix) computePath() [][]int {
 			i1, i2 = decrPath(ul, u, l, i1, i2)
 		}
 	}
-	path = append(path, []int{0, 0})
-	return path
+	cumCost.path = append(cumCost.path, []int{0, 0})
 }
 
 func (cumCost *CumCostMatrix) neighborCosts(i1 int, i2 int) (float64, float64, float64) {
@@ -114,13 +114,7 @@ func (cumCost *CumCostMatrix) neighborCosts(i1 int, i2 int) (float64, float64, f
 	return l, u, ul
 }
 
-func (cumCost *CumCostMatrix) ravel(i1, i2 int) int {
-	var r1 = cumCost.tr0*i1 + cumCost.tr1*i2
-	var r2 = cumCost.tr0*i2 + cumCost.tr1*i1
-	return cumCost.shift(r1, r2)
-}
-
-func (cumCost *CumCostMatrix) shift(i, j int) int {
+func (cumCost *CumCostMatrix) ravel(i, j int) int {
 	if i > cumCost.window {
 		return cumCost.index(i, j-i+cumCost.window)
 	}

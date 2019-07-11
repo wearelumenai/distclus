@@ -64,10 +64,10 @@ func (cumCost *CumCostMatrix) computeCumCost() {
 	cumCost.values = make([]float64, cumCost.stride0*cumCost.stride1)
 	for i1 := range cumCost.s1 {
 		var i2l = 0
-		var i2r = len(cumCost.s2) - 1
 		if !cumCost.inWindow(i1, i2l) {
 			i2l = i1 - cumCost.window
 		}
+		var i2r = len(cumCost.s2) - 1
 		if !cumCost.inWindow(i1, i2r) {
 			i2r = i1 + cumCost.window
 		}
@@ -127,15 +127,8 @@ func (cumCost *CumCostMatrix) index(i, j int) int {
 	return i*cumCost.stride1 + j
 }
 
-//go:inline
 func (cumCost *CumCostMatrix) inWindow(i int, j int) bool {
-	if i-j > cumCost.window {
-		return false
-	}
-	if j-i > cumCost.window {
-		return false
-	}
-	return true
+	return i-j <= cumCost.window && j-i <= cumCost.window
 }
 
 func min(v1 float64, v2 float64, v3 float64) float64 {

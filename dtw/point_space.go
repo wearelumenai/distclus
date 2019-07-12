@@ -2,6 +2,7 @@ package dtw
 
 import "distclus/core"
 
+// PointSpace represents a space for points in R
 type PointSpace interface {
 	core.Space
 	PointDist(point1 []float64, point2 []float64) float64

@@ -4,6 +4,7 @@ import (
 	"math"
 )
 
+// Ends holds the ends of a DTW path piece
 type Ends struct {
 	End0, End1 int
 }
@@ -42,6 +43,7 @@ func (cumCost *CumCostMatrix) Get(i1, i2 int) float64 {
 	return cumCost.values[i]
 }
 
+// Path returns the DTW path
 func (cumCost *CumCostMatrix) Path() []Ends {
 	return cumCost.path
 }

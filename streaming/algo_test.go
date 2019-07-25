@@ -84,4 +84,8 @@ func Test_AlgoPush(t *testing.T) {
 		_ = algo.Push(d[i])
 	}
 	_ = algo.Close()
+	var figures, _ = algo.RuntimeFigures()
+	if figures["maxDistance"] < 10. {
+		t.Error("max distance should be grater than 1")
+	}
 }

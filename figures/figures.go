@@ -5,4 +5,5 @@ type figure string
 const (
 	Iterations   = "iterations"
 	Acceptations = "acceptations"
+	MaxDistance  = "maxDistance"
 )

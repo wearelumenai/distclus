@@ -28,8 +28,8 @@ func NewImpl(conf Conf, elemts []core.Elemt) Impl {
 		c:    c,
 		conf: conf,
 		norm: distuv.Normal{
-			Mu:    GetRadius(conf.Lambda),
-			Sigma: .2,
+			Mu:    conf.Mu,
+			Sigma: conf.Sigma,
 			Src:   conf.RGen,
 		},
 	}
@@ -83,7 +83,7 @@ func (impl *Impl) iterSync(space core.Space, notifier core.Notifier) bool {
 
 func (impl *Impl) iter(elemt core.Elemt, space core.Space, notifier core.Notifier) {
 	impl.Iterate(elemt, space)
-	notifier(impl.clust, nil)
+	notifier(impl.clust, map[string]float64{"maxDistance": impl.maxDistance})
 }
 
 // Push pushes a new element
@@ -128,10 +128,10 @@ func (impl *Impl) GetMaxDistance() float64 {
 
 // GetRelativeDistance returns the ratio of given distance with the maximal distance if less than 1, otherwise 1.
 func (impl *Impl) GetRelativeDistance(distance float64) float64 {
-	if distance < impl.maxDistance {
-		return distance / impl.maxDistance
+	if impl.maxDistance == 0 {
+		impl.maxDistance = distance
 	}
-	return 1
+	return distance / impl.maxDistance
 }
 
 // AddCenter adds a new center.
@@ -165,20 +165,15 @@ func (impl *Impl) Iterate(elemt core.Elemt, space core.Space) {
 	var _, label, distance = impl.clust.Assign(elemt, space)
 	var relative = impl.GetRelativeDistance(distance)
 
-	if impl.count < 5 || relative < impl.conf.B {
+	if impl.count >= impl.conf.OutAfter && relative > impl.conf.OutRatio {
+		impl.AddOutlier(elemt)
+	} else {
 		var threshold = impl.norm.Rand()
 		if threshold < relative {
 			impl.AddCenter(elemt, distance)
 		} else {
 			impl.UpdateCenter(label, elemt, distance, space)
 		}
-	} else {
-		impl.AddOutlier(elemt)
 	}
 	impl.count++
-}
-
-// GetRadius returns the radius of the sphere that might contains new centers
-func GetRadius(Lambda float64) float64 {
-	return 1.1 - Lambda*.1
 }

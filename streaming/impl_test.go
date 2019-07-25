@@ -28,10 +28,10 @@ func TestImpl_UpdateMaxDistance(t *testing.T) {
 }
 
 func TestImpl_GetRelativeDistance(t *testing.T) {
-	var impl = streaming.Impl{}
+	var impl = streaming.NewImpl(streaming.Conf{}, nil)
 	var relDist = impl.GetRelativeDistance(1.2)
-	if relDist != 1 {
-		t.Error("expected 1 got", relDist)
+	if relDist != 1. {
+		t.Error("expected 1. got", relDist)
 	}
 
 	impl.UpdateMaxDistance(1.2)
@@ -39,8 +39,8 @@ func TestImpl_GetRelativeDistance(t *testing.T) {
 		t.Error("expected 0.5 got", relDist)
 	}
 
-	if relDist := impl.GetRelativeDistance(1.5); relDist != 1 {
-		t.Error("expected 1 got", relDist)
+	if relDist := impl.GetRelativeDistance(1.5); relDist != 1.25 {
+		t.Error("expected 1.25 got", relDist)
 	}
 }
 
@@ -96,15 +96,6 @@ func TestImpl_UpdateCenter(t *testing.T) {
 	}
 }
 
-func TestImpl_GetRadius(t *testing.T) {
-	if radius := streaming.GetRadius(1.); radius != 1. {
-		t.Error("expected 1. got", radius)
-	}
-	if radius := streaming.GetRadius(.1); radius != 1.09 {
-		t.Error("expected 1.09 got", radius)
-	}
-}
-
 func TestImpl_Interface(t *testing.T) {
 	var impl interface{} = &streaming.Impl{}
 	var _, ok = impl.(core.Impl)
@@ -155,10 +146,13 @@ func TestImpl_PushError(t *testing.T) {
 	}
 }
 
+var conf = streaming.Conf{
+	BufferSize: 5, Mu: .5, Sigma: .1, OutRatio: 2., OutAfter: 5,
+	RGen: rand.New(rand.NewSource(1514613616431)),
+}
+
 func TestImpl_Iterate(t *testing.T) {
 	var distr = mix()
-	var conf = streaming.Conf{BufferSize: 5, Lambda: 3, B: 0.95}
-	conf.RGen = rand.New(rand.NewSource(1514613616431))
 	var impl = streaming.NewImpl(conf, []core.Elemt{})
 	impl.AddCenter(distr(), 0.)
 	for i := 0; i < 1000; i++ {
@@ -176,12 +170,6 @@ func TestImpl_Iterate(t *testing.T) {
 
 func TestImpl_Run(t *testing.T) {
 	var distr = mix()
-	var conf = streaming.Conf{
-		BufferSize: 5,
-		Lambda:     3,
-		B:          0.95,
-		RGen:       rand.New(rand.NewSource(6231645162)),
-	}
 	var impl = streaming.NewImpl(conf, []core.Elemt{})
 	var closing = make(chan bool, 1)
 	var closed = make(chan bool, 1)

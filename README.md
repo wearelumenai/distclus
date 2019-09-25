@@ -6,9 +6,19 @@
 
 This library implements the concepts and theoretical results described in the article https://hal.inria.fr/hal-01264233.
 
+## Requirements
+
+You should have go installed on your system. 
+
 ## Installation
 
+The repo should be clone inside your GO environnment. One standard location for it is to put it inside `~/go/src`
+
+
 ```
+$ cd ~/go/src/
+$ git clone https://github.com/wearelumenai/distclus.git
+cd distclus
 $ make build
 ```
 

@@ -18,7 +18,7 @@ The repo should be clone inside your GO environnment. One standard location for 
 ```
 $ cd ~/go/src/
 $ git clone https://github.com/wearelumenai/distclus.git
-cd distclus
+$ cd distclus
 $ make build
 ```
 

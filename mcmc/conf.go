@@ -47,7 +47,7 @@ func SetConfigDefaults(conf *Conf) {
 	if conf.Iter == 0 {
 		conf.Iter = 1
 	}
-	if conf.Timeout == 0 {
+	if conf.Timeout <= 0 {
 		conf.Timeout = math.MaxInt64
 	}
 	if conf.NumCPU == 0 {

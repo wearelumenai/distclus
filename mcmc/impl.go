@@ -4,9 +4,10 @@ import (
 	"distclus/core"
 	"distclus/figures"
 	"distclus/kmeans"
-	"gonum.org/v1/gonum/stat/distuv"
 	"math"
 	"time"
+
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
 // Impl of MCMC

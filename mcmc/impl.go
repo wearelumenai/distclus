@@ -63,7 +63,7 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data, impl.getCurrentTime(data))
 			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
-			if time.Now().Sub(start).Seconds() > float64(mcmcConf.Timeout) {
+			if mcmcConf.Timeout > 0 && time.Now().Sub(start).Seconds() > float64(mcmcConf.Timeout) {
 				err = core.ErrTimeOut
 				loop = false
 			} else {

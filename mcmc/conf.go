@@ -2,7 +2,6 @@ package mcmc
 
 import (
 	"fmt"
-	"math"
 	"runtime"
 	"time"
 
@@ -13,6 +12,7 @@ import (
 type Conf struct {
 	Par            bool
 	Iter           int
+	IterWait       int // wait time in s between iterations
 	InitK          int
 	FrameSize      int
 	RGen           *rand.Rand
@@ -46,9 +46,6 @@ func SetConfigDefaults(conf *Conf) {
 	}
 	if conf.Iter == 0 {
 		conf.Iter = 1
-	}
-	if conf.Timeout <= 0 {
-		conf.Timeout = math.MaxInt64
 	}
 	if conf.NumCPU == 0 {
 		conf.NumCPU = runtime.NumCPU()

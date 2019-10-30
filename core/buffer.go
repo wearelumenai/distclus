@@ -84,17 +84,15 @@ func (b *DataBuffer) Apply() (err error) {
 
 // Applies next staged data if available and returns true.
 // Otherwise returns false.
-func (b *DataBuffer) applyNext() (loop bool) {
-	loop = true
+func (b *DataBuffer) applyNext() (ok bool) {
+	var elmt Elemt
 
 	select {
-	case elmt, ok := <-b.pipe:
+	case elmt, ok = <-b.pipe:
 		if ok {
 			b.data = b.strategy.push(b.data, elmt)
 		}
-		loop = ok
 	default:
-		loop = false
 	}
 
 	return

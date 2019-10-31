@@ -35,16 +35,16 @@ Three implementations are provided :
  - kmeans is built with the ```kmeans.NewAlgo``` constructor
  - mcmc is built with the ```mcmc.NewAlgo``` constructor
  - streaming is built with the ```streaming.NewAlgo``` constructor
- 
+
 Constructors need at least :
  - a configuration object which holds the algorithm parameters
  - a ```core.Space``` object used for distance and center computations
- 
+
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
 
 ## Configuration
 
-Algorithm are configured with configuration objects. A minimal configuration for the MCMC algorithm requires 
+Algorithm are configured with configuration objects. A minimal configuration for the MCMC algorithm requires
 two objects, one for the Metropolis Hastings and the other for the alteration distribution:
 
 ```go
@@ -68,7 +68,7 @@ where :
  - ```InitK``` is the starting number of clusters
  - ```Amp``` and ```B``` are used in the Metropolis Hastings accept ratio computation
  - ```Dim``` and ```Nu``` are used by the alteration distribution
- 
+
 For more information on setting these parameters refer to https://hal.inria.fr/hal-01264233.
 
 ## Build the algorithm
@@ -79,7 +79,7 @@ The algorithm is built using the ```mcmc.NewAlgo``` function. It takes the follo
  - ```data []core.Elemt``` : observations known at build time if any (```nil``` otherwise)
  - ```initializer kmeans.Initializer``` : a functor that returns the starting centers
  - ```distrib mcmc.Distrib``` : alteration distribution
- 
+
  ```go
 package main
 import (
@@ -102,7 +102,7 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.
 The algorithm can be run in two modes :
  - synchronous : all data must be pushed before stating the algorithm
  - asynchronous (or online) : further data can be pushed after the algorithm is statrted
- 
+
 The following function starts the algorithm in asynchronous mode then pushes the observations
 
 ```go
@@ -123,9 +123,9 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 
 ## Prediction
 
-Once the algorithm is started, either in synchronous or online mode, 
+Once the algorithm is started, either in synchronous or online mode,
 the ```Predict``` method can be used to make predictions.
-The following function uses predictions to calculate the root mean squared error 
+The following function uses predictions to calculate the root mean squared error
 for observations for which real output is known.
 
 ```go
@@ -222,7 +222,7 @@ import (
 func Example() {
 	var centers, observations = Sample(1000)
 	var train, test = observations[:800], observations[800:]
-	
+
 	var algo, space = Build(conf, tConf)
 	defer algo.Close()
 
@@ -271,7 +271,7 @@ The ```OnlineClust``` interface is implemented by the ```core.Algo``` struct. We
  - ```Run(async bool) error```
  - ```Close() error```
  - ```RuntimeFigures() (map[string]float64, error)```
- 
+
 Algorithms may return specific figures that describes their running state. These can be obtained by the
 ```RuntimeFigures``` method.
 ```go
@@ -301,7 +301,7 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *cor
 	space = euclid.NewSpace(euclid.Conf{})
 	var buildDistrib = func(data core.Elemt) mcmc.Distrib {
 		tConf.Dim = space.Dim([]core.Elemt{data})
-		return mcmc.NewMultivT(tConf) 
+		return mcmc.NewMultivT(tConf)
 	}
 	var distrib = mcmc.NewLateDistrib(buildDistrib) // the alteration distribution
 	algo = mcmc.NewAlgo(conf, space, data, kmeans.PPInitializer, distrib)
@@ -321,6 +321,8 @@ When the algorithm starts, it first initializes the starting centers.
 The number of initial centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
 Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
 otherwise an error is returned by the ```Run``` method.
+
+In such mode, the parameters ```McmcIter``` and ```IterFreq``` of the ```mcmc.Conf``` are both used to temporize continuous execution by respectively execute n iterations after a last pushed data and ensure maximum number of iterations per seconds.
 
 The ```RunAndFeed``` function above may be modified like this:
 
@@ -360,13 +362,13 @@ The library provides 3 different data types :
  - ```euclid.Space``` built with ```euclid.NewSpace``` constructor, used for vectors with Euclid distance
  - ```cosinus.Space``` built with ```cosinus.NewSpace``` constructor, used for vectors with cosinus distance
  - ```dtw.Space``` built with ```dtw.NewSpace``` constructor, used for time series of vectors with dtw distance
- 
+
  ### Time series
- 
+
  In order to manipulate time series instead of simple vectors,
  all the specific stuff has to be done at construction time.
  In our example above the ```Build``` function should be modified as follow :
- 
+
  ```go
 package main
 import (

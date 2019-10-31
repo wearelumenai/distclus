@@ -9,6 +9,9 @@ import (
 	"sync/atomic"
 )
 
+// StatusNotifier for being notified by Online clustering change status
+type StatusNotifier = func(ClustStatus)
+
 // OnlineClust interface
 // When a prediction is made, the element can be pushed to the model.
 // A prediction consists in a centroid and a label.
@@ -20,7 +23,10 @@ type OnlineClust interface {
 	Centroids() (Clust, error)
 	Push(elemt Elemt) error
 	Predict(elemt Elemt) (Elemt, int, error)
-	Run(async bool) error
+	Run() error
+	RunOC(StatusNotifier) error
+	Pause() error
+	WakeUp() error
 	Close() error
 	RuntimeFigures() (map[string]float64, error)
 }
@@ -37,6 +43,7 @@ type Algo struct {
 	lastUpdateTime int64
 	mutex          sync.RWMutex
 	runtimeFigures map[string]float64
+	statusNotifier StatusNotifier
 }
 
 // AlgoConf algorithm configuration
@@ -51,6 +58,13 @@ func NewAlgo(conf Conf, impl Impl, space Space) Algo {
 		status:  Created,
 		closing: make(chan bool, 1),
 		closed:  make(chan bool, 1),
+	}
+}
+
+func (algo *Algo) setStatus(status ClustStatus) {
+	atomic.StoreInt64(&algo.status, status)
+	if algo.statusNotifier != nil {
+		algo.statusNotifier(status)
 	}
 }
 
@@ -78,11 +92,21 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	return
 }
 
-// Run executes the algorithm and notify the user with a callback, timed by a time to callback (ttc) integer
-func (algo *Algo) Run(async bool) (err error) {
+// Run executes the algorithm in batch mode
+func (algo *Algo) Run() (err error) {
 	err = algo.tryInit()
 	if err == nil {
-		err = algo.runIfReady(async)
+		err = algo.runIfReady(false)
+	}
+	return
+}
+
+// ARun executes asynchronously the algorithm in Online Clustering mode
+func (algo *Algo) RunOC(notifier StatusNotifier) (err error) {
+	algo.statusNotifier = notifier
+	err = algo.tryInit()
+	if err == nil {
+		err = algo.runIfReady(true)
 	}
 	return
 }
@@ -90,6 +114,26 @@ func (algo *Algo) Run(async bool) (err error) {
 // Space returns space
 func (algo *Algo) Space() Space {
 	return algo.space
+}
+
+// Pause algorithm execution
+func (algo *Algo) Pause() (err error) {
+	if algo.Status() == Running {
+		err = algo.impl.Pause()
+	} else {
+		err = fmt.Errorf("Algorithm is not running")
+	}
+	return
+}
+
+// WakeUp algorithm execution after paused status
+func (algo *Algo) WakeUp() (err error) {
+	if algo.Status() == Paused {
+		err = algo.impl.WakeUp()
+	} else {
+		err = fmt.Errorf("Algorithm is not paused")
+	}
+	return
 }
 
 // Predict the cluster for a new observation
@@ -106,11 +150,11 @@ func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, err error) {
 
 // Close Stops the algorithm
 func (algo *Algo) Close() (err error) {
-	if algo.status == Running {
+	if algo.status == Running || algo.status == Paused {
 		algo.closing <- true
 		<-algo.closed
 	}
-	atomic.StoreInt64(&algo.status, Closed)
+	algo.setStatus(Closed)
 	return
 }
 
@@ -147,7 +191,7 @@ func (algo *Algo) tryInit() (err error) {
 	if algo.status == Created {
 		algo.centroids, err = algo.impl.Init(algo.conf.ImplConf, algo.space)
 		if err == nil {
-			atomic.StoreInt64(&algo.status, Ready)
+			algo.setStatus(Ready)
 		}
 	}
 	return
@@ -164,7 +208,7 @@ func (algo *Algo) runIfReady(async bool) (err error) {
 
 func (algo *Algo) run(async bool) (err error) {
 	if async {
-		err = algo.impl.SetAsync()
+		err = algo.impl.SetAsync(algo.setStatus)
 		if err == nil {
 			go algo.runAsync()
 		}
@@ -176,7 +220,7 @@ func (algo *Algo) run(async bool) (err error) {
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) runSync() (err error) {
-	atomic.StoreInt64(&algo.status, Running)
+	algo.setStatus(Running)
 
 	err = algo.impl.Run(
 		algo.conf.ImplConf,
@@ -188,7 +232,7 @@ func (algo *Algo) runSync() (err error) {
 	)
 
 	if algo.status == Running {
-		atomic.StoreInt64(&algo.status, Ready)
+		algo.setStatus(Ready)
 	}
 
 	return

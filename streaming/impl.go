@@ -3,6 +3,9 @@ package streaming
 import (
 	"distclus/core"
 	"errors"
+	"fmt"
+	"sync"
+
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -16,6 +19,10 @@ type Impl struct {
 	norm        distuv.Normal
 	count       int
 	async       bool
+	notifier    core.StatusNotifier
+	paused      bool
+	wakeUp      chan bool
+	mutex       sync.RWMutex
 }
 
 // NewImpl creates a new Impl instance.
@@ -52,6 +59,12 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 	}
 	for loop := true; loop; {
 		if impl.async {
+			if impl.paused {
+				var _, ok = <-impl.wakeUp
+				if !ok {
+					break
+				}
+			}
 			loop = impl.iterAsync(space, notifier, closing)
 		} else {
 			loop = impl.iterSync(space, notifier)
@@ -86,6 +99,31 @@ func (impl *Impl) iter(elemt core.Elemt, space core.Space, notifier core.Notifie
 	notifier(impl.clust, map[string]float64{"maxDistance": impl.maxDistance})
 }
 
+// Pause pause the algorithm
+func (impl *Impl) Pause() (err error) {
+	if impl.async {
+		impl.mutex.Lock()
+		impl.paused = true
+		impl.mutex.Unlock()
+	} else {
+		err = fmt.Errorf("Batch mode")
+	}
+	return
+}
+
+// WakeUp the algorithm after paused it
+func (impl *Impl) WakeUp() (err error) {
+	if impl.async {
+		impl.mutex.Lock()
+		impl.paused = false
+		impl.wakeUp <- true
+		impl.mutex.Unlock()
+	} else {
+		err = fmt.Errorf("Batch mode")
+	}
+	return
+}
+
 // Push pushes a new element
 func (impl *Impl) Push(elemt core.Elemt) error {
 	if impl.async {
@@ -109,7 +147,8 @@ func (impl *Impl) pushSync(elemt core.Elemt) error {
 }
 
 // SetAsync indicates that the algorithm is asynchronous
-func (impl *Impl) SetAsync() error {
+func (impl *Impl) SetAsync(notifier core.StatusNotifier) error {
+	impl.notifier = notifier
 	impl.async = true
 	return nil
 }

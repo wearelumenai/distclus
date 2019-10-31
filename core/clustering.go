@@ -16,7 +16,8 @@ type ClustStatus = int64
 const (
 	Created ClustStatus = iota
 	Ready
-	Running
+	Running // used when algorithm run or after a pushed data when algo is in paused status
+	Paused  // only in online clustering when no data and iterations are done
 	Closed
 )
 

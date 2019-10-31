@@ -21,6 +21,7 @@ type mockImpl struct {
 	clust       core.Clust
 	error       string
 	iter        int
+	notifier    core.StatusNotifier
 }
 
 func (impl *mockImpl) Init(conf core.ImplConf, space core.Space) (centroids core.Clust, err error) {
@@ -67,9 +68,18 @@ func (impl *mockImpl) Push(elemt core.Elemt) error {
 	return impl.errorResult()
 }
 
-func (impl *mockImpl) SetAsync() error {
+func (impl *mockImpl) SetAsync(notifier core.StatusNotifier) error {
+	impl.notifier = notifier
 	impl.async = true
 	return impl.errorResult()
+}
+
+func (impl *mockImpl) Pause() (err error) {
+	return
+}
+
+func (impl *mockImpl) WakeUp() (err error) {
+	return
 }
 
 type mockSpace struct {
@@ -133,7 +143,7 @@ func TestErrorAtInitialization(t *testing.T) {
 	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
-	err := algo.Run(false)
+	err := algo.Run()
 
 	if err == nil {
 		t.Error("no error in wrong cluster")
@@ -145,7 +155,7 @@ func TestAsyncError(t *testing.T) {
 
 	impl := algo.Impl().(*mockImpl)
 
-	err := algo.Run(true)
+	err := algo.RunOC(nil)
 
 	if err != nil {
 		t.Error("error during async execution")
@@ -153,7 +163,7 @@ func TestAsyncError(t *testing.T) {
 
 	impl.error = "launch error\n"
 
-	err = algo.Run(true)
+	err = algo.RunOC(nil)
 
 	if err == nil {
 		t.Error("no error in wrong cluster")
@@ -182,7 +192,7 @@ func Test_Predict(t *testing.T) {
 		t.Error("initialized before running")
 	}
 
-	err = algo.Run(false)
+	err = algo.Run()
 
 	if err != nil {
 		t.Error("error while running prediction")
@@ -277,7 +287,7 @@ func Test_Scenario_Sync(t *testing.T) {
 		t.Error("async before starting")
 	}
 
-	_ = algo.Run(false)
+	_ = algo.Run()
 	if algo.Status() != core.Ready {
 		t.Error("status should be Ready")
 	}
@@ -342,7 +352,7 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("async before starting")
 	}
 
-	_ = algo.Run(true)
+	_ = algo.RunOC(nil)
 	time.Sleep(500 * time.Millisecond)
 	if algo.Status() != core.Running {
 		t.Error("status should be Running")

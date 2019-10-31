@@ -4,7 +4,9 @@ import (
 	"distclus/core"
 	"distclus/figures"
 	"distclus/kmeans"
+	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"gonum.org/v1/gonum/stat/distuv"
@@ -21,6 +23,12 @@ type Impl struct {
 	iter, acc   int
 	forever     bool
 	dim         int
+	pushed      chan core.Elemt
+	newData     int
+	mutex       sync.RWMutex
+	paused      bool
+	wakeUp      chan bool
+	notifier    core.StatusNotifier
 }
 
 // Strategy specifies strategy methods
@@ -50,12 +58,21 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 	}
 
 	var start = time.Now()
+	var newData = impl.newData
+	var iterFreq time.Duration
+	if mcmcConf.IterFreq > 0 {
+		iterFreq = time.Second / time.Duration(mcmcConf.IterFreq+1)
+	}
+	var lastIterExecutionTime = time.Now()
 	for loop := impl.forever || impl.iter < mcmcConf.McmcIter; loop; {
 		select {
 		case <-closing:
 			closed <- true
 			time.Sleep(300 * time.Millisecond)
 			loop = false
+			if impl.forever && impl.notifier != nil {
+				impl.notifier(core.Closed)
+			}
 
 		default:
 			impl.iter++
@@ -64,12 +81,51 @@ func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust
 			notifier(centroids, impl.runtimeFigures())
 			err = impl.buffer.Apply()
 			if err == nil {
+				if impl.forever {
+					// impl.mutex.RLock()
+					if impl.paused {
+						// impl.mutex.RUnlock()
+						var _, ok = <-impl.wakeUp
+						if !ok {
+							break
+						}
+					}
+					// impl.mutex.RUnlock()
+				}
+				if iterFreq > 0 {
+					var diff = time.Duration(time.Now().Sub(lastIterExecutionTime).Seconds()) - iterFreq
+					if diff > 0 {
+						time.Sleep(diff)
+					}
+					lastIterExecutionTime = time.Now()
+				}
 				if mcmcConf.Timeout > 0 && time.Now().Sub(start).Seconds() > float64(mcmcConf.Timeout) {
 					err = core.ErrTimeOut
 					loop = false
 				} else {
-					if mcmcConf.IterWait > 0 {
-						time.Sleep(time.Duration(mcmcConf.IterWait) * time.Millisecond)
+					if impl.forever && mcmcConf.McmcIter > 0 { // check for iterations after no activity in asynchronous execution
+						// impl.mutex.Lock()
+						if impl.newData > newData {
+							impl.iter = 0
+							impl.newData = 0
+						} else if mcmcConf.McmcIter <= impl.iter {
+							// impl.mutex.Unlock()
+							if impl.notifier != nil {
+								impl.notifier(core.Paused)
+							}
+							var _, ok = <-impl.pushed
+							if impl.notifier != nil {
+								impl.notifier(core.Running)
+							}
+							if !ok {
+								break
+							}
+							impl.iter = 0
+							// impl.mutex.Lock()
+							impl.newData = 0
+						}
+						newData = impl.newData
+						// impl.mutex.Unlock()
 					}
 					loop = impl.forever || impl.iter < mcmcConf.McmcIter
 				}
@@ -86,13 +142,24 @@ func (impl *Impl) getCurrentTime(data []core.Elemt) int {
 }
 
 // SetAsync changes the status of impl buffer to async
-func (impl *Impl) SetAsync() error {
+func (impl *Impl) SetAsync(notifier core.StatusNotifier) error {
+	impl.notifier = notifier
 	impl.forever = true
+	impl.pushed = make(chan core.Elemt)
 	return impl.buffer.SetAsync()
 }
 
 // Push input element in the buffer
 func (impl *Impl) Push(elemt core.Elemt) error {
+	if impl.forever {
+		// impl.mutex.Lock()
+		// defer impl.mutex.Unlock()
+		impl.newData++
+		select {
+		case impl.pushed <- elemt:
+		default:
+		}
+	}
 	return impl.buffer.Push(elemt)
 }
 
@@ -184,6 +251,31 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 }
 
 // runtimeFigures returns specific kmeans properties
-func (impl Impl) runtimeFigures() map[string]float64 {
+func (impl *Impl) runtimeFigures() map[string]float64 {
 	return map[string]float64{figures.Iterations: float64(impl.iter), figures.Acceptations: float64(impl.acc)}
+}
+
+// Pause asynchronous execution
+func (impl *Impl) Pause() (err error) {
+	if impl.forever {
+		// impl.mutex.Lock()
+		// defer impl.mutex.Unlock()
+		impl.paused = true
+	} else {
+		err = fmt.Errorf("Batch mode")
+	}
+	return
+}
+
+// WakeUp cancel paused status
+func (impl *Impl) WakeUp() (err error) {
+	if impl.forever {
+		// impl.mutex.Lock()
+		// defer impl.mutex.Unlock()
+		impl.paused = false
+		impl.wakeUp <- true
+	} else {
+		err = fmt.Errorf("Batch mode")
+	}
+	return
 }

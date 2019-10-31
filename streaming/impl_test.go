@@ -4,9 +4,10 @@ import (
 	"distclus/core"
 	"distclus/euclid"
 	"distclus/streaming"
-	"golang.org/x/exp/rand"
 	"reflect"
 	"testing"
+
+	"golang.org/x/exp/rand"
 )
 
 func TestImpl_UpdateMaxDistance(t *testing.T) {
@@ -177,7 +178,7 @@ func TestImpl_Run(t *testing.T) {
 	var notifier = func(clusts core.Clust, float64s map[string]float64) {
 		clusters = clusts
 	}
-	_ = impl.SetAsync()
+	_ = impl.SetAsync(nil)
 	go func() {
 		_ = impl.Run(conf, euclid.Space{}, core.Clust{distr()}, notifier, closing, closed)
 	}()

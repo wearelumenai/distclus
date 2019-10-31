@@ -6,8 +6,9 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 	"fmt"
-	"golang.org/x/exp/rand"
 	"math"
+
+	"golang.org/x/exp/rand"
 )
 
 var conf = mcmc.Conf{
@@ -48,7 +49,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	for i := 0; i < len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
-	err = algo.Run(false)
+	err = algo.Run()
 	return
 }
 

@@ -5,10 +5,11 @@ import (
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"gonum.org/v1/gonum/mat"
 	"math"
 	"runtime"
 	"testing"
+
+	"gonum.org/v1/gonum/mat"
 
 	"golang.org/x/exp/rand"
 )
@@ -126,7 +127,7 @@ func Test_Normal(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 	var algo = mcmc.NewAlgo(implConf, space, data, initializer, distrib)
 
-	_ = algo.Run(false)
+	_ = algo.Run()
 	var result, _ = algo.Centroids()
 
 	var _, cards = result.ParReduceLoss(data, space, implConf.Norm, runtime.NumCPU())

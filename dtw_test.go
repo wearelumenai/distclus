@@ -6,8 +6,9 @@ import (
 	"distclus/euclid"
 	"distclus/kmeans"
 	"distclus/mcmc"
-	"gonum.org/v1/gonum/stat/distuv"
 	"testing"
+
+	"gonum.org/v1/gonum/stat/distuv"
 )
 
 func BenchmarkSeries(b *testing.B) {
@@ -63,7 +64,7 @@ func runSeriesAlgo(algo *core.Algo, series [][][]float64) ([]core.Elemt, error) 
 		}
 	}
 
-	if err := algo.Run(false); err != nil {
+	if err := algo.Run(); err != nil {
 		return nil, err
 	}
 

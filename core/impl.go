@@ -8,7 +8,9 @@ type Impl interface {
 	Init(ImplConf, Space) (centroids Clust, err error)
 	Run(conf ImplConf, space Space, centroids Clust, notifier Notifier, closing <-chan bool, closed chan<- bool) error
 	Push(Elemt) error
-	SetAsync() error
+	SetAsync(StatusNotifier) error
+	Pause() error
+	WakeUp() error
 }
 
 // ImplConf is implementation configuration interface

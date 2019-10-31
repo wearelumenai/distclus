@@ -3,6 +3,7 @@ package mcmc
 import (
 	"distclus/core"
 	"distclus/kmeans"
+
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
@@ -30,7 +31,7 @@ func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core
 		RGen: conf.RGen,
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
-	_ = algo.Run(false)
+	_ = algo.Run()
 	_ = algo.Close()
 	result, _ = algo.Centroids()
 

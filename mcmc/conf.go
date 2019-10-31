@@ -12,14 +12,14 @@ import (
 type Conf struct {
 	Par            bool
 	Iter           int
-	IterWait       int // wait time in s between iterations
-	InitK          int
+	IterFreq       int // maximal number of iterations per seconds
+	InitK          int // number of initial number of clusters
 	FrameSize      int
 	RGen           *rand.Rand
 	B, Amp, R      float64
 	Norm           float64
 	MaxK           int
-	McmcIter       int
+	McmcIter       int // number of iterations only in batch mode
 	Timeout        int
 	ProbaK         []float64
 	lamb, l2b, tau float64

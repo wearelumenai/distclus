@@ -199,7 +199,7 @@ func Test_TimeOut(t *testing.T) {
 	for _, elemt := range test.Vectors {
 		_ = algo.Push(elemt)
 	}
-	var err = algo.Run(false)
+	var err = algo.Run()
 	if err != core.ErrTimeOut {
 		t.Error("time out expected")
 	}

@@ -9,7 +9,7 @@ import (
 func NewParImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
 	impl = NewSeqImpl(conf, initializer, data, distrib)
 	impl.strategy = &ParStrategy{
-		Degree: conf.NumCPU,
+		Degree: conf.Conf.NumCPU,
 	}
 	return
 }
@@ -22,9 +22,11 @@ type ParStrategy struct {
 // Iterate is the iterative execution
 func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) core.Clust {
 	var kmeansConf = kmeans.Conf{
-		Par:  true,
-		K:    len(centroids),
-		Iter: iter,
+		Par: true,
+		K:   len(centroids),
+		Conf: core.Conf{
+			Iter: iter,
+		},
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 

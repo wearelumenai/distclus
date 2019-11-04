@@ -19,7 +19,7 @@ func Test_Initialization(t *testing.T) {
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 0.1,
-		Norm: 2, McmcIter: 0,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -38,7 +38,7 @@ func Test_DefaultConf(t *testing.T) {
 		FrameSize: 8,
 		RGen:      nil,
 		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 0,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -57,7 +57,7 @@ func Test_RunSyncGiven(t *testing.T) {
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 0,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -77,7 +77,7 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 		ProbaK:    []float64{1, 8, 1},
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 0.1,
-		Norm: 2, McmcIter: 1,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -96,7 +96,7 @@ func Test_RunAsync(t *testing.T) {
 		// FrameSize: 8,
 		RGen: rand.New(rand.NewSource(6305689164243)),
 		B:    100, Amp: 0.1,
-		Norm: 2, McmcIter: 20,
+		Norm:   2,
 		ProbaK: []float64{1, 8, 1},
 	}
 	var tConf = mcmc.MultivTConf{
@@ -117,7 +117,7 @@ func Test_Workflow(t *testing.T) {
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 20,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -136,7 +136,7 @@ func Test_MaxK(t *testing.T) {
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1e6,
-		Norm: 2, McmcIter: 10,
+		Norm: 2,
 		MaxK: 6,
 	}
 	var tConf = mcmc.MultivTConf{
@@ -161,7 +161,7 @@ func Test_AcceptRatio(t *testing.T) {
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 20,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -185,8 +185,7 @@ func Test_TimeOut(t *testing.T) {
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 2000000,
-		Timeout: 1,
+		Norm: 2,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,

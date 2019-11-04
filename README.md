@@ -6,6 +6,8 @@
 
 This library implements the concepts and theoretical results described in the article https://hal.inria.fr/hal-01264233.
 
+In addition, static and dynamic concerns aim to address multi-platform cross-usages, from large to embedded scales.
+
 ## Installation
 
 ```
@@ -55,7 +57,6 @@ var conf = mcmc.Conf{
 	InitK: 1,
 	Amp:   .5,
 	B:     1,
-	McmcIter: 20,
 }
 
 var tConf = mcmc.MultivTConf{
@@ -88,7 +89,6 @@ import (
 	"distclus/kmeans"
 	"distclus/mcmc"
 )
-
 func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
@@ -268,9 +268,12 @@ The ```OnlineClust``` interface is implemented by the ```core.Algo``` struct. We
  - ```Centroids() (Clust, error)```
  - ```Push(elemt Elemt) error```
  - ```Predict(elemt Elemt) (Elemt, int, error)```
- - ```Run(async bool) error```
+ - ```Run() error```
+ - ```RunOC(StatusNotifier) error```
  - ```Close() error```
- - ```RuntimeFigures() (map[string]float64, error)```
+ - ```Pause() error```
+ - ```Play() error```
+ - ```RuntimeFigures() (figures.RuntimeFigures, error)```
 
 Algorithms may return specific figures that describes their running state. These can be obtained by the
 ```RuntimeFigures``` method.
@@ -309,20 +312,23 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *cor
 }
 ```
 
-The functor passed to ```mcmc.NewLateDistrib``` is executed only once with minimal locking to ensure parallel safety.
+The functor passed to `mcmc.NewLateDistrib` is executed only once with minimal locking to ensure parallel safety.
 
 ## Online clustering
 
 The algorithm can be executed online, allowing new data to be pushed during execution.
-This is achieved by passing ```true``` to the ```Run``` method
-which will launch the algorithm execution as a background routine.
+This is achieved by calling the `RunOC` method with a `core.StatusNotifier` callback which will launch the algorithm execution as a background routine, and notify when status change in the same go routine than the RunOC execution (therefore, it might brake main execution routine).
 
 When the algorithm starts, it first initializes the starting centers.
-The number of initial centroids is given by the parameter ```InitK``` of the ```mcmc.Conf``` configuration object (see above).
-Thus at least ```InitK``` observations must be given at construction time or pushed before the algorithm starts,
-otherwise an error is returned by the ```Run``` method.
+For example, the number of initial centroids is given by the parameter `InitK` of the `mcmc.Conf` configuration object (see above).
+Thus at least `InitK` observations must be given at construction time or pushed before the algorithm starts,
+otherwise an error is returned by the `RunOC` method.
 
-In such mode, the parameters ```McmcIter``` and ```IterFreq``` of the ```mcmc.Conf``` are both used to temporize continuous execution by respectively execute n iterations after a last pushed data and ensure maximum number of iterations per seconds.
+In such mode, the parameters `Iter`, `MinDataLength` and `IterFreq` of the `core.Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `MinDataLength` pushed data and ensure maximum number of iterations per seconds.
+
+Additional methods allow you to dynamically interact with the algorithm:
+- `Pause() error` : blocking method until the algorithm is paused.
+- `Play() error` : in opposition to method `Pause`, this blocking method goes back to running status.
 
 The ```RunAndFeed``` function above may be modified like this:
 
@@ -338,7 +344,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
         err = algo.Push(observations[i])
     }
     if err != nil {
-        err = algo.Run(true)
+        err = algo.RunOC(nil)
         for i := conf.initK; i < len(observations) && err == nil; i++ {
             err = algo.Push(observations[i])
         }
@@ -422,3 +428,15 @@ func Build(conf streaming.Conf) (algo *core.Algo, space core.Space) {
 	return
 }
 ```
+
+## Add your own algorithm
+
+You can start to create your own algorithm by copying the template package and inspirate from other packages.
+
+### file description
+
+- template/conf: Algorithm configuration properties definition.
+
+- template/impl: Algorithm implementation definition.
+
+- template/algo: Bind algorithm configuration, implementation and user space into a core.Algo structure.

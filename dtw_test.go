@@ -38,11 +38,13 @@ func runSeries() ([]core.Elemt, error) {
 
 func getSeriesConf() (mcmc.Conf, dtw.Space) {
 	var mcmcConf = mcmc.Conf{
-		InitK:    2,
-		Amp:      .001,
-		B:        200,
-		McmcIter: 50,
-		Par:      true,
+		InitK: 2,
+		Amp:   .001,
+		B:     200,
+		Par:   true,
+		Conf: core.Conf{
+			Iter: 50,
+		},
 	}
 	var space = dtw.NewSpace(dtw.Conf{
 		InnerSpace: euclid.NewSpace(euclid.Conf{}),

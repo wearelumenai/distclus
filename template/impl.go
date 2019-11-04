@@ -1,0 +1,35 @@
+package template // to rename for specific algorithm
+
+import (
+	"distclus/core"
+	"distclus/figures"
+)
+
+// Impl represents the implementation of the streaming clustering algorithm.
+type Impl struct {
+}
+
+// NewImpl creates a new Impl instance.
+func NewImpl(conf Conf, elemts []core.Elemt) Impl {
+	return Impl{}
+}
+
+// Init initializes the streaming algorithm.
+func (impl *Impl) Init(core.ImplConf, core.Space, core.Clust) (clust core.Clust, err error) {
+	return
+}
+
+// Iterate runs one iteration of the streaming algorithm.
+func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+	return
+}
+
+// Push pushes a new element
+func (impl *Impl) Push(elemt core.Elemt) (err error) {
+	return
+}
+
+// SetOC change clustering mode to online
+func (impl *Impl) SetOC() (err error) {
+	return
+}

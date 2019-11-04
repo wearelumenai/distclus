@@ -12,10 +12,9 @@ import (
 )
 
 var conf = mcmc.Conf{
-	InitK:    1,
-	Amp:      .5,
-	B:        1,
-	McmcIter: 20,
+	InitK: 1,
+	Amp:   .5,
+	B:     1,
 }
 
 var tConf = mcmc.MultivTConf{

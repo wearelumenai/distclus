@@ -1,8 +1,8 @@
 package mcmc
 
 import (
+	"distclus/core"
 	"fmt"
-	"runtime"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -10,24 +10,20 @@ import (
 
 // Conf is the mcmc configuration object
 type Conf struct {
+	core.Conf
 	Par            bool
-	Iter           int
-	IterFreq       int // maximal number of iterations per seconds
 	InitK          int // number of initial number of clusters
 	FrameSize      int
 	RGen           *rand.Rand
 	B, Amp, R      float64
 	Norm           float64
 	MaxK           int
-	McmcIter       int // number of iterations only in batch mode
-	Timeout        int
 	ProbaK         []float64
 	lamb, l2b, tau float64
-	NumCPU         int
 }
 
 // SetConfigDefaults initializes nil parameter values
-func SetConfigDefaults(conf *Conf) {
+func (conf *Conf) SetConfigDefaults() {
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
 		conf.RGen = rand.New(rand.NewSource(seed))
@@ -44,25 +40,15 @@ func SetConfigDefaults(conf *Conf) {
 	if conf.B == 0 {
 		conf.B = 1
 	}
-	if conf.Iter == 0 {
-		conf.Iter = 1
-	}
-	if conf.NumCPU == 0 {
-		conf.NumCPU = runtime.NumCPU()
-	}
 }
 
 // Verify configuration parameters
-func Verify(conf Conf) {
+func (conf Conf) Verify() {
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}
 
 	if conf.InitK > conf.MaxK && conf.MaxK != 0 {
 		panic(fmt.Sprintf("Illegal value for Max K / Init K: %v / %v", conf.MaxK, conf.InitK))
-	}
-
-	if conf.McmcIter < 0 {
-		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.McmcIter))
 	}
 }

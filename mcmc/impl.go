@@ -4,10 +4,7 @@ import (
 	"distclus/core"
 	"distclus/figures"
 	"distclus/kmeans"
-	"fmt"
 	"math"
-	"sync"
-	"time"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -21,14 +18,8 @@ type Impl struct {
 	distrib     Distrib
 	store       CenterStore
 	iter, acc   int
-	forever     bool
 	dim         int
-	pushed      chan core.Elemt
-	newData     int
-	mutex       sync.RWMutex
-	paused      bool
-	wakeUp      chan bool
-	notifier    core.StatusNotifier
+	current     proposal
 }
 
 // Strategy specifies strategy methods
@@ -38,128 +29,43 @@ type Strategy interface {
 }
 
 // Init initializes the algorithm
-func (impl *Impl) Init(conf core.ImplConf, space core.Space) (core.Clust, error) {
-	var mcmcConf = conf.(Conf)
+func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (centroids core.Clust, err error) {
+	var mcmcConf = conf.(*Conf)
 	_ = impl.buffer.Apply()
-	impl.iter = 0
-	return impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
-}
-
-// Run executes the algorithm
-func (impl *Impl) Run(conf core.ImplConf, space core.Space, centroids core.Clust, notifier core.Notifier, closing <-chan bool, closed chan<- bool) (err error) {
-	var mcmcConf = conf.(Conf)
-	var data = impl.buffer.Data()
-	impl.dim = space.Dim(centroids)
-	var current = proposal{
-		k:       mcmcConf.InitK,
-		centers: centroids,
-		loss:    impl.strategy.Loss(mcmcConf, space, centroids, data),
-		pdf:     impl.proba(mcmcConf, space, centroids, centroids, impl.getCurrentTime(data)),
-	}
-
-	var start = time.Now()
-	var newData = impl.newData
-	var iterFreq time.Duration
-	if mcmcConf.IterFreq > 0 {
-		iterFreq = time.Second / time.Duration(mcmcConf.IterFreq+1)
-	}
-	var lastIterExecutionTime = time.Now()
-	for loop := impl.forever || impl.iter < mcmcConf.McmcIter; loop; {
-		select {
-		case <-closing:
-			closed <- true
-			time.Sleep(300 * time.Millisecond)
-			loop = false
-			if impl.forever && impl.notifier != nil {
-				impl.notifier(core.Closed)
-			}
-
-		default:
-			impl.iter++
-			data = impl.buffer.Data()
-			current, centroids = impl.doIter(mcmcConf, space, current, centroids, data, impl.getCurrentTime(data))
-			notifier(centroids, impl.runtimeFigures())
-			err = impl.buffer.Apply()
-			if err == nil {
-				if impl.forever {
-					// impl.mutex.RLock()
-					if impl.paused {
-						// impl.mutex.RUnlock()
-						var _, ok = <-impl.wakeUp
-						if !ok {
-							break
-						}
-					}
-					// impl.mutex.RUnlock()
-				}
-				if iterFreq > 0 {
-					var diff = time.Duration(time.Now().Sub(lastIterExecutionTime).Seconds()) - iterFreq
-					if diff > 0 {
-						time.Sleep(diff)
-					}
-					lastIterExecutionTime = time.Now()
-				}
-				if mcmcConf.Timeout > 0 && time.Now().Sub(start).Seconds() > float64(mcmcConf.Timeout) {
-					err = core.ErrTimeOut
-					loop = false
-				} else {
-					if impl.forever && mcmcConf.McmcIter > 0 { // check for iterations after no activity in asynchronous execution
-						// impl.mutex.Lock()
-						if impl.newData > newData {
-							impl.iter = 0
-							impl.newData = 0
-						} else if mcmcConf.McmcIter <= impl.iter {
-							// impl.mutex.Unlock()
-							if impl.notifier != nil {
-								impl.notifier(core.Paused)
-							}
-							var _, ok = <-impl.pushed
-							if impl.notifier != nil {
-								impl.notifier(core.Running)
-							}
-							if !ok {
-								break
-							}
-							impl.iter = 0
-							// impl.mutex.Lock()
-							impl.newData = 0
-						}
-						newData = impl.newData
-						// impl.mutex.Unlock()
-					}
-					loop = impl.forever || impl.iter < mcmcConf.McmcIter
-				}
-			} else {
-				loop = false
-			}
+	centroids, err = impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
+	if err == nil {
+		var data = impl.buffer.Data()
+		impl.dim = space.Dim(centroids)
+		impl.current = proposal{
+			k:       mcmcConf.InitK,
+			centers: centroids,
+			loss:    impl.strategy.Loss(*mcmcConf, space, centroids, data),
+			pdf:     impl.proba(*mcmcConf, space, centroids, centroids, impl.getCurrentTime(data)),
 		}
 	}
 	return
+}
+
+// Iterate executes the algorithm
+func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+	var mcmcConf = conf.(*Conf)
+
+	var data = impl.buffer.Data()
+	impl.current, clust = impl.doIter(*mcmcConf, space, impl.current, centroids, data, impl.getCurrentTime(data))
+	return clust, runtimeFigures, impl.buffer.Apply()
 }
 
 func (impl *Impl) getCurrentTime(data []core.Elemt) int {
 	return len(data)
 }
 
-// SetAsync changes the status of impl buffer to async
-func (impl *Impl) SetAsync(notifier core.StatusNotifier) error {
-	impl.notifier = notifier
-	impl.forever = true
-	impl.pushed = make(chan core.Elemt)
+// SetOC changes the status of impl buffer to async
+func (impl *Impl) SetOC() error {
 	return impl.buffer.SetAsync()
 }
 
 // Push input element in the buffer
 func (impl *Impl) Push(elemt core.Elemt) error {
-	if impl.forever {
-		// impl.mutex.Lock()
-		// defer impl.mutex.Unlock()
-		impl.newData++
-		select {
-		case impl.pushed <- elemt:
-		default:
-		}
-	}
 	return impl.buffer.Push(elemt)
 }
 
@@ -251,31 +157,8 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 }
 
 // runtimeFigures returns specific kmeans properties
-func (impl *Impl) runtimeFigures() map[string]float64 {
-	return map[string]float64{figures.Iterations: float64(impl.iter), figures.Acceptations: float64(impl.acc)}
-}
-
-// Pause asynchronous execution
-func (impl *Impl) Pause() (err error) {
-	if impl.forever {
-		// impl.mutex.Lock()
-		// defer impl.mutex.Unlock()
-		impl.paused = true
-	} else {
-		err = fmt.Errorf("Batch mode")
+func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
+	return figures.RuntimeFigures{
+		figures.Acceptations: figures.Value(impl.acc),
 	}
-	return
-}
-
-// WakeUp cancel paused status
-func (impl *Impl) WakeUp() (err error) {
-	if impl.forever {
-		// impl.mutex.Lock()
-		// defer impl.mutex.Unlock()
-		impl.paused = false
-		impl.wakeUp <- true
-	} else {
-		err = fmt.Errorf("Batch mode")
-	}
-	return
 }

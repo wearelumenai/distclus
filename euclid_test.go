@@ -37,10 +37,12 @@ func runVectors() ([]core.Elemt, error) {
 
 func getVectorsConf() (mcmc.Conf, euclid.Space) {
 	var mcmcConf = mcmc.Conf{
-		InitK:    2,
-		Amp:      .01,
-		B:        200,
-		McmcIter: 50,
+		InitK: 2,
+		Amp:   .01,
+		B:     200,
+		Conf: core.Conf{
+			Iter: 50,
+		},
 	}
 	var space = euclid.NewSpace(euclid.Conf{})
 	return mcmcConf, space

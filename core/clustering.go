@@ -14,11 +14,13 @@ type ClustStatus = int64
 
 // ClustStatus const values
 const (
-	Created ClustStatus = iota
-	Ready
-	Running // used when algorithm run or after a pushed data when algo is in paused status
-	Paused  // only in online clustering when no data and iterations are done
-	Closed
+	Created  ClustStatus = iota
+	Ready                //
+	Running              // used when algorithm run or after a pushed data when algo is in paused status
+	Idle                 // paused by user
+	Sleeping             // only in online clustering mode when no data and iterations are done
+	Failed               // if an error occured during execution
+	Closed               // only in online clustering mode
 )
 
 // Clust type is an abbrevation for centroids indexed by labels.

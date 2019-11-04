@@ -15,8 +15,6 @@ import (
 )
 
 func Test_getCenters(t *testing.T) {
-	var conf = mcmcConf
-	conf.McmcIter = 0
 	var buffer = core.NewDataBuffer([]core.Elemt{}, -1)
 	var seed = uint64(time.Now().UTC().Unix())
 	var rgen = rand.New(rand.NewSource(seed))

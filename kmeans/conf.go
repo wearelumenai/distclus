@@ -1,8 +1,8 @@
 package kmeans
 
 import (
+	"distclus/core"
 	"fmt"
-	"runtime"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -10,16 +10,16 @@ import (
 
 // Conf of KMeans
 type Conf struct {
+	core.Conf
 	Par       bool
-	NumCPU    int
 	K         int
-	Iter      int
 	FrameSize int
 	RGen      *rand.Rand
 }
 
 // Verify configuratio
-func Verify(conf Conf) {
+func (conf Conf) Verify() {
+	conf.Conf.Verify()
 	if conf.K < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
 	}
@@ -30,12 +30,12 @@ func Verify(conf Conf) {
 }
 
 // SetConfigDefaults initializes nil configuration values
-func SetConfigDefaults(conf *Conf) {
+func (conf *Conf) SetConfigDefaults() {
+	if conf.Conf.Iter == 0 {
+		conf.Conf.Iter = 20
+	}
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
 		conf.RGen = rand.New(rand.NewSource(seed))
-	}
-	if conf.NumCPU == 0 {
-		conf.NumCPU = runtime.NumCPU()
 	}
 }

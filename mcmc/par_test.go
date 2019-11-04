@@ -19,9 +19,10 @@ func Test_ParPredict_Given(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 0,
-		Par: true,
+		B:         100,
+		Amp:       1,
+		Norm:      2,
+		Par:       true,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -40,9 +41,10 @@ func Test_ParPredictPP(t *testing.T) {
 		FrameSize: 8,
 		ProbaK:    []float64{1, 8, 1},
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		B:         100, Amp: 0.1,
-		Norm: 2, McmcIter: 20,
-		Par: true,
+		B:         100,
+		Amp:       0.1,
+		Norm:      2,
+		Par:       true,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -61,9 +63,9 @@ func Test_ParRunAsync(t *testing.T) {
 		FrameSize: 8,
 		ProbaK:    []float64{1, 8, 1},
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		B:         100, Amp: 0.1,
-		McmcIter: 5,
-		Par:      true,
+		B:         100,
+		Amp:       0.1,
+		Par:       true,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -82,9 +84,10 @@ func TestParStrategy_Loss(t *testing.T) {
 		InitK:     3,
 		FrameSize: 8,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		B:         100, Amp: 1,
-		Norm: 2, McmcIter: 0,
-		Par: true,
+		B:         100,
+		Amp:       1,
+		Norm:      2,
+		Par:       true,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -114,9 +117,10 @@ func Test_Normal(t *testing.T) {
 		InitK:     3,
 		FrameSize: 0,
 		RGen:      rand.New(rand.NewSource(6305689164243)),
-		B:         1, Amp: .05,
-		Norm: 2, McmcIter: 60,
-		Par: true,
+		B:         1,
+		Amp:       .05,
+		Norm:      2,
+		Par:       true,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 3,

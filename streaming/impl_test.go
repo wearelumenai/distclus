@@ -107,7 +107,7 @@ func TestImpl_Interface(t *testing.T) {
 
 func TestImpl_InitError(t *testing.T) {
 	var impl = streaming.Impl{}
-	var _, err = impl.Init(streaming.Conf{}, euclid.Space{})
+	var _, err = impl.Init(&streaming.Conf{}, euclid.Space{}, nil)
 	if err == nil {
 		t.Error("an error was expected (initialization is not possible)")
 	}
@@ -121,7 +121,7 @@ func TestImpl_InitSuccess(t *testing.T) {
 	if err0 != nil {
 		t.Error("unexpected error", err0)
 	}
-	var clust, err = impl.Init(conf, euclid.Space{})
+	var clust, err = impl.Init(&conf, euclid.Space{}, nil)
 	if err != nil {
 		t.Error("unexpected error", err)
 	}
@@ -136,7 +136,7 @@ func TestImpl_PushError(t *testing.T) {
 
 	var cluster0 = []float64{1.}
 
-	streaming.SetConfigDefaults(&conf)
+	conf.SetConfigDefaults()
 	for i := 0; i < conf.BufferSize; i++ {
 		var _ = impl.Push(cluster0)
 	}
@@ -158,7 +158,7 @@ func TestImpl_Iterate(t *testing.T) {
 	impl.AddCenter(distr(), 0.)
 	for i := 0; i < 1000; i++ {
 		var cluster1 = distr()
-		impl.Iterate(cluster1, euclid.Space{})
+		impl.Process(cluster1, euclid.Space{})
 	}
 	var clusters = impl.GetClusters()
 	if c := len(clusters); c < 3 {
@@ -175,12 +175,9 @@ func TestImpl_Run(t *testing.T) {
 	var closing = make(chan bool, 1)
 	var closed = make(chan bool, 1)
 	var clusters core.Clust
-	var notifier = func(clusts core.Clust, float64s map[string]float64) {
-		clusters = clusts
-	}
-	_ = impl.SetAsync(nil)
+	_ = impl.SetAsync()
 	go func() {
-		_ = impl.Run(conf, euclid.Space{}, core.Clust{distr()}, notifier, closing, closed)
+		_, _, _ = impl.Iterate(&conf, euclid.Space{}, core.Clust{distr()})
 	}()
 	for i := 0; i < 1000; i++ {
 		_ = impl.Push(distr())

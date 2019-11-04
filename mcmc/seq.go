@@ -27,8 +27,10 @@ type SeqStrategy struct {
 func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) (result core.Clust) {
 	var kmeansConf = kmeans.Conf{
 		K:    len(centroids),
-		Iter: iter,
 		RGen: conf.RGen,
+		Conf: core.Conf{
+			Iter: iter,
+		},
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 	_ = algo.Run()

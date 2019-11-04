@@ -13,8 +13,9 @@ var mcmcConf = mcmc.Conf{
 	InitK:     3,
 	FrameSize: 8,
 	RGen:      rand.New(rand.NewSource(6305689164243)),
-	B:         100, Amp: 1,
-	Norm: 2, McmcIter: 20,
+	B:         100,
+	Amp:       1,
+	Norm:      2,
 }
 
 var mvtConf = mcmc.MultivTConf{

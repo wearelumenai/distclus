@@ -1,12 +1,15 @@
 package streaming
 
 import (
-	"golang.org/x/exp/rand"
+	"distclus/core"
 	"time"
+
+	"golang.org/x/exp/rand"
 )
 
 // Conf represents the cofiguration of a streaming algorithm.
 type Conf struct {
+	core.Conf
 	BufferSize int
 	Mu         float64
 	Sigma      float64
@@ -16,7 +19,7 @@ type Conf struct {
 }
 
 // SetConfigDefaults applies default values to the given configuration.
-func SetConfigDefaults(conf *Conf) {
+func (conf *Conf) SetConfigDefaults() {
 	if conf.BufferSize == 0 {
 		conf.BufferSize = 100
 	}
@@ -36,6 +39,8 @@ func SetConfigDefaults(conf *Conf) {
 
 // Verify checks if the given configuration is valid.
 func Verify(conf Conf) {
+	conf.SetConfigDefaults()
+	conf.Conf.Verify()
 	if conf.OutAfter < 2 {
 		panic("OutAfter should be greater than 1")
 	}

@@ -43,7 +43,9 @@ func (conf *Conf) SetConfigDefaults() {
 }
 
 // Verify configuration parameters
-func (conf Conf) Verify() {
+func (conf *Conf) Verify() {
+	conf.Conf.Verify()
+	conf.SetConfigDefaults()
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}

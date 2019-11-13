@@ -46,7 +46,35 @@ The result of a clustering is of type ```core.Clust``` which is an array of ```c
 
 ## Configuration
 
-Algorithm are configured with configuration objects. A minimal configuration for the MCMC algorithm requires
+Algorithms are configured with configuration objects.
+
+All algorithm configurations extend the `core.Conf` :
+
+```go
+package core
+
+type Conf struct {
+	Iter           uint64
+	IterFreq       float64
+    Timeout        float64
+    NumCPU         int
+    DataPerIter   uint64
+	StatusNotifier StatusNotifier
+}
+```
+
+Where :
+
+- Iter: maximal number of iterations if given. Unlimited by default.
+- IterFreq: maximal number of iterations per second. Unlimited by default.
+- Timeout: maximal algorithm execution duration in seconds. Unlimited by default.
+- NumCPU: number of CPU to use for algorithm execution. Default is maximal number of CPU.
+- DataPerIter: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
+- StatusNotifier: callback called in a separate go routine, each time the algorithm change of status or fires an error. Online clustering specific.
+
+### MCMC Configuration
+
+A minimal configuration for the MCMC algorithm requires
 two objects, one for the Metropolis Hastings and the other for the alteration distribution:
 
 ```go
@@ -57,6 +85,9 @@ var conf = mcmc.Conf{
 	InitK: 1,
 	Amp:   .5,
 	B:     1,
+    Conf:  core.Conf{
+      Iter: 1000,
+    }
 }
 
 var tConf = mcmc.MultivTConf{
@@ -268,8 +299,7 @@ The ```OnlineClust``` interface is implemented by the ```core.Algo``` struct. We
  - ```Centroids() (Clust, error)```
  - ```Push(elemt Elemt) error```
  - ```Predict(elemt Elemt) (Elemt, int, error)```
- - ```Run() error```
- - ```RunOC(StatusNotifier) error```
+ - ```Run(bool) error```
  - ```Close() error```
  - ```Pause() error```
  - ```Play() error```
@@ -316,13 +346,14 @@ The functor passed to `mcmc.NewLateDistrib` is executed only once with minimal l
 
 ## Online clustering
 
-The algorithm can be executed online, allowing new data to be pushed during execution.
-This is achieved by calling the `RunOC` method with a `core.StatusNotifier` callback which will launch the algorithm execution as a background routine, and notify when status change in the same go routine than the RunOC execution (therefore, it might brake main execution routine).
+The algorithm can be executed asynchronously and continuously, allowing new data to be pushed during execution.
+
+This is achieved by calling the method `Run` with the parameter async set to `true`, which will launch the algorithm execution as a background routine.
 
 When the algorithm starts, it first initializes the starting centers.
 For example, the number of initial centroids is given by the parameter `InitK` of the `mcmc.Conf` configuration object (see above).
 Thus at least `InitK` observations must be given at construction time or pushed before the algorithm starts,
-otherwise an error is returned by the `RunOC` method.
+otherwise an error is returned by the `Run` method.
 
 In such mode, the parameters `Iter`, `MinDataLength` and `IterFreq` of the `core.Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `MinDataLength` pushed data and ensure maximum number of iterations per seconds.
 
@@ -344,7 +375,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
         err = algo.Push(observations[i])
     }
     if err != nil {
-        err = algo.RunOC(nil)
+        err = algo.Run(true)
         for i := conf.initK; i < len(observations) && err == nil; i++ {
             err = algo.Push(observations[i])
         }

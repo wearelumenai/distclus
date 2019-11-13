@@ -175,7 +175,7 @@ func TestImpl_Run(t *testing.T) {
 	var closing = make(chan bool, 1)
 	var closed = make(chan bool, 1)
 	var clusters core.Clust
-	_ = impl.SetAsync()
+	_ = impl.SetOC()
 	go func() {
 		_, _, _ = impl.Iterate(&conf, euclid.Space{}, core.Clust{distr()})
 	}()

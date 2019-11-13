@@ -7,18 +7,20 @@ import (
 
 // Conf specific to algo/space configuration
 type Conf struct {
-	MinDataCount int
-	Iter         int
-	IterFreq     float64
-	Timeout      float64
-	NumCPU       int
+	Iter     int
+	IterFreq float64
+	Timeout  float64
+	NumCPU   int
+	// Online Clustering specific properties
+	DataPerIter    int
+	StatusNotifier StatusNotifier
 }
 
 // Verify conf parameters
-func (conf Conf) Verify() {
+func (conf *Conf) Verify() {
 	conf.setConfigDefaults()
-	if conf.MinDataCount < 0 {
-		panic(errors.New("MinDataCount must be greater or equal than 1"))
+	if conf.DataPerIter < 0 {
+		panic(errors.New("DataPerIter must be greater or equal than 1"))
 	}
 	if conf.Iter < 0 {
 		panic(errors.New("Iterations must be greater or equal than 1"))
@@ -32,6 +34,9 @@ func (conf Conf) Verify() {
 func (conf *Conf) setConfigDefaults() {
 	if conf.NumCPU == 0 {
 		conf.NumCPU = runtime.NumCPU()
+	}
+	if conf.DataPerIter == 0 {
+		conf.DataPerIter = 1
 	}
 }
 

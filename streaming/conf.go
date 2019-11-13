@@ -38,7 +38,7 @@ func (conf *Conf) SetConfigDefaults() {
 }
 
 // Verify checks if the given configuration is valid.
-func Verify(conf Conf) {
+func Verify(conf *Conf) {
 	conf.SetConfigDefaults()
 	conf.Conf.Verify()
 	if conf.OutAfter < 2 {

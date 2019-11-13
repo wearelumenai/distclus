@@ -113,7 +113,7 @@ func TestErrorAtInitialization(t *testing.T) {
 	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
-	err := algo.Run()
+	err := algo.Run(false)
 
 	if err == nil {
 		t.Error("no error in wrong cluster")
@@ -123,7 +123,7 @@ func TestErrorAtInitialization(t *testing.T) {
 func TestOCInitError(t *testing.T) {
 	algo := newAlgo(t, 1, 1)
 
-	err := algo.RunOC(nil)
+	err := algo.Run(true)
 
 	if err != errInit {
 		fmt.Println(err.Error())
@@ -141,7 +141,7 @@ func TestOCIterError(t *testing.T) {
 		}
 	}
 
-	err := algo.RunOC(notifier)
+	err := algo.Run(true)
 
 	if err != nil {
 		t.Error("error while initializing")
@@ -166,7 +166,7 @@ func TestOCPause(t *testing.T) {
 		}
 	}
 
-	err := algo.RunOC(notifier)
+	err := algo.Run(true)
 
 	if err != nil {
 		t.Error("error while initializing", err)
@@ -221,7 +221,7 @@ func Test_Predict(t *testing.T) {
 		t.Error("initialized before running")
 	}
 
-	err = algo.Run()
+	err = algo.Run(false)
 
 	if err != nil {
 		t.Error("error while running prediction", err)
@@ -316,7 +316,7 @@ func Test_Scenario_Sync(t *testing.T) {
 		t.Error("oc before starting")
 	}
 
-	_ = algo.Run()
+	_ = algo.Run(false)
 	if algo.Status() != core.Ready {
 		t.Error("status should be Ready")
 	}
@@ -381,7 +381,7 @@ func Test_Scenario_ASync(t *testing.T) {
 		t.Error("oc before starting")
 	}
 
-	_ = algo.RunOC(nil)
+	_ = algo.Run(true)
 	time.Sleep(500 * time.Millisecond)
 	if algo.Status() != core.Running {
 		t.Error("status should be Running")

@@ -61,7 +61,7 @@ func runVectorsAlgo(algo *core.Algo, series [][]float64) ([]core.Elemt, error) {
 		}
 	}
 
-	if err := algo.Run(); err != nil {
+	if err := algo.Run(false); err != nil {
 		return nil, err
 	}
 

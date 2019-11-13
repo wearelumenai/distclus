@@ -153,7 +153,7 @@ func DoTestRunAsyncCentroids(t *testing.T, km core.OnlineClust) {
 func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 	DoTestBeforeRun(algo, t)
 
-	_ = algo.RunOC(nil)
+	_ = algo.Run(true)
 	DoTestAfterRun(algo, t)
 
 	_ = algo.Close()
@@ -175,10 +175,10 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	_, _, err = algo.Predict(Vectors[5])
 	AssertNoError(t, err)
 
-	err = algo.Run()
+	err = algo.Run(false)
 	AssertError(t, err)
 
-	err = algo.RunOC(nil)
+	err = algo.Run(true)
 	AssertError(t, err)
 }
 
@@ -232,7 +232,7 @@ func PushAndRunAsync(algorithm core.OnlineClust) {
 	for _, elemt := range Vectors {
 		_ = algorithm.Push(elemt)
 	}
-	_ = algorithm.RunOC(nil)
+	_ = algorithm.Run(true)
 }
 
 // RunAsyncAndPush test
@@ -240,7 +240,7 @@ func RunAsyncAndPush(algo core.OnlineClust) {
 	for _, elemt := range Vectors {
 		_ = algo.Push(elemt)
 	}
-	_ = algo.RunOC(nil)
+	_ = algo.Run(true)
 }
 
 // PushAndRunSync test
@@ -248,7 +248,7 @@ func PushAndRunSync(algo core.OnlineClust) core.Clust {
 	for _, elemt := range Vectors {
 		_ = algo.Push(elemt)
 	}
-	_ = algo.Run()
+	_ = algo.Run(false)
 	var clust, _ = algo.Centroids()
 	return clust
 }

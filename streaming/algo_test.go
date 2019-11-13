@@ -16,7 +16,7 @@ func Test_Async(t *testing.T) {
 	var algo = streaming.NewAlgo(streaming.Conf{}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
 	_ = algo.Push(distr())
-	_ = algo.RunOC(nil)
+	_ = algo.Run(true)
 	for i := 0; i < 999; i++ {
 		_ = algo.Push(distr())
 	}
@@ -36,7 +36,7 @@ func Test_Sync(t *testing.T) {
 	for i := 0; i < 1000; i++ {
 		_ = algo.Push(distr())
 	}
-	_ = algo.Run()
+	_ = algo.Run(false)
 	_ = algo.Close()
 	var clusters, _ = algo.Centroids()
 	if c := len(clusters); c < 3 {
@@ -76,7 +76,7 @@ func Test_AlgoPush(t *testing.T) {
 	var data = mix()
 	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5}, euclid.Space{}, []core.Elemt{})
 	_ = algo.Push(data())
-	_ = algo.RunOC(nil)
+	_ = algo.Run(true)
 	var d = make([][]float64, 10000)
 	for i := range d {
 		d[i] = data()

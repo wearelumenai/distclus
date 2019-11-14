@@ -15,8 +15,8 @@ func Test_SetDefaultConfig(t *testing.T) {
 	if conf.Mu != .5 {
 		t.Error("expected .5")
 	}
-	if conf.Sigma != 0. {
-		t.Error("expected 0.")
+	if conf.Sigma != 0.1 {
+		t.Error("expected 0.1")
 	}
 	if conf.OutRatio != 2. {
 		t.Error("expected 2.")
@@ -32,5 +32,5 @@ func Test_SetDefaultConfig(t *testing.T) {
 func Test_VerifyConfig(t *testing.T) {
 	defer test.AssertPanic(t)
 	var conf = streaming.Conf{OutAfter: 1}
-	streaming.Verify(conf)
+	conf.Verify()
 }

@@ -35,10 +35,13 @@ func (conf *Conf) SetConfigDefaults() {
 	if conf.RGen == nil {
 		conf.RGen = rand.New(rand.NewSource(uint64(time.Now().Nanosecond())))
 	}
+	if conf.Sigma == 0 {
+		conf.Sigma = 0.1
+	}
 }
 
 // Verify checks if the given configuration is valid.
-func Verify(conf *Conf) {
+func (conf *Conf) Verify() {
 	conf.SetConfigDefaults()
 	conf.Conf.Verify()
 	if conf.OutAfter < 2 {

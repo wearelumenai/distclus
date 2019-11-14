@@ -3,6 +3,7 @@ package streaming_test
 import (
 	"distclus/core"
 	"distclus/euclid"
+	"distclus/figures"
 	"distclus/streaming"
 	"reflect"
 	"testing"
@@ -171,19 +172,35 @@ func TestImpl_Iterate(t *testing.T) {
 
 func TestImpl_Run(t *testing.T) {
 	var distr = mix()
-	var impl = streaming.NewImpl(conf, []core.Elemt{})
-	var closing = make(chan bool, 1)
-	var closed = make(chan bool, 1)
-	var clusters core.Clust
-	_ = impl.SetOC()
+	var clusters = core.Clust{distr()}
+	var impl = streaming.NewImpl(conf, clusters)
+	var err = impl.SetOC()
+	if err != nil {
+		t.Error("No error expected.", err)
+	}
+	clusters, err = impl.Init(&conf, euclid.Space{}, nil)
+	if err != nil {
+		t.Error("No error expected.", err)
+	}
 	go func() {
-		_, _, _ = impl.Iterate(&conf, euclid.Space{}, core.Clust{distr()})
+		var centroids core.Clust
+		var runtimeFigures figures.RuntimeFigures
+		for {
+			centroids, runtimeFigures, err = impl.Iterate(&conf, euclid.Space{}, clusters)
+			if centroids != nil {
+				if runtimeFigures == nil {
+					t.Error("RuntimeFigures expected.")
+				}
+				clusters = centroids
+			}
+			if err != nil {
+				t.Error("No error expected.", err)
+			}
+		}
 	}()
 	for i := 0; i < 1000; i++ {
 		_ = impl.Push(distr())
 	}
-	closing <- true
-	<-closed
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)
 	}

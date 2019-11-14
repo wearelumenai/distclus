@@ -5,7 +5,6 @@ import (
 	"distclus/figures"
 	"distclus/internal/test"
 	"errors"
-	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -25,6 +24,16 @@ type mockImpl struct {
 
 var errInit = errors.New("init")
 var errIter = errors.New("iter")
+
+var errChan = make(chan error)
+var statusChan = make(chan core.ClustStatus)
+
+var notifier = func(status core.ClustStatus, err error) {
+	if err != nil {
+		errChan <- err
+	}
+	statusChan <- status
+}
 
 func (impl *mockImpl) Init(conf core.ImplConf, space core.Space, clust core.Clust) (centroids core.Clust, err error) {
 	centroids = impl.clust
@@ -81,7 +90,12 @@ func (m mockSpace) Dim(e []core.Elemt) int {
 
 func newAlgo(t *testing.T, iter int, size int) (algo core.Algo) {
 	algo = *core.NewAlgo(
-		&mockConf{},
+		&mockConf{
+			core.Conf{
+				StatusNotifier: notifier,
+				Iter:           20,
+			},
+		},
 		&mockImpl{
 			clust: make(core.Clust, size),
 		},
@@ -126,20 +140,12 @@ func TestOCInitError(t *testing.T) {
 	err := algo.Run(true)
 
 	if err != errInit {
-		fmt.Println(err.Error())
 		t.Error("error during oc initialization", err)
 	}
 }
 
 func TestOCIterError(t *testing.T) {
 	algo := newAlgo(t, 1, 2)
-
-	var errChan = make(chan error)
-	var notifier = func(status core.ClustStatus, err error) {
-		if status == core.Failed {
-			errChan <- err
-		}
-	}
 
 	err := algo.Run(true)
 
@@ -159,14 +165,19 @@ func TestOCIterError(t *testing.T) {
 func TestOCPause(t *testing.T) {
 	algo := newAlgo(t, 1, 10)
 
-	var statusChan = make(chan core.ClustStatus)
-	var notifier = func(status core.ClustStatus, err error) {
-		if status == core.Idle {
-			statusChan <- status
-		}
+	err := algo.Run(true)
+
+	status := <-statusChan
+
+	if status != core.Ready {
+		t.Error("wrong status. Ready expected:", status)
 	}
 
-	err := algo.Run(true)
+	status = <-statusChan
+
+	if status != core.Running {
+		t.Error("wrong status. Running expected:", status)
+	}
 
 	if err != nil {
 		t.Error("error while initializing", err)
@@ -182,10 +193,10 @@ func TestOCPause(t *testing.T) {
 		t.Error("Idle error", algo.Status())
 	}
 
-	status := <-statusChan
+	status = <-statusChan
 
 	if status != core.Idle {
-		t.Error("wrong status. Idle expected:", status)
+		t.Error("wrong status. Idle expected:", status, <-errChan)
 	}
 
 	err = algo.Play()

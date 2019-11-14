@@ -37,7 +37,7 @@ func NewImpl(conf Conf, elemts []core.Elemt) Impl {
 }
 
 // Init initializes the streaming algorithm.
-func (impl *Impl) Init(_ core.ImplConf, _ core.Space, centroids core.Clust) (clust core.Clust, err error) {
+func (impl *Impl) Init(_ core.ImplConf, _ core.Space, _ core.Clust) (clust core.Clust, err error) {
 	select {
 	case centroids := <-impl.c:
 		clust = core.Clust{centroids}
@@ -58,7 +58,6 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 		clust = impl.clust
 		runtimeFigures = impl.runtimeFigures()
 	default:
-		err = errors.New("Channel is empty or closed")
 	}
 	return
 }

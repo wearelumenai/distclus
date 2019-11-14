@@ -88,10 +88,12 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 		err = ErrEnded
 	default:
 		err = algo.impl.Push(elemt)
-		if err == nil && algo.async {
-			atomic.AddUint64(&algo.newData, 1)
+		if err == nil {
+			if algo.async {
+				atomic.AddUint64(&algo.newData, 1)
+			}
+			err = algo.wakeUp()
 		}
-		err = algo.wakeUp()
 	}
 	return
 }
@@ -137,7 +139,8 @@ func (algo *Algo) Close() (err error) {
 
 // Pause the algorithm and set status to idle
 func (algo *Algo) Pause() (err error) {
-	if atomic.LoadInt64(&algo.status) == Running {
+	var status = atomic.LoadInt64(&algo.status)
+	if status == Running || status == Ready {
 		algo.statusChannel <- Idle
 		algo.setStatus(Idle, nil)
 	} else {
@@ -265,7 +268,12 @@ func (algo *Algo) runSync() (err error) {
 						algo.space,
 						algo.centroids,
 					)
-					if err == nil { // save run results
+					if centroids == nil { // impl has finished
+						if !algo.async {
+							status = Closed
+							algo.setStatus(Closed, err)
+						}
+					} else if err == nil { // save run results
 						algo.saveIterContext(centroids, runtimeFigures, iterations)
 					}
 					if (!algo.async) && conf.Iter > 0 && conf.Iter < iterations {
@@ -332,7 +340,7 @@ func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.Runtim
 			runtimeFigures[figures.Iterations] = figures.Value(iterations)
 		} else {
 			runtimeFigures = figures.RuntimeFigures{
-				"iterations": figures.Value(iterations),
+				figures.Iterations: figures.Value(iterations),
 			}
 		}
 		algo.mutex.Lock()

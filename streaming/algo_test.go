@@ -15,15 +15,27 @@ import (
 func Test_Async(t *testing.T) {
 	var algo = streaming.NewAlgo(streaming.Conf{}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
-	_ = algo.Push(distr())
-	_ = algo.Run(true)
+	err := algo.Push(distr())
+	if err != nil {
+		t.Error("No error expected.", err)
+	}
+	err = algo.Run(true)
+	if err != nil {
+		t.Error("No error expected.", err)
+	}
 	for i := 0; i < 999; i++ {
 		_ = algo.Push(distr())
 	}
-	_ = algo.Close()
-	var clusters, _ = algo.Centroids()
+	err = algo.Close()
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+	clusters, err := algo.Centroids()
+	if err != nil {
+		t.Error("No error expected", err)
+	}
 	if c := len(clusters); c < 3 {
-		t.Error("3 or more clusters expected got", c)
+		t.Error("3 or more clusters expected got", c, algo.Status())
 	}
 	if len(clusters) > 9 {
 		t.Error("less than 9 clusters expected")
@@ -31,14 +43,27 @@ func Test_Async(t *testing.T) {
 }
 
 func Test_Sync(t *testing.T) {
-	var algo = streaming.NewAlgo(streaming.Conf{}, euclid.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{Conf: core.Conf{Iter: 20}}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
+	var err error
 	for i := 0; i < 1000; i++ {
-		_ = algo.Push(distr())
+		err = algo.Push(distr())
+		if i > 99 {
+			if err == nil {
+				t.Error("Buffer is not full")
+			}
+		} else if err != nil {
+			t.Error("No error expected", err)
+		}
 	}
-	_ = algo.Run(false)
-	_ = algo.Close()
-	var clusters, _ = algo.Centroids()
+	err = algo.Run(false)
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+	clusters, err := algo.Centroids()
+	if err != nil {
+		t.Error("No error expected", err)
+	}
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)
 	}

@@ -9,7 +9,7 @@ import (
 func TestMCMC_ConfErrorIter(t *testing.T) {
 	defer test.AssertPanic(t)
 	var conf = mcmcConf
-	conf.Conf.Iter = -10
+	conf.Iter = -10
 	conf.Verify()
 }
 

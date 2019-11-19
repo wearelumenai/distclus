@@ -25,11 +25,6 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 }
 
 // Push pushes a new element
-func (impl *Impl) Push(elemt core.Elemt) (err error) {
-	return
-}
-
-// SetOC change clustering mode to online
-func (impl *Impl) SetOC() (err error) {
+func (impl *Impl) Push(elemt core.Elemt, running bool) (err error) {
 	return
 }

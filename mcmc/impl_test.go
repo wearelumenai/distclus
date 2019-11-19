@@ -37,10 +37,10 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 	var algo = mcmc.NewAlgo(implConf, euclid.Space{}, []core.Elemt{}, initializer, distrib)
 
 	for _, v := range ints {
-		_ = algo.Push(v)
+		algo.Push(v)
 	}
 
-	_ = algo.Run(false)
+	algo.Batch()
 
 	var centroids, _ = algo.Centroids()
 

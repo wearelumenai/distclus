@@ -59,14 +59,9 @@ func (impl *Impl) getCurrentTime(data []core.Elemt) int {
 	return len(data)
 }
 
-// SetOC changes the status of impl buffer to async
-func (impl *Impl) SetOC() error {
-	return impl.buffer.SetAsync()
-}
-
 // Push input element in the buffer
-func (impl *Impl) Push(elemt core.Elemt) error {
-	return impl.buffer.Push(elemt)
+func (impl *Impl) Push(elemt core.Elemt, running bool) error {
+	return impl.buffer.Push(elemt, running)
 }
 
 type proposal struct {

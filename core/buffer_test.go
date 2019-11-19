@@ -19,7 +19,7 @@ func TestBuffer_Push(t *testing.T) {
 	}
 
 	for i := 2; i < 130; i++ {
-		_ = buf.Push([]float64{float64(i), 1., 2., 4.})
+		_ = buf.Push([]float64{float64(i), 1., 2., 4.}, false)
 	}
 
 	if l := len(buf.Data()); l != 130 {
@@ -46,7 +46,7 @@ func TestBuffer_FrameMore(t *testing.T) {
 	}
 
 	for i := 0; i < 128; i++ {
-		_ = buf.Push([]float64{float64(i), 1., 2., 4.})
+		_ = buf.Push([]float64{float64(i), 1., 2., 4.}, false)
 	}
 
 	if l := len(buf.Data()); l != 50 {
@@ -77,7 +77,7 @@ func TestBuffer_FrameLess(t *testing.T) {
 	}
 
 	for i := 0; i < 128; i++ {
-		_ = buf.Push([]float64{float64(i), 1., 2., 4.})
+		_ = buf.Push([]float64{float64(i), 1., 2., 4.}, false)
 	}
 
 	if l := len(buf.Data()); l != 50 {
@@ -95,17 +95,15 @@ func TestBuffer_Apply(t *testing.T) {
 	var buf = core.NewDataBuffer(nil, -1)
 
 	for i := 0; i < 128; i++ {
-		_ = buf.Push([]float64{float64(i), 1., 2., 4.})
+		_ = buf.Push([]float64{float64(i), 1., 2., 4.}, false)
 	}
 
 	if l := len(buf.Data()); l != 128 {
 		t.Error("Expected 128 got", l)
 	}
 
-	_ = buf.SetAsync()
-
 	for i := 0; i < 128; i++ {
-		_ = buf.Push([]float64{float64(i), 1., 2., 4.})
+		_ = buf.Push([]float64{float64(i), 1., 2., 4.}, true)
 	}
 
 	if l := len(buf.Data()); l != 128 {

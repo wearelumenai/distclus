@@ -2,8 +2,7 @@ package core
 
 // Buffer interface
 type Buffer interface {
-	Push(elemt Elemt) error
-	SetAsync() error
+	Push(elemt Elemt, running bool) error
 	Data() []Elemt
 	Apply() error
 }
@@ -15,7 +14,6 @@ type Buffer interface {
 type DataBuffer struct {
 	pipe     chan Elemt
 	data     []Elemt
-	async    bool
 	strategy bufferSizeStrategy
 }
 
@@ -26,8 +24,7 @@ const pipeSize = 2000
 // Otherwise creates an infinite size buffer.
 func NewDataBuffer(data []Elemt, size int) Buffer {
 	var db = DataBuffer{
-		pipe:  make(chan Elemt, pipeSize),
-		async: false,
+		pipe: make(chan Elemt, pipeSize),
 	}
 
 	switch {
@@ -54,8 +51,8 @@ func NewDataBuffer(data []Elemt, size int) Buffer {
 }
 
 // Push stores or stages an element depending on synchronous / asynchronous mode.
-func (b *DataBuffer) Push(elmt Elemt) (err error) {
-	if b.async {
+func (b *DataBuffer) Push(elmt Elemt, running bool) (err error) {
+	if running {
 		b.pipe <- elmt
 	} else {
 		b.data = b.strategy.push(b.data, elmt)
@@ -68,16 +65,9 @@ func (b *DataBuffer) Data() (data []Elemt) {
 	return b.data
 }
 
-// SetAsync set asynchronous execution status to true
-func (b *DataBuffer) SetAsync() (err error) {
-	b.async = true
-	return
-}
-
 // Apply all staged data in asynchronous mode, otherwise do nothing
 func (b *DataBuffer) Apply() (err error) {
-	for loop := b.async; loop; {
-		loop = b.applyNext()
+	for b.applyNext() {
 	}
 	return
 }

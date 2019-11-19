@@ -19,14 +19,14 @@ func Test_Async(t *testing.T) {
 	if err != nil {
 		t.Error("No error expected.", err)
 	}
-	err = algo.Run(true)
+	err = algo.Play()
 	if err != nil {
 		t.Error("No error expected.", err)
 	}
 	for i := 0; i < 999; i++ {
 		_ = algo.Push(distr())
 	}
-	err = algo.Close()
+	err = algo.Stop()
 	if err != nil {
 		t.Error("No error expected", err)
 	}
@@ -56,7 +56,7 @@ func Test_Sync(t *testing.T) {
 			t.Error("No error expected", err)
 		}
 	}
-	err = algo.Run(false)
+	err = algo.Batch()
 	if err != nil {
 		t.Error("No error expected", err)
 	}
@@ -101,7 +101,7 @@ func Test_AlgoPush(t *testing.T) {
 	var data = mix()
 	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5}, euclid.Space{}, []core.Elemt{})
 	_ = algo.Push(data())
-	_ = algo.Run(true)
+	_ = algo.Play()
 	var d = make([][]float64, 10000)
 	for i := range d {
 		d[i] = data()
@@ -109,7 +109,7 @@ func Test_AlgoPush(t *testing.T) {
 	for i := range d {
 		_ = algo.Push(d[i])
 	}
-	_ = algo.Close()
+	_ = algo.Stop()
 	var figures, _ = algo.RuntimeFigures()
 	if figures["maxDistance"] < 10 {
 		t.Error("max distance should be grater than 1")

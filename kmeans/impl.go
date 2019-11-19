@@ -37,11 +37,6 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 }
 
 // Push input element in the buffer
-func (impl *Impl) Push(elemt core.Elemt) error {
-	return impl.buffer.Push(elemt)
-}
-
-// SetOC changes the status of impl buffer to async
-func (impl *Impl) SetOC() error {
-	return impl.buffer.SetAsync()
+func (impl *Impl) Push(elemt core.Elemt, running bool) error {
+	return impl.buffer.Push(elemt, running)
 }

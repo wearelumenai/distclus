@@ -5,9 +5,7 @@ import (
 	"distclus/figures"
 	"distclus/internal/test"
 	"errors"
-	"math"
 	"testing"
-	"time"
 )
 
 type mockConf struct {
@@ -15,11 +13,12 @@ type mockConf struct {
 }
 
 type mockImpl struct {
-	init  int
-	count int
-	oc    bool
-	clust core.Clust
-	iter  int
+	init         int
+	runningcount int
+	stoppedcount int
+	oc           bool
+	clust        core.Clust
+	iter         int
 }
 
 var errInit = errors.New("init")
@@ -55,13 +54,12 @@ func (impl *mockImpl) Iterate(conf core.ImplConf, space core.Space, centroids co
 	return
 }
 
-func (impl *mockImpl) Push(elemt core.Elemt) (err error) {
-	impl.count++
-	return
-}
-
-func (impl *mockImpl) SetOC() (err error) {
-	impl.oc = true
+func (impl *mockImpl) Push(elemt core.Elemt, running bool) (err error) {
+	if running {
+		impl.runningcount++
+	} else {
+		impl.stoppedcount++
+	}
 	return
 }
 
@@ -93,7 +91,7 @@ func newAlgo(t *testing.T, iter int, size int) (algo core.Algo) {
 		&mockConf{
 			core.Conf{
 				StatusNotifier: notifier,
-				Iter:           20,
+				Iter:           iter,
 			},
 		},
 		&mockImpl{
@@ -112,11 +110,8 @@ func newAlgo(t *testing.T, iter int, size int) (algo core.Algo) {
 	if impl.iter > 0 {
 		t.Error("running before starting")
 	}
-	if impl.count != 0 {
+	if impl.runningcount != 0 {
 		t.Error("count before starting")
-	}
-	if impl.oc {
-		t.Error("oc before starting")
 	}
 
 	return
@@ -127,7 +122,7 @@ func TestErrorAtInitialization(t *testing.T) {
 	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
-	err := algo.Run(false)
+	err := algo.Batch()
 
 	if err == nil {
 		t.Error("no error in wrong cluster")
@@ -137,7 +132,7 @@ func TestErrorAtInitialization(t *testing.T) {
 func TestOCInitError(t *testing.T) {
 	algo := newAlgo(t, 1, 1)
 
-	err := algo.Run(true)
+	err := algo.Play()
 
 	if err != errInit {
 		t.Error("error during oc initialization", err)
@@ -147,37 +142,19 @@ func TestOCInitError(t *testing.T) {
 func TestOCIterError(t *testing.T) {
 	algo := newAlgo(t, 1, 2)
 
-	err := algo.Run(true)
+	err := algo.Play()
 
 	if err != nil {
 		t.Error("error while initializing")
 	}
 
-	err = <-errChan
-
-	if err != errIter {
-		t.Error("no error in wrong cluster")
-	}
-
-	_ = algo.Close()
+	_ = algo.Stop()
 }
 
 func TestOCPause(t *testing.T) {
 	algo := newAlgo(t, 1, 10)
 
-	err := algo.Run(true)
-
-	status := <-statusChan
-
-	if status != core.Ready {
-		t.Error("wrong status. Ready expected:", status)
-	}
-
-	status = <-statusChan
-
-	if status != core.Running {
-		t.Error("wrong status. Running expected:", status)
-	}
+	err := algo.Play()
 
 	if err != nil {
 		t.Error("error while initializing", err)
@@ -190,13 +167,7 @@ func TestOCPause(t *testing.T) {
 	}
 
 	if algo.Status() != core.Idle {
-		t.Error("Idle error", algo.Status())
-	}
-
-	status = <-statusChan
-
-	if status != core.Idle {
-		t.Error("wrong status. Idle expected:", status, <-errChan)
+		t.Error("Idle status expected. found", algo.Status())
 	}
 
 	err = algo.Play()
@@ -205,11 +176,11 @@ func TestOCPause(t *testing.T) {
 		t.Error("error while playing", err)
 	}
 
-	if algo.Status() != core.Running {
-		t.Error("wrong status. Running expected", algo.Status())
+	if algo.Status() != core.Running && algo.Status() != core.Sleeping {
+		t.Error("wrong status. Running or sleeping expected", algo.Status())
 	}
 
-	_ = algo.Close()
+	_ = algo.Stop()
 }
 
 func Test_Conf(t *testing.T) {
@@ -223,7 +194,6 @@ func Test_Conf(t *testing.T) {
 }
 
 func Test_Predict(t *testing.T) {
-
 	var algo = newAlgo(t, 1, 10)
 
 	_, _, err := algo.Predict(nil)
@@ -232,16 +202,16 @@ func Test_Predict(t *testing.T) {
 		t.Error("initialized before running")
 	}
 
-	err = algo.Run(false)
+	err = algo.Batch()
 
 	if err != nil {
-		t.Error("error while running prediction", err)
+		t.Error("error while running", err)
 	}
 
 	pred, label, err := algo.Predict(nil)
 
 	if err != nil {
-		t.Error("Error after initialization")
+		t.Error("Error while predict")
 	}
 	if pred != nil {
 		t.Error("pred has been found")
@@ -249,15 +219,20 @@ func Test_Predict(t *testing.T) {
 	if label != 0 {
 		t.Error("wrong label")
 	}
-	if algo.Impl().(*mockImpl).count != 0 {
+	if algo.Impl().(*mockImpl).runningcount != 0 {
 		t.Error("element has been pushed")
 	}
 
 	pred, label, err = algo.Predict(nil)
-	_ = algo.Push(nil)
 
 	if err != nil {
-		t.Error("Error after prediction")
+		t.Error("Error while predict", err)
+	}
+
+	err = algo.Push(nil)
+
+	if err != nil {
+		t.Error("Error while pushing", err)
 	}
 	if pred != nil {
 		t.Error("pred has been found")
@@ -265,14 +240,14 @@ func Test_Predict(t *testing.T) {
 	if label != 0 {
 		t.Error("wrong label")
 	}
-	if algo.Impl().(*mockImpl).count != 1 {
-		t.Error("element has not been pushed")
+	if algo.Impl().(*mockImpl).runningcount != 0 && algo.Impl().(*mockImpl).stoppedcount != 1 {
+		t.Error("element has not been pushed", algo.Impl().(*mockImpl).runningcount)
 	}
 
-	err = algo.Close()
+	err = algo.Stop()
 
-	if err != nil {
-		t.Error("error while closing the algorithm")
+	if err != core.ErrNotRunning {
+		t.Error("error while stopping the algorithm", err)
 	}
 
 	_, _, err = algo.Predict(nil)
@@ -280,12 +255,12 @@ func Test_Predict(t *testing.T) {
 		err = algo.Push(nil)
 	}
 
-	if err == nil {
-		t.Error("error after close and prediction")
+	if err != nil {
+		t.Error("error after close and prediction", err)
 	}
 }
 
-func Test_Scenario_Sync(t *testing.T) {
+func Test_Scenario_Batch(t *testing.T) {
 	var algo = newAlgo(t, 1, 10)
 	if algo.Status() != core.Created {
 		t.Error("status should be Created")
@@ -320,43 +295,51 @@ func Test_Scenario_Sync(t *testing.T) {
 	if impl.iter > 0 {
 		t.Error("running before starting")
 	}
-	if impl.count != 1 {
+	if impl.stoppedcount != 1 {
 		t.Error("count before starting")
 	}
-	if impl.oc {
-		t.Error("oc before starting")
+
+	err = algo.Batch()
+
+	if err != nil {
+		t.Error("Error while stopping")
 	}
 
-	_ = algo.Run(false)
 	if algo.Status() != core.Ready {
-		t.Error("status should be Ready")
+		t.Error("status should be Ready", algo.Status())
 	}
 
 	if impl.init == 0 {
 		t.Error("not initialized")
 	}
-	if impl.iter == 0 {
+	var iter = impl.iter
+	if iter == 0 {
 		t.Error("not running")
 	}
 
-	_ = algo.Close()
-	if algo.Status() != core.Closed {
-		t.Error("status should be Closed")
+	err = algo.Stop()
+
+	if algo.Status() != core.Ready {
+		t.Error("status should be ready")
 	}
 
-	if impl.iter > 0 {
-		t.Error("running")
+	if impl.iter != iter {
+		t.Error("running", impl.iter)
+	}
+
+	if err != core.ErrNotRunning {
+		t.Error("Error while stopping", err)
 	}
 }
 
-func Test_Scenario_ASync(t *testing.T) {
-	var algo = newAlgo(t, math.MaxInt32, 10)
+func Test_Scenario_Play(t *testing.T) {
+	var algo = newAlgo(t, 0, 10)
 	if algo.Status() != core.Created {
 		t.Error("status should be Created")
 	}
 
 	var figures0, err0 = algo.RuntimeFigures()
-	var iter0, ok0 = figures0["iterations"]
+	var iter0, ok0 = figures0[figures.Iterations]
 
 	test.AssertError(t, err0)
 	test.AssertFalse(t, ok0)
@@ -385,47 +368,51 @@ func Test_Scenario_ASync(t *testing.T) {
 	if impl.iter > 0 {
 		t.Error("running before starting")
 	}
-	if impl.count != 1 {
+	if impl.stoppedcount != 1 {
 		t.Error("count before starting")
 	}
-	if impl.oc {
-		t.Error("oc before starting")
-	}
 
-	_ = algo.Run(true)
-	time.Sleep(500 * time.Millisecond)
-	if algo.Status() != core.Running {
-		t.Error("status should be Running")
+	_ = algo.Play()
+
+	if algo.Status() != core.Running && algo.Status() != core.Sleeping {
+		t.Error("status should be Running", algo.Status())
 	}
 
 	var figures1, err1 = algo.RuntimeFigures()
-	var iter1, ok1 = figures1["iterations"]
+	var iter1, ok1 = figures1[figures.Iterations]
 
 	test.AssertNoError(t, err1)
 	test.AssertTrue(t, ok1)
 	test.AssertTrue(t, iter1 > 0)
 
-	if !impl.oc {
-		t.Error("not oc after asynchronous execution")
-	}
 	if impl.init == 0 {
 		t.Error("not initialized")
 	}
+	var iter = impl.iter
 	if impl.iter == 0 {
 		t.Error("not running")
 	}
 
-	_ = algo.Close()
-	if algo.Status() != core.Closed {
-		t.Error("status should be Closed")
+	if impl.iter < iter {
+		t.Error("not running")
 	}
 
-	if impl.iter > 0 {
+	err = algo.Stop()
+
+	if err != nil {
+		t.Error("Error while stopping")
+	}
+
+	if algo.Status() != core.Ready {
+		t.Error("status should be ready")
+	}
+	iter = impl.iter
+	if impl.iter != iter {
 		t.Error("running")
 	}
 
 	var figures2, err2 = algo.RuntimeFigures()
-	var iter2, ok2 = figures2["iterations"]
+	var iter2, ok2 = figures2[figures.Iterations]
 
 	test.AssertNoError(t, err2)
 	test.AssertTrue(t, ok2)

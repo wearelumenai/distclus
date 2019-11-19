@@ -32,8 +32,8 @@ func (conf *Conf) Verify() {
 
 // SetConfigDefaults initializes nil configuration values
 func (conf *Conf) SetConfigDefaults() {
-	if conf.Conf.Iter == 0 {
-		conf.Conf.Iter = 20
+	if conf.Iter == 0 {
+		conf.Iter = 20
 	}
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())

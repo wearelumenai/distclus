@@ -28,7 +28,7 @@ any element type can be used provided a distance and a barycenter can be compute
 A data type that can be clustered must implement the ```core.Elemt``` interface.
 Distance and barycenter are calculated using a suitable object that implements ```core.Space```.
 
-An algorithm is represented by a ```core.Algo``` object.
+An algorithm is represented by an ```core.Algo``` object.
 Actually several algorithm are provided by the library and more can be implemented by providing a specific
 implementation to the ```core.Algo``` object.
 An implementation is an objects that respects the ```core.Impl``` interface.
@@ -65,12 +65,12 @@ type Conf struct {
 
 Where :
 
-- Iter: maximal number of iterations if given. Unlimited by default.
-- IterFreq: maximal number of iterations per second. Unlimited by default.
-- Timeout: maximal algorithm execution duration in seconds. Unlimited by default.
-- NumCPU: number of CPU to use for algorithm execution. Default is maximal number of CPU.
-- DataPerIter: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
-- StatusNotifier: callback called in a separate go routine, each time the algorithm change of status or fires an error. Online clustering specific.
+- `Iter`: maximal number of iterations if given. Unlimited by default.
+- `IterFreq`: maximal number of iterations per second. Unlimited by default.
+- `Timeout`: maximal algorithm execution duration in seconds. Unlimited by default.
+- `NumCPU`: number of CPU to use for algorithm execution. Default is maximal number of CPU.
+- `DataPerIter`: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
+- `StatusNotifier`: callback called in a separate go routine, each time the algorithm change of status or fires an error. Online clustering specific.
 
 ### MCMC Configuration
 
@@ -131,30 +131,29 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.
 ## Run and feed
 
 The algorithm can be run in two modes :
- - synchronous : all data must be pushed before stating the algorithm
- - asynchronous (or online) : further data can be pushed after the algorithm is statrted
+ - `batch` : all data must be pushed before starting the algorithm.
+ - `online` : further data can be pushed after the algorithm is started, and dynamic functionalities are given for interacting continuously with the clustering
 
-The following function starts the algorithm in asynchronous mode then pushes the observations
+The following function starts the algorithm in online mode then pushes the observations
 
 ```go
 package main
 import (
-	"time"
 	"distclus/core"
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
-	for i := 0; i<len(observations) && err == nil; i++ {
+	for i := 0; i < len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
-	err = algo.Run(false) // run the algorithm in synchronous mode
+	err = algo.Batch() // run the algorithm in batch mode
 	return
 }
 ```
 
 ## Prediction
 
-Once the algorithm is started, either in synchronous or online mode,
+Once the algorithm is started, either in batch or online mode,
 the ```Predict``` method can be used to make predictions.
 The following function uses predictions to calculate the root mean squared error
 for observations for which real output is known.
@@ -293,24 +292,31 @@ var labels = centers.ParMapLabel(observations, space, norm)
 ```
 This is useful when the clustering is done online because the centers are continually changing.
 
-### ```core.OnlineClust``` interface
+### `core.OnlineClust` interface
 
-The ```OnlineClust``` interface is implemented by the ```core.Algo``` struct. We have covered almost all methods so far.
- - ```Centroids() (Clust, error)```
- - ```Push(elemt Elemt) error```
- - ```Predict(elemt Elemt) (Elemt, int, error)```
- - ```Run(bool) error```
- - ```Close() error```
- - ```Pause() error```
- - ```Play() error```
- - ```RuntimeFigures() (figures.RuntimeFigures, error)```
+The `core.OnlineClust` interface is implemented by the `core.Algo` struct.
+
+We have covered almost all methods so far:
+
+ - `Play() error`: execute the algorithm.
+ - `Centroids() (Clust, error)`: get array of clustering centroids.
+ - `Predict(elemt Elemt) (Elemt, int, error)`: according to previous method, get centroid and its index in array of clustering centroids for input elemt.
+ - `Push(elemt Elemt) error`: push an element.
+ - `Stop() error`: stop execution.
+ - `Pause() error`: pause execution. The method `Play` goes back to execution.
+ - `Wait() error`: wait until algorithm status equals Sleeping or ends the execution.
+ - `Batch() error` execute the algo in batch mode. Similar to the call sequence of `Run`, `Wait` and `Stop`.
+ - `Status() core.ClustStatus`: get algo status.
+ - `Running() bool`: true iif algo is in running status (`core.Running`, `core.Idle` and `core.Sleeping`).
 
 Algorithms may return specific figures that describes their running state. These can be obtained by the
-```RuntimeFigures``` method.
+`RuntimeFigures` method.
 ```go
-var rt = algo.RuntimeFigures()
-for name, value := range rt {
-	fmt.Printf("%v: %v\n", name, value)
+var rt, err = algo.RuntimeFigures()
+if err == nil {
+  for name, value := range rt {
+  	fmt.Printf("%v: %v\n", name, value)
+  }
 }
 ```
 
@@ -344,30 +350,34 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *cor
 
 The functor passed to `mcmc.NewLateDistrib` is executed only once with minimal locking to ensure parallel safety.
 
-## Online clustering
+## Dynamic features
 
-The algorithm can be executed asynchronously and continuously, allowing new data to be pushed during execution.
+The algorithm is executed asynchronously and continuously, allowing new data to be pushed during execution.
 
-This is achieved by calling the method `Run` with the parameter async set to `true`, which will launch the algorithm execution as a background routine.
+This is achieved by calling the method `Play`, launching the algorithm execution as a separate go routine, and waiting for status equals `core.Running`.
 
 When the algorithm starts, it first initializes the starting centers.
 For example, the number of initial centroids is given by the parameter `InitK` of the `mcmc.Conf` configuration object (see above).
 Thus at least `InitK` observations must be given at construction time or pushed before the algorithm starts,
-otherwise an error is returned by the `Run` method.
+otherwise an error is returned by the `Play` method.
 
-In such mode, the parameters `Iter`, `MinDataLength` and `IterFreq` of the `core.Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `MinDataLength` pushed data and ensure maximum number of iterations per seconds.
+In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `core.Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `DataPerIter` pushed data and ensure maximum number of iterations per seconds.
 
-Additional methods allow you to dynamically interact with the algorithm:
-- `Pause() error` : blocking method until the algorithm is paused.
-- `Play() error` : in opposition to method `Pause`, this blocking method goes back to running status.
+Remainding methods allow you to dynamically interact with the algorithm:
+- `Play() error`: start the algorithm if not running (status `core.Created`, `core.Ready` or `core.Failed`), otherwise (status `core.Idle`), goes back to execution. Release when algorithm status equals `core.Running`.
+- `Pause() error`: pause the algorithm. Wait until the algo is `core.Idle`.
+- `Wait() error`: wait until the algorithm is `core.Sleeping`, `core.Ready` or `core.Failed` status.
+- `Stop() error`: stop the algorithm and wait until it is ready. Such algorithm enters in `core.Stopping` before `core.Ready`.
+- `Status() core.ClustStatus`: get algo status.
+- `Running() bool`: true iif algo is in running status (`core.Running`, `core.Idle` and `core.Sleeping`).
+- `StatusNotifier(core.ClustStatus, error)`: callback function when algo status change or an error is raised. Setted in `core.Conf.StatusNotifier`.
 
-The ```RunAndFeed``` function above may be modified like this:
+The `RunAndFeed` function above may be modified like this:
 
 ```go
 package main
 import (
 	"distclus/core"
-	"time"
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
@@ -375,36 +385,35 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
         err = algo.Push(observations[i])
     }
     if err != nil {
-        err = algo.Run(true)
+        err = algo.Play()
         for i := conf.initK; i < len(observations) && err == nil; i++ {
             err = algo.Push(observations[i])
         }
-        time.Sleep(time.Second) // let the algorithm converge
+        algo.Wait()  // let the algorithm converge
     }
     return
 }
 
 ```
 
-The timer is used to let the background algorithm converge. In a real life situation of course this is not needed:
-The online algorithm will be closed only when the service is shutdown
-and data will be pushed gradually when they arrive.
+In a real life situation of course this is not needed:
+The online algorithm will be closed only when the service is shutdown and data will be pushed gradually when they arrive.
 
 ## More data types
 
 In the example above the observations where vectors of R<sup>2</sup> and the distance used was the Euclid distance.
-The data types and distance are defined by objects that implement the ```core.Space``` interface.
+The data types and distance are defined by objects that implement the `core.Space` interface.
 
 The library provides 3 different data types :
- - ```euclid.Space``` built with ```euclid.NewSpace``` constructor, used for vectors with Euclid distance
- - ```cosinus.Space``` built with ```cosinus.NewSpace``` constructor, used for vectors with cosinus distance
- - ```dtw.Space``` built with ```dtw.NewSpace``` constructor, used for time series of vectors with dtw distance
+ - `euclid.Space` built with `euclid.NewSpace` constructor, used for vectors with Euclid distance
+ - `cosinus.Space` built with `cosinus.NewSpace` constructor, used for vectors with cosinus distance
+ - `dtw.Space` built with `dtw.NewSpace` constructor, used for time series of vectors with dtw distance
 
  ### Time series
 
  In order to manipulate time series instead of simple vectors,
  all the specific stuff has to be done at construction time.
- In our example above the ```Build``` function should be modified as follow :
+ In our example above the `Build` function should be modified as follow :
 
  ```go
 package main
@@ -425,13 +434,13 @@ func Build(conf mcmc.Conf) (algo *core.Algo, space core.Space) {
 }
 ```
 
-The ```dtw.Space``` object uses internally an ```euclid.Space```
+The `dtw.Space` object uses internally an `euclid.Space`
 but it could use another space as well (such as the cosinus space).
 
 The library does not provide a distribution that handle time series,
 the generic Dirac distribution (which actually does not alter the centers) can be used instead.
 
-Of course the ```Sample``` function should be also modified to sample time series instead of vectors.
+Of course the `Sample` function should be also modified to sample time series instead of vectors.
 
 ## More algorithms
 

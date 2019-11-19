@@ -26,7 +26,7 @@ func Example() {
 	var centers, observations = Sample(1000)
 	var train, test = observations[:800], observations[800:]
 	var algo, space = Build(conf, tConf)
-	defer algo.Close()
+	defer algo.Stop()
 
 	var errRun = RunAndFeed(algo, train)
 
@@ -48,7 +48,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	for i := 0; i < len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
-	err = algo.Run(false)
+	err = algo.Batch()
 	return
 }
 

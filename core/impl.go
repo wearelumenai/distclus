@@ -8,10 +8,8 @@ type Impl interface {
 	Init(ImplConf, Space, Clust) (Clust, error)
 	// process one algorithm iteration
 	Iterate(ImplConf, Space, Clust) (Clust, figures.RuntimeFigures, error)
-	// push a data
-	Push(Elemt) error
-	// set algorithm to online clustering mode
-	SetOC() error
+	// push a data. The second argument is true if algo is running
+	Push(Elemt, bool) error
 }
 
 // ImplConf is implementation configuration interface

@@ -52,32 +52,28 @@ func (impl *Impl) Init(_ core.ImplConf, _ core.Space, _ core.Clust) (clust core.
 
 // Iterate runs the streaming algorithm.
 func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+	runtimeFigures = impl.runtimeFigures()
 	select {
 	case elemt := <-impl.c:
 		impl.Process(elemt, space)
 		clust = impl.clust
-		runtimeFigures = impl.runtimeFigures()
 	default:
+		clust = centroids
 	}
 	return
 }
 
 func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
-	return figures.RuntimeFigures{"maxDistance": figures.Value(impl.maxDistance)}
+	return figures.RuntimeFigures{figures.MaxDistance: figures.Value(impl.maxDistance)}
 }
 
 // Push pushes a new element
-func (impl *Impl) Push(elemt core.Elemt) (err error) {
+func (impl *Impl) Push(elemt core.Elemt, running bool) (err error) {
 	select {
 	case impl.c <- elemt:
 	default:
 		err = errors.New("buffer is full")
 	}
-	return
-}
-
-// SetOC set online clustering mode
-func (impl *Impl) SetOC() (err error) {
 	return
 }
 

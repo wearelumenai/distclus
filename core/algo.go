@@ -13,18 +13,22 @@ import (
 // When a prediction is made, the element can be pushed to the model.
 // A prediction consists in a centroid and a label.
 // The following constraints must be met (otherwise an error is returned) :
-// an element can't be pushed if the algorithm is closed,
+// an element can't be pushed if the algorithm is stopped,
 // a prediction can't be done before the algorithm is run,
 // no centroid can be returned before the algorithm is run.
 type OnlineClust interface {
-	Centroids() (Clust, error)
-	Push(elemt Elemt) error
-	Predict(elemt Elemt) (Elemt, int, error)
-	Run(bool) error
-	Pause() error
-	Play() error
-	Close() error
-	RuntimeFigures() (figures.RuntimeFigures, error)
+	Play() error            // play the algorithm
+	Pause() error           // pause the algorithm (idle)
+	Wait() error            // wait for algorithm sleeping, ready or failed
+	Stop() error            // stop the algorithm
+	Push(elemt Elemt) error // add element
+	// only if algo has runned once
+	Centroids() (Clust, error)                       // clustering result
+	Predict(elemt Elemt) (Elemt, int, error)         // input elemt centroid/label
+	Batch() error                                    // execute in batch mode (do play, wait, then stop)
+	Running() bool                                   // true iif algo is running (running, idle and sleeping)
+	Status() ClustStatus                             // algo status
+	RuntimeFigures() (figures.RuntimeFigures, error) // clustering figures
 }
 
 // StatusNotifier for being notified by Online clustering change status
@@ -41,7 +45,7 @@ type Algo struct {
 	mutex          sync.RWMutex
 	runtimeFigures figures.RuntimeFigures
 	statusNotifier StatusNotifier
-	async          bool
+	waitNotifier   chan error
 	newData        uint64
 }
 
@@ -58,6 +62,7 @@ func NewAlgo(conf ImplConf, impl Impl, space Space) *Algo {
 		status:         Created,
 		statusChannel:  make(chan ClustStatus),
 		statusNotifier: conf.AlgoConf().StatusNotifier,
+		waitNotifier:   make(chan error),
 	}
 }
 
@@ -81,29 +86,67 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	return
 }
 
+// Running is true only if the algorithm is running
+func (algo *Algo) Running() bool {
+	var status = algo.Status()
+	return status == Running || status == Idle || status == Sleeping
+}
+
 // Push a new observation in the algorithm
 func (algo *Algo) Push(elemt Elemt) (err error) {
-	switch atomic.LoadInt64(&algo.status) {
-	case Closed:
-		err = ErrEnded
-	default:
-		err = algo.impl.Push(elemt)
+	err = algo.impl.Push(elemt, algo.Running())
+	if err == nil {
+		atomic.AddUint64(&algo.newData, 1)
+		err = algo.wakeUp()
+	}
+	return
+}
+
+// Batch executes the algorithm in batch mode
+func (algo *Algo) Batch() (err error) {
+	if algo.conf.AlgoConf().Iter == 0 {
+		err = ErrInfiniteIterations
+	} else if algo.Running() {
+		err = ErrRunning
+	} else {
+		err = algo.Play()
 		if err == nil {
-			if algo.async {
-				atomic.AddUint64(&algo.newData, 1)
+			err = algo.Wait()
+			if err == nil {
+				err = algo.Stop()
 			}
-			err = algo.wakeUp()
 		}
 	}
 	return
 }
 
-// Run executes the algorithm in batch mode
-func (algo *Algo) Run(async bool) (err error) {
-	algo.async = async
-	err = algo.tryInit()
-	if err == nil {
-		err = algo.runIfReady()
+// Play the algorithm in online mode
+func (algo *Algo) Play() (err error) {
+	switch atomic.LoadInt64(&algo.status) {
+	case Created:
+		algo.centroids, err = algo.impl.Init(algo.conf, algo.space, algo.centroids)
+		if err == nil {
+			algo.setStatus(Ready, nil)
+		} else {
+			return
+		}
+		fallthrough
+	case Failed:
+		fallthrough
+	case Ready:
+		algo.statusChannel = make(chan ClustStatus)
+		algo.waitNotifier = make(chan error)
+		go algo.run()
+		<-algo.statusChannel // wait run ack
+	case Idle:
+		algo.statusChannel <- Running
+		algo.setStatus(Running, nil)
+	case Sleeping:
+		err = ErrSleeping
+	case Running:
+		err = ErrRunning
+	case Stopping:
+		err = ErrStopping
 	}
 	return
 }
@@ -125,12 +168,12 @@ func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, err error) {
 	return
 }
 
-// Close Stops the algorithm
-func (algo *Algo) Close() (err error) {
-	var status = algo.Status()
-	if status == Running || status == Idle || status == Sleeping {
-		algo.statusChannel <- Closed
-		algo.setStatus(Closed, nil)
+// Stop Stops the algorithm
+func (algo *Algo) Stop() (err error) {
+	if algo.Running() {
+		algo.setStatus(Stopping, nil)
+		algo.statusChannel <- Stopping
+		<-algo.statusChannel
 	} else {
 		err = ErrNotRunning
 	}
@@ -140,22 +183,11 @@ func (algo *Algo) Close() (err error) {
 // Pause the algorithm and set status to idle
 func (algo *Algo) Pause() (err error) {
 	var status = atomic.LoadInt64(&algo.status)
-	if status == Running || status == Ready {
+	if status == Running || status == Sleeping {
 		algo.statusChannel <- Idle
 		algo.setStatus(Idle, nil)
 	} else {
 		err = ErrNotRunning
-	}
-	return
-}
-
-// Play algorithm execution after idle status
-func (algo *Algo) Play() (err error) {
-	if atomic.LoadInt64(&algo.status) == Idle {
-		algo.statusChannel <- Running
-		algo.setStatus(Running, nil)
-	} else {
-		err = ErrNotIdle
 	}
 	return
 }
@@ -196,102 +228,69 @@ func (algo *Algo) Status() ClustStatus {
 	return atomic.LoadInt64(&algo.status)
 }
 
-func (algo *Algo) tryInit() (err error) {
-	if atomic.LoadInt64(&algo.status) == Created {
-		if algo.async {
-			err = algo.impl.SetOC()
-		}
-		algo.centroids, err = algo.impl.Init(algo.conf, algo.space, algo.centroids)
-		if err == nil {
-			algo.setStatus(Ready, nil)
-		}
-	}
-	return
-}
-
-func (algo *Algo) runIfReady() (err error) {
-	if atomic.LoadInt64(&algo.status) == Ready {
-		err = algo.run()
-	} else {
-		err = ErrNotReady
-	}
-	return
-}
-
-func (algo *Algo) run() (err error) {
-	if algo.async {
-		go algo.runAsync()
-	} else {
-		err = algo.runSync()
-	}
-	return
-}
-
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) runSync() (err error) {
+func (algo *Algo) run() (err error) {
 	algo.setStatus(Running, nil)
 
 	var conf = algo.conf.AlgoConf()
-	if conf.Iter == 0 && !algo.async {
-		err = ErrInfiniteIterations
-	}
 
-	if err == nil {
-		var centroids Clust
-		var runtimeFigures figures.RuntimeFigures
-		var start = time.Now()
-		var iterFreq time.Duration
-		if conf.IterFreq > 0 {
-			iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
+	defer (func() { // clean algorithm
+		select { // unlock wait notifier if blocked
+		case algo.waitNotifier <- err:
+		default:
 		}
-		var lastIterationTime time.Time
-		var newData = atomic.LoadUint64(&algo.newData)
+		close(algo.statusChannel)
+		close(algo.waitNotifier)
+		algo.Stop()
+	})()
 
-		var status = Running
+	algo.statusChannel <- Running // unlock runIfReady pause
 
-		for iterations := 0; status == Running && err == nil; iterations++ {
-			select { // check for algo status update
-			case status = <-algo.statusChannel:
-				switch status {
-				case Idle:
-					status = <-algo.statusChannel
-				case Closed:
-				}
-			default: // try to run the implementation
-				if conf.Timeout > 0 && time.Now().Sub(start).Seconds() > conf.Timeout { // check timeout
-					algo.setStatus(Closed, nil)
-					err = ErrTimeOut
-				} else { // run implementation
-					lastIterationTime = time.Now()
-					centroids, runtimeFigures, err = algo.impl.Iterate(
-						algo.conf,
-						algo.space,
-						algo.centroids,
-					)
-					if centroids == nil { // impl has finished
-						if !algo.async {
-							status = Closed
-							algo.setStatus(Closed, err)
-						}
-					} else if err == nil { // save run results
+	var centroids Clust
+	var runtimeFigures figures.RuntimeFigures
+	var start = time.Now()
+	var iterFreq time.Duration
+	if conf.IterFreq > 0 {
+		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
+	}
+	var lastIterationTime time.Time
+	var newData = atomic.LoadUint64(&algo.newData)
+
+	var status = Running
+
+	for iterations := 0; (status == Running || status == Idle) && err == nil; iterations++ {
+		select { // check for algo status update
+		case status = <-algo.statusChannel:
+			switch status {
+			case Idle:
+				status = <-algo.statusChannel
+			case Stopping:
+			}
+		default: // try to run the implementation
+			if conf.Timeout > 0 && time.Now().Sub(start).Seconds() > conf.Timeout { // check timeout
+				algo.setStatus(Stopping, nil)
+				err = ErrTimeOut
+			} else { // run implementation
+				lastIterationTime = time.Now()
+				centroids, runtimeFigures, err = algo.impl.Iterate(
+					algo.conf,
+					algo.space,
+					algo.centroids,
+				)
+				if err == nil {
+					if centroids != nil { // impl has finished
 						algo.saveIterContext(centroids, runtimeFigures, iterations)
 					}
-					if (!algo.async) && conf.Iter > 0 && conf.Iter < iterations {
-						algo.setStatus(Ready, nil)
-						status = Ready
-					}
-				}
-				if err == nil && atomic.LoadInt64(&algo.status) == Running {
-					// temporize iteration
-					if conf.IterFreq > 0 { // with iteration freqency
-						var diff = iterFreq - time.Now().Sub(lastIterationTime)
-						if diff > 0 {
-							algo.setStatus(Idle, nil)
-							time.Sleep(diff)
-							algo.setStatus(Running, nil)
+					if atomic.LoadInt64(&algo.status) == Running {
+						// temporize iteration
+						if conf.IterFreq > 0 { // with iteration freqency
+							var diff = iterFreq - time.Now().Sub(lastIterationTime)
+							if diff > 0 {
+								algo.setStatus(Idle, nil)
+								time.Sleep(diff)
+								algo.setStatus(Running, nil)
+							}
 						}
-					}
-					if algo.async { // check online clustering activity
 						var algoNewData = atomic.LoadUint64(&algo.newData)
 						if newData < algoNewData {
 							iterations = 0
@@ -299,6 +298,7 @@ func (algo *Algo) runSync() (err error) {
 						} else if newData == algoNewData {
 							if (conf.Iter > 0 && iterations > conf.Iter) || (conf.DataPerIter > 0 && algoNewData < uint64(conf.DataPerIter)) {
 								algo.setStatus(Sleeping, nil)
+								algo.notifyWaiters()
 								status = <-algo.statusChannel
 								atomic.StoreUint64(&algo.newData, 0)
 								newData = 0
@@ -312,26 +312,36 @@ func (algo *Algo) runSync() (err error) {
 
 	if err != nil {
 		algo.setStatus(Failed, err)
-	}
-	if algo.async { // empty stack if necessary
-		select {
-		case <-algo.statusChannel:
-			algo.setStatus(Closed, nil)
-		default:
-		}
+		log.Println(err)
+	} else if status == Stopping {
+		algo.setStatus(Ready, nil)
 	}
 	return
 }
 
-// Initialize the algorithm, if success run it asynchronously otherwise retry
-func (algo *Algo) runAsync() {
-	var err error
-	for atomic.LoadInt64(&algo.status) == Ready {
-		err = algo.runSync()
-		if err != nil {
-			log.Println(err)
-		}
+func (algo *Algo) notifyWaiters() {
+	select {
+	case algo.waitNotifier <- nil:
+	default:
 	}
+}
+
+// Wait for online sleeping/ending status
+func (algo *Algo) Wait() (err error) {
+	switch atomic.LoadInt64(&algo.status) {
+	case Idle:
+		err = ErrIdle
+	case Running:
+		if algo.conf.AlgoConf().Iter == 0 || algo.conf.AlgoConf().DataPerIter == 0 {
+			err = ErrNeverSleeping
+		} else {
+			err = <-algo.waitNotifier
+		}
+	case Sleeping:
+	default:
+		err = ErrNotRunning
+	}
+	return
 }
 
 func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures, iterations int) {

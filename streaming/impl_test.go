@@ -118,7 +118,7 @@ func TestImpl_InitSuccess(t *testing.T) {
 	var conf = streaming.Conf{BufferSize: 5}
 	var impl = streaming.NewImpl(conf, []core.Elemt{})
 	var cluster0 = []float64{1.}
-	var err0 = impl.Push(cluster0)
+	var err0 = impl.Push(cluster0, false)
 	if err0 != nil {
 		t.Error("unexpected error", err0)
 	}
@@ -139,10 +139,10 @@ func TestImpl_PushError(t *testing.T) {
 
 	conf.SetConfigDefaults()
 	for i := 0; i < conf.BufferSize; i++ {
-		var _ = impl.Push(cluster0)
+		var _ = impl.Push(cluster0, false)
 	}
 
-	var err0 = impl.Push(cluster0)
+	var err0 = impl.Push(cluster0, false)
 	if err0 == nil {
 		t.Error("an error was expected (channel is full)")
 	}
@@ -174,11 +174,7 @@ func TestImpl_Run(t *testing.T) {
 	var distr = mix()
 	var clusters = core.Clust{distr()}
 	var impl = streaming.NewImpl(conf, clusters)
-	var err = impl.SetOC()
-	if err != nil {
-		t.Error("No error expected.", err)
-	}
-	clusters, err = impl.Init(&conf, euclid.Space{}, nil)
+	clusters, err := impl.Init(&conf, euclid.Space{}, nil)
 	if err != nil {
 		t.Error("No error expected.", err)
 	}
@@ -199,7 +195,7 @@ func TestImpl_Run(t *testing.T) {
 		}
 	}()
 	for i := 0; i < 1000; i++ {
-		_ = impl.Push(distr())
+		_ = impl.Push(distr(), true)
 	}
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)

@@ -22,7 +22,7 @@ func Test_getCenters(t *testing.T) {
 	var store = mcmc.NewCenterStore(rgen)
 
 	for _, elemt := range test.Vectors {
-		_ = buffer.Push(elemt)
+		_ = buffer.Push(elemt, false)
 	}
 
 	var data = buffer.Data()

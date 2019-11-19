@@ -9,7 +9,7 @@ import (
 func NewParImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) (impl Impl) {
 	impl = NewSeqImpl(conf, initializer, data, distrib)
 	impl.strategy = &ParStrategy{
-		Degree: conf.Conf.NumCPU,
+		Degree: conf.NumCPU,
 	}
 	return
 }
@@ -30,8 +30,7 @@ func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 
-	_ = algo.Run(false)
-	_ = algo.Close()
+	algo.Batch()
 
 	var result, _ = algo.Centroids()
 

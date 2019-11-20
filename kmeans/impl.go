@@ -10,10 +10,6 @@ type Impl struct {
 	strategy    Strategy
 	buffer      core.Buffer
 	initializer core.Initializer
-	iter        int
-	forever     bool
-	wakeUp      chan bool
-	paused      bool
 }
 
 // Strategy Abstract Impl strategy to be implemented by concrete algorithms
@@ -22,10 +18,9 @@ type Strategy interface {
 }
 
 // Init Algorithm
-func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (core.Clust, error) {
+func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (clust core.Clust, err error) {
 	var kmeansConf = conf.(*Conf)
 	_ = impl.buffer.Apply()
-	impl.iter = 0
 	return impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
 }
 

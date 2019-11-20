@@ -46,7 +46,7 @@ type Algo struct {
 	runtimeFigures figures.RuntimeFigures
 	statusNotifier StatusNotifier
 	waitNotifier   chan error
-	newData        uint64
+	newData        int64
 }
 
 // AlgoConf algorithm configuration
@@ -96,7 +96,7 @@ func (algo *Algo) Running() bool {
 func (algo *Algo) Push(elemt Elemt) (err error) {
 	err = algo.impl.Push(elemt, algo.Running())
 	if err == nil {
-		atomic.AddUint64(&algo.newData, 1)
+		atomic.AddInt64(&algo.newData, 1)
 		err = algo.wakeUp()
 	}
 	return
@@ -254,11 +254,13 @@ func (algo *Algo) run() (err error) {
 		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
 	}
 	var lastIterationTime time.Time
-	var newData = atomic.LoadUint64(&algo.newData)
+	var newData = int64(0)
 
 	var status = Running
+	var iterations = 0
+	var iterationsPerSleep = 0
 
-	for iterations := 0; (status == Running || status == Idle) && err == nil; iterations++ {
+	for (status == Running || status == Idle) && err == nil {
 		select { // check for algo status update
 		case status = <-algo.statusChannel:
 			switch status {
@@ -279,31 +281,33 @@ func (algo *Algo) run() (err error) {
 				)
 				if err == nil {
 					if centroids != nil { // impl has finished
+						iterationsPerSleep++
+						iterations++
 						algo.saveIterContext(centroids, runtimeFigures, iterations)
-					}
-					if atomic.LoadInt64(&algo.status) == Running {
 						// temporize iteration
 						if conf.IterFreq > 0 { // with iteration freqency
 							var diff = iterFreq - time.Now().Sub(lastIterationTime)
 							if diff > 0 {
-								algo.setStatus(Idle, nil)
 								time.Sleep(diff)
-								algo.setStatus(Running, nil)
 							}
 						}
-						var algoNewData = atomic.LoadUint64(&algo.newData)
+						var algoNewData = atomic.LoadInt64(&algo.newData)
 						if newData < algoNewData {
-							iterations = 0
 							newData = algoNewData
+							iterationsPerSleep = 0
 						} else if newData == algoNewData {
-							if (conf.Iter > 0 && iterations > conf.Iter) || (conf.DataPerIter > 0 && algoNewData < uint64(conf.DataPerIter)) {
+							if (conf.Iter > 0 && iterationsPerSleep >= conf.Iter) || (conf.DataPerIter > 0 && int64(conf.DataPerIter) >= algoNewData) {
 								algo.setStatus(Sleeping, nil)
 								algo.notifyWaiters()
 								status = <-algo.statusChannel
-								atomic.StoreUint64(&algo.newData, 0)
+								atomic.StoreInt64(&algo.newData, 0)
 								newData = 0
+								iterationsPerSleep = 0
 							}
 						}
+					} else { // impl has finished
+						algo.setStatus(Stopping, nil)
+						status = Stopping
 					}
 				}
 			}

@@ -17,7 +17,7 @@ type Impl struct {
 	uniform     distuv.Uniform
 	distrib     Distrib
 	store       CenterStore
-	iter, acc   int
+	acc         int
 	dim         int
 	current     proposal
 }

@@ -1,10 +1,13 @@
 package figures
 
-type Figure string
+// Key figure name
+type Key string
+
+// Value figure value
 type Value float64
 
 // RuntimeFigures are meta values given by respective impl
-type RuntimeFigures map[Figure]Value
+type RuntimeFigures map[Key]Value
 
 const (
 	Iterations   = "iterations"

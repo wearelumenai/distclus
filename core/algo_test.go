@@ -416,5 +416,5 @@ func Test_Scenario_Play(t *testing.T) {
 
 	test.AssertNoError(t, err2)
 	test.AssertTrue(t, ok2)
-	test.AssertTrue(t, iter2 > iter1)
+	test.AssertTrue(t, iter2 >= iter1)
 }

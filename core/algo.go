@@ -235,6 +235,7 @@ func (algo *Algo) run() (err error) {
 	var conf = algo.conf.AlgoConf()
 
 	defer (func() { // clean algorithm
+		atomic.StoreInt64(&algo.newData, 0)
 		select { // unlock wait notifier if blocked
 		case algo.waitNotifier <- err:
 		default:
@@ -254,7 +255,7 @@ func (algo *Algo) run() (err error) {
 		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
 	}
 	var lastIterationTime time.Time
-	var newData = int64(0)
+	var newData = atomic.LoadInt64(&algo.newData)
 
 	var status = Running
 	var iterations = 0

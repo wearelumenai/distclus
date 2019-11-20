@@ -24,10 +24,6 @@ func (conf *Conf) Verify() {
 	if conf.K < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
 	}
-
-	if conf.Iter < 0 {
-		panic(fmt.Sprintf("Illegal value for Iter: %v", conf.Iter))
-	}
 }
 
 // SetConfigDefaults initializes nil configuration values

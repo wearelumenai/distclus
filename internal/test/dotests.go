@@ -165,13 +165,13 @@ func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	var err error
 	err = algo.Push(Vectors[5])
-	AssertError(t, err)
+	AssertNoError(t, err)
 
 	_, _, err = algo.Predict(Vectors[5])
 	if err == nil {
 		err = algo.Push(Vectors[5])
 	}
-	AssertError(t, err)
+	AssertNoError(t, err)
 
 	_, _, err = algo.Predict(Vectors[5])
 	AssertNoError(t, err)
@@ -326,7 +326,7 @@ func AssertNoError(t *testing.T, err error) {
 // AssertError test
 func AssertError(t *testing.T, err error) {
 	if err == nil {
-		t.Error("Expected no workflow error")
+		t.Error("Expected workflow error")
 	}
 }
 

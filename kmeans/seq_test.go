@@ -18,7 +18,7 @@ func Test_Initialization(t *testing.T) {
 }
 
 func Test_RunSyncGiven(t *testing.T) {
-	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 0}}
+	var implConf = kmeans.Conf{K: 3}
 	var initializer = kmeans.GivenInitializer
 	var algo = kmeans.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 

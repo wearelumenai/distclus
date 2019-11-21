@@ -7,12 +7,6 @@ import (
 	"testing"
 )
 
-func TestKMeans_ConfErrorIter(t *testing.T) {
-	defer test.AssertPanic(t)
-	var conf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: -10}}
-	conf.Verify()
-}
-
 func TestKMeans_ConfErrorK(t *testing.T) {
 	defer test.AssertPanic(t)
 	var conf = kmeans.Conf{K: -12, Conf: core.Conf{Iter: 10}}

@@ -54,18 +54,18 @@ All algorithm configurations extend the `core.Conf` :
 package core
 
 type Conf struct {
-	Iter           uint64
+	Iter           int
 	IterFreq       float64
     Timeout        float64
     NumCPU         int
-    DataPerIter   uint64
+    DataPerIter   int
 	StatusNotifier StatusNotifier
 }
 ```
 
 Where :
 
-- `Iter`: maximal number of iterations if given. Unlimited by default.
+- `Iter`: maximal number of iterations if given. 0 by default. Infinite if negative.
 - `IterFreq`: maximal number of iterations per second. Unlimited by default.
 - `Timeout`: maximal algorithm execution duration in seconds. Unlimited by default.
 - `NumCPU`: number of CPU to use for algorithm execution. Default is maximal number of CPU.

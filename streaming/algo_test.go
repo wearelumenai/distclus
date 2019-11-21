@@ -13,7 +13,7 @@ import (
 )
 
 func Test_Async(t *testing.T) {
-	var algo = streaming.NewAlgo(streaming.Conf{}, euclid.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{Conf: core.Conf{Iter: -1}}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
 	err := algo.Push(distr())
 	if err != nil {
@@ -99,7 +99,7 @@ func mix() func() []float64 {
 
 func Test_AlgoPush(t *testing.T) {
 	var data = mix()
-	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5}, euclid.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5, Conf: core.Conf{Iter: -1}}, euclid.Space{}, []core.Elemt{})
 	_ = algo.Push(data())
 	_ = algo.Play()
 	var d = make([][]float64, 10000)

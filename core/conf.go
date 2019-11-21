@@ -22,11 +22,11 @@ func (conf *Conf) Verify() {
 	if conf.DataPerIter < 0 {
 		panic(errors.New("DataPerIter must be greater or equal than 1"))
 	}
-	if conf.Iter < 0 {
-		panic(errors.New("Iterations must be greater or equal than 1"))
-	}
 	if conf.IterFreq < 0 {
 		panic(errors.New("Iteration frequency must be greater or equal than 0"))
+	}
+	if conf.Timeout < 0 {
+		panic(errors.New("Timeout must be greater or equal than 0"))
 	}
 }
 
@@ -34,9 +34,6 @@ func (conf *Conf) Verify() {
 func (conf *Conf) setConfigDefaults() {
 	if conf.NumCPU == 0 {
 		conf.NumCPU = runtime.NumCPU()
-	}
-	if conf.DataPerIter == 0 {
-		conf.DataPerIter = 1
 	}
 }
 

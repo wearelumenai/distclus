@@ -104,7 +104,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 
 // Batch executes the algorithm in batch mode
 func (algo *Algo) Batch() (err error) {
-	if algo.conf.AlgoConf().Iter == 0 {
+	if algo.conf.AlgoConf().Iter < 0 {
 		err = ErrInfiniteIterations
 	} else if algo.Running() {
 		err = ErrRunning
@@ -134,10 +134,12 @@ func (algo *Algo) Play() (err error) {
 	case Failed:
 		fallthrough
 	case Ready:
-		algo.statusChannel = make(chan ClustStatus)
-		algo.waitNotifier = make(chan error)
-		go algo.run()
-		<-algo.statusChannel // wait run ack
+		if algo.conf.AlgoConf().Iter != 0 {
+			algo.statusChannel = make(chan ClustStatus)
+			algo.waitNotifier = make(chan error)
+			go algo.run()
+			<-algo.statusChannel // wait run ack
+		}
 	case Idle:
 		algo.statusChannel <- Running
 		algo.setStatus(Running, nil)
@@ -339,7 +341,7 @@ func (algo *Algo) Wait() (err error) {
 	case Idle:
 		err = ErrIdle
 	case Running:
-		if algo.conf.AlgoConf().Iter == 0 || algo.conf.AlgoConf().DataPerIter == 0 {
+		if algo.conf.AlgoConf().Iter < 0 && algo.conf.AlgoConf().DataPerIter == 0 {
 			err = ErrNeverSleeping
 		} else {
 			err = <-algo.waitNotifier

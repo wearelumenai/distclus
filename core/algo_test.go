@@ -334,7 +334,7 @@ func Test_Scenario_Batch(t *testing.T) {
 }
 
 func Test_Scenario_Play(t *testing.T) {
-	var algo = newAlgo(t, 0, 10)
+	var algo = newAlgo(t, -1, 10)
 	if algo.Status() != core.Created {
 		t.Error("status should be Created")
 	}
@@ -375,7 +375,7 @@ func Test_Scenario_Play(t *testing.T) {
 
 	_ = algo.Play()
 
-	if algo.Status() != core.Running && algo.Status() != core.Sleeping {
+	if !algo.Running() {
 		t.Error("status should be Running", algo.Status())
 	}
 

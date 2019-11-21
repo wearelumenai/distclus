@@ -6,13 +6,6 @@ import (
 	"testing"
 )
 
-func TestMCMC_ConfErrorIter(t *testing.T) {
-	defer test.AssertPanic(t)
-	var conf = mcmcConf
-	conf.Iter = -10
-	conf.Verify()
-}
-
 func TestMCMC_ConfErrorMaxK(t *testing.T) {
 	defer test.AssertPanic(t)
 	var conf = mcmcConf

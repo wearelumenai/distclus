@@ -11,7 +11,7 @@ import (
 var space = euclid.Space{}
 
 func Test_ParPredictGiven(t *testing.T) {
-	kmeansConf := kmeans.Conf{K: 3, Conf: core.Conf{Iter: 0}, Par: true}
+	kmeansConf := kmeans.Conf{K: 3, Par: true}
 	var algo = kmeans.NewAlgo(kmeansConf, space, []core.Elemt{}, kmeans.GivenInitializer)
 
 	test.DoTestRunSyncGiven(t, algo)

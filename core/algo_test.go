@@ -60,6 +60,7 @@ func (impl *mockImpl) Push(elemt core.Elemt, running bool) (err error) {
 	} else {
 		impl.stoppedcount++
 	}
+	impl.clust = append(impl.clust, elemt)
 	return
 }
 

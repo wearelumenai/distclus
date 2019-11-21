@@ -186,6 +186,8 @@ func (algo *Algo) Pause() (err error) {
 	if status == Running || status == Sleeping {
 		algo.statusChannel <- Idle
 		algo.setStatus(Idle, nil)
+	} else if status == Idle {
+		err = ErrIdle
 	} else {
 		err = ErrNotRunning
 	}

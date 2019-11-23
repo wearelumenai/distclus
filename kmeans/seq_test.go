@@ -39,7 +39,7 @@ func Test_RunSyncPP(t *testing.T) {
 }
 
 func Test_RunAsync(t *testing.T) {
-	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 1 << 30}, RGen: rgen()}
+	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 1000}, RGen: rgen()}
 	var initializer = kmeans.GivenInitializer
 	var algo = kmeans.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 
@@ -49,7 +49,7 @@ func Test_RunAsync(t *testing.T) {
 }
 
 func Test_Workflow(t *testing.T) {
-	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 1 << 30}, RGen: rgen()}
+	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 1000}, RGen: rgen()}
 	var initializer = kmeans.PPInitializer
 	var algo = kmeans.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 

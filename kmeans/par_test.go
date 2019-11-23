@@ -25,7 +25,7 @@ func Test_ParRunSyncPP(t *testing.T) {
 	test.DoTestRunSyncCentroids(t, algo)
 }
 func Test_ParRunAsync(t *testing.T) {
-	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 1 << 30}, RGen: rgen(), Par: true}
+	var implConf = kmeans.Conf{K: 3, Conf: core.Conf{Iter: 1000}, RGen: rgen(), Par: true}
 	var initializer = kmeans.GivenInitializer
 	var algo = kmeans.NewAlgo(implConf, space, []core.Elemt{}, initializer)
 

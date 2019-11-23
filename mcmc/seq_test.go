@@ -99,7 +99,7 @@ func Test_RunAsync(t *testing.T) {
 		B:    100, Amp: 0.1,
 		Norm:   2,
 		ProbaK: []float64{1, 8, 1},
-		Conf:   core.Conf{Iter: 20},
+		Conf:   core.Conf{Iter: 100},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,

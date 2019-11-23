@@ -15,6 +15,7 @@ var conf = mcmc.Conf{
 	InitK: 1,
 	Amp:   .5,
 	B:     1,
+	Conf:  core.Conf{Iter: 20},
 }
 
 var tConf = mcmc.MultivTConf{

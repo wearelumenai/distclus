@@ -69,7 +69,7 @@ func Test_ParRunAsync(t *testing.T) {
 		B:         100,
 		Amp:       0.1,
 		Par:       true,
-		Conf:      core.Conf{Iter: 5},
+		Conf:      core.Conf{Iter: 1000},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,

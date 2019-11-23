@@ -11,11 +11,11 @@ var ErrNotRunning = errors.New("Algorithm is not running")
 // ErrRunning raised while algorithm status equals Running, Idle or Sleeping
 var ErrRunning = errors.New("Algorithm is running")
 
-// ErrSleeping raised while algorithm status equals Sleeping
-var ErrSleeping = errors.New("Algorithm is sleeping")
-
 // ErrStopping raised while algorithm status equals stopping
 var ErrStopping = errors.New("Algorithm is stopping")
+
+// ErrAlreadyCreated raised if algorithm is already created
+var ErrAlreadyCreated = errors.New("Algorithm is already created")
 
 // ErrNotIdle idle status is asked and not setted
 var ErrNotIdle = errors.New("Algorithm is not idle")

@@ -1,7 +1,7 @@
 package core
 
 // ClustStatus integer type
-type ClustStatus = int64
+type ClustStatus int64
 
 // ClustStatus const values
 const (
@@ -10,6 +10,18 @@ const (
 	Running              // used when algorithm run
 	Idle                 // paused by user
 	Sleeping             // waiting for data to process
-	Failed               // if an error occured during execution
 	Stopping             // stopped by user
+	Failed               // if an error occured during execution
+	Succeed              // if clustering succeed
 )
+
+var names = []string{
+	"Created", "Ready",
+	"Running", "Idle", "Sleeping", "Stopping",
+	"Failed", "Succeed",
+}
+
+// String display value message
+func (clustStatus ClustStatus) String() string {
+	return names[int(clustStatus)]
+}

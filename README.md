@@ -70,7 +70,7 @@ Where :
 - `Timeout`: maximal algorithm execution duration in seconds. Unlimited by default.
 - `NumCPU`: number of CPU to use for algorithm execution. Default is maximal number of CPU.
 - `DataPerIter`: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
-- `StatusNotifier`: callback called in a separate go routine, each time the algorithm change of status or fires an error. Online clustering specific.
+- `StatusNotifier`: callback called in the same go routine than algo execution, each time the algorithm change of status or fires an error.
 
 ### MCMC Configuration
 
@@ -298,6 +298,7 @@ The `core.OnlineClust` interface is implemented by the `core.Algo` struct.
 
 We have covered almost all methods so far:
 
+ - `Init() (Clust, error)`: initialize the algorithm with implentation strategy (random, given, kmeans++, ...).
  - `Play() error`: execute the algorithm.
  - `Centroids() (Clust, error)`: get array of clustering centroids.
  - `Predict(elemt Elemt) (Elemt, int, error)`: according to previous method, get centroid and its index in array of clustering centroids for input elemt.
@@ -354,23 +355,24 @@ The functor passed to `mcmc.NewLateDistrib` is executed only once with minimal l
 
 The algorithm is executed asynchronously and continuously, allowing new data to be pushed during execution.
 
-This is achieved by calling the method `Play`, launching the algorithm execution as a separate go routine, and waiting for status equals `core.Running`.
+This is achieved by calling the method `Play`, launching the algorithm execution as a separate go routine, and waiting for status equals `Running`.
 
 When the algorithm starts, it first initializes the starting centers.
 For example, the number of initial centroids is given by the parameter `InitK` of the `mcmc.Conf` configuration object (see above).
 Thus at least `InitK` observations must be given at construction time or pushed before the algorithm starts,
 otherwise an error is returned by the `Play` method.
 
-In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `core.Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `DataPerIter` pushed data and ensure maximum number of iterations per seconds.
+In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `DataPerIter` pushed data and ensure maximum number of iterations per seconds.
 
 Remainding methods allow you to dynamically interact with the algorithm:
-- `Play() error`: start the algorithm if not running (status `core.Created`, `core.Ready` or `core.Failed`), otherwise (status `core.Idle`), goes back to execution. Release when algorithm status equals `core.Running`.
-- `Pause() error`: pause the algorithm. Wait until the algo is `core.Idle`.
-- `Wait() error`: wait until the algorithm is `core.Sleeping`, `core.Ready` or `core.Failed` status.
-- `Stop() error`: stop the algorithm and wait until it is ready. Such algorithm enters in `core.Stopping` before `core.Ready`.
-- `Status() core.ClustStatus`: get algo status.
-- `Running() bool`: true iif algo is in running status (`core.Running`, `core.Idle` and `core.Sleeping`).
-- `StatusNotifier(core.ClustStatus, error)`: callback function when algo status change or an error is raised. Setted in `core.Conf.StatusNotifier`.
+- `Init() (Clust, error)`: initialize the algorithm if not yet created, and set status to ready.
+- `Play() error`: start the algorithm if not running (status `Created`, `Ready` or `Failed`), otherwise (status `Idle` and `Sleeping`), goes back to execution. Release when algorithm status equals `Running`.
+- `Pause() error`: pause the algorithm. Wait until the algo is `Idle`.
+- `Wait() error`: wait until the algorithm is `Sleeping`, `Ready` or `Failed` status.
+- `Stop() error`: stop the algorithm and wait until it is ready. Such algorithm enters in `Stopping` before `Ready`.
+- `Status() ClustStatus`: get algo status.
+- `Running() bool`: true iif algo is in running status (`Running`, `Idle` and `Sleeping`).
+- `StatusNotifier(ClustStatus, error)`: callback function when algo status change or an error is raised. Setted in `Conf.StatusNotifier`.
 
 The `RunAndFeed` function above may be modified like this:
 

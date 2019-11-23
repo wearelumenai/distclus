@@ -28,9 +28,18 @@ var Vectors = []core.Elemt{
 
 // DoTestInitialization Algorithm must be configured with GivenInitializer with 3 centers and 0 iteration
 func DoTestInitialization(t *testing.T, algo core.OnlineClust) {
-	var actual = PushAndRunSync(algo)
+	var actual = PushAndInit(algo)
 	var expected = Vectors[:3]
 	AssertCentroids(t, expected, actual)
+}
+
+// DoTestInitGiven Algorithm must be configured with GivenInitializer with 3 centers
+func DoTestInitGiven(t *testing.T, algo core.OnlineClust) {
+	var clust = PushAndInit(algo)
+	var actual, _ = clust.MapLabel(Vectors, euclid.Space{})
+
+	var expected = []int{0, 1, 2, 0, 0, 1, 2, 2}
+	AssertArrayEqual(t, expected, actual)
 }
 
 // DoTestRunSyncGiven Algorithm must be configured with GivenInitializer with 3 centers
@@ -223,6 +232,16 @@ func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) 
 	if !reflect.DeepEqual(clust[1], init[1]) {
 		t.Error("Expected empty cluster")
 	}
+}
+
+// PushAndInit test
+func PushAndInit(algorithm core.OnlineClust) (centroids core.Clust) {
+	for _, elemt := range Vectors {
+		_ = algorithm.Push(elemt)
+	}
+	algorithm.Init()
+	centroids, _ = algorithm.Centroids()
+	return
 }
 
 // PushAndRunAsync test

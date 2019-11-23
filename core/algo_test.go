@@ -3,9 +3,10 @@ package core_test
 import (
 	"distclus/core"
 	"distclus/figures"
-	"distclus/internal/test"
 	"errors"
+	"math"
 	"testing"
+	"time"
 )
 
 type mockConf struct {
@@ -47,7 +48,9 @@ func (impl *mockImpl) Init(conf core.ImplConf, space core.Space, clust core.Clus
 func (impl *mockImpl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
 	impl.iter++
 	clust = impl.clust
-	runtimeFigures = figures.RuntimeFigures{"iter": figures.Value(impl.iter)}
+	if impl.iter%2 == 0 {
+		runtimeFigures = figures.RuntimeFigures{"iter": figures.Value(impl.iter)}
+	}
 	if len(centroids) == 2 {
 		err = errIter
 	}
@@ -87,13 +90,10 @@ func (m mockSpace) Dim(e []core.Elemt) int {
 	return 0
 }
 
-func newAlgo(t *testing.T, iter int, size int) (algo core.Algo) {
+func newAlgo(t *testing.T, conf core.Conf, size int) (algo core.Algo) {
 	algo = *core.NewAlgo(
 		&mockConf{
-			core.Conf{
-				StatusNotifier: notifier,
-				Iter:           iter,
-			},
+			Conf: conf,
 		},
 		&mockImpl{
 			clust: make(core.Clust, size),
@@ -119,7 +119,7 @@ func newAlgo(t *testing.T, iter int, size int) (algo core.Algo) {
 }
 
 func TestErrorAtInitialization(t *testing.T) {
-	var algo = newAlgo(t, 1, 10)
+	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
 	var impl = algo.Impl().(*mockImpl)
 	impl.clust = impl.clust[0:1]
 
@@ -130,9 +130,8 @@ func TestErrorAtInitialization(t *testing.T) {
 	}
 }
 
-func TestOCInitError(t *testing.T) {
-	algo := newAlgo(t, 1, 1)
-
+func TestInitError(t *testing.T) {
+	algo := newAlgo(t, core.Conf{Iter: 1}, 1)
 	err := algo.Play()
 
 	if err != errInit {
@@ -140,20 +139,35 @@ func TestOCInitError(t *testing.T) {
 	}
 }
 
-func TestOCIterError(t *testing.T) {
-	algo := newAlgo(t, 1, 2)
-
+func TestIterError(t *testing.T) {
+	algo := newAlgo(t, core.Conf{Iter: 1}, 2)
 	err := algo.Play()
 
 	if err != nil {
-		t.Error("error while initializing")
+		t.Error("no error expected", err)
 	}
 
-	_ = algo.Stop()
+	err = algo.Wait()
+
+	if err != errIter {
+		t.Error("Iter error expected", err)
+	}
+
+	err = algo.Wait()
+
+	if err != errIter {
+		t.Error("Iter error expected", err)
+	}
+
+	err = algo.Batch()
+
+	if err != errIter {
+		t.Error("Iter error expected", err)
+	}
 }
 
-func TestOCPause(t *testing.T) {
-	algo := newAlgo(t, 1, 10)
+func TestPause(t *testing.T) {
+	algo := newAlgo(t, core.Conf{Iter: 1}, 10)
 
 	err := algo.Play()
 
@@ -185,7 +199,7 @@ func TestOCPause(t *testing.T) {
 }
 
 func Test_Conf(t *testing.T) {
-	var algo = newAlgo(t, 1, 10)
+	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
 
 	var conf = algo.Conf()
 
@@ -194,8 +208,24 @@ func Test_Conf(t *testing.T) {
 	}
 }
 
+func Test_Init(t *testing.T) {
+	var algo = newAlgo(t, core.Conf{}, 10)
+
+	var err = algo.Init()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+
+	err = algo.Init()
+
+	if err != core.ErrAlreadyCreated {
+		t.Error("already created expected", err)
+	}
+}
+
 func Test_Predict(t *testing.T) {
-	var algo = newAlgo(t, 1, 10)
+	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
 
 	_, _, err := algo.Predict(nil)
 
@@ -261,8 +291,19 @@ func Test_Predict(t *testing.T) {
 	}
 }
 
+func Test_infinite_Batch(t *testing.T) {
+	var algo = newAlgo(t, core.Conf{}, 10)
+
+	var err = algo.Batch()
+
+	if err != core.ErrInfiniteIterations {
+		t.Error("Infinite iterations expected")
+	}
+
+}
+
 func Test_Scenario_Batch(t *testing.T) {
-	var algo = newAlgo(t, 1, 10)
+	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
 	if algo.Status() != core.Created {
 		t.Error("status should be Created")
 	}
@@ -306,8 +347,8 @@ func Test_Scenario_Batch(t *testing.T) {
 		t.Error("Error while stopping")
 	}
 
-	if algo.Status() != core.Ready {
-		t.Error("status should be Ready", algo.Status())
+	if algo.Status() != core.Succeed {
+		t.Error("status should be Succeed", algo.Status())
 	}
 
 	if impl.init == 0 {
@@ -320,7 +361,7 @@ func Test_Scenario_Batch(t *testing.T) {
 
 	err = algo.Stop()
 
-	if algo.Status() != core.Ready {
+	if algo.Status() != core.Succeed {
 		t.Error("status should be ready")
 	}
 
@@ -333,8 +374,212 @@ func Test_Scenario_Batch(t *testing.T) {
 	}
 }
 
+func Test_scenario_infinite(t *testing.T) {
+	var algo = newAlgo(t, core.Conf{}, 10)
+
+	if algo.Status() != core.Created {
+		t.Error("created expected", algo.Status())
+	}
+
+	var err = algo.Wait()
+
+	if err != core.ErrNotStarted {
+		t.Error("not started expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if algo.Status() != core.Running {
+		t.Error("Running expected", algo.Status())
+	}
+
+	err = algo.Pause()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if algo.Status() != core.Idle {
+		t.Error("Idle expected", algo.Status())
+	}
+
+	err = algo.Pause()
+
+	if err != core.ErrIdle {
+		t.Error("EddIdle expected", err)
+	}
+
+	err = algo.Wait()
+
+	if err != core.ErrIdle {
+		t.Error("idle error expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if !algo.Running() {
+		t.Error("Running expected", algo.Status())
+	}
+
+	err = algo.Wait()
+
+	if err != core.ErrNeverSleeping {
+		t.Error("never sleeping expected", err)
+	}
+	if algo.Status() != core.Running {
+		t.Error("Sleeping expected", algo.Status())
+	}
+
+	err = algo.Play()
+
+	if err != core.ErrRunning {
+		t.Error("running expected")
+	}
+
+	err = algo.Stop()
+
+	if err != nil {
+		t.Error("No error expected")
+	}
+	if algo.Status() != core.Succeed {
+		t.Error("succeed expected", algo.Status())
+	}
+
+	err = algo.Play()
+	if err != nil {
+		t.Error("No error expected")
+	}
+
+	if algo.Status() != core.Running {
+		t.Error("running expected", algo.Status())
+	}
+
+	err = algo.Pause()
+
+	if err != nil {
+		t.Error("No error expected")
+	}
+
+	if algo.Status() != core.Idle {
+		t.Error("idle expected", algo.Status())
+	}
+
+	err = algo.Stop()
+
+	if err != nil {
+		t.Error("No error expected")
+	}
+
+	if algo.Status() != core.Succeed {
+		t.Error("Succeed expected", algo.Status())
+	}
+}
+
+func Test_scenario_finite(t *testing.T) {
+	var algo = newAlgo(t, core.Conf{Iter: 10}, 10)
+
+	if algo.Status() != core.Created {
+		t.Error("created expected", algo.Status())
+	}
+
+	err := algo.Play()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if !algo.Running() {
+		t.Error("Running expected", algo.Status())
+	}
+
+	err = algo.Pause()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if algo.Status() != core.Idle {
+		t.Error("Idle expected", algo.Status())
+	}
+
+	err = algo.Pause()
+
+	if err != core.ErrIdle {
+		t.Error("EddIdle expected", err)
+	}
+
+	err = algo.Wait()
+
+	if err != core.ErrIdle {
+		t.Error("idle error expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if !algo.Running() {
+		t.Error("Running expected", algo.Status())
+	}
+
+	err = algo.Wait()
+
+	if err != nil {
+		t.Error("never sleeping expected", err)
+	}
+	if algo.Status() != core.Sleeping {
+		t.Error("Sleeping expected", algo.Status())
+	}
+
+	err = algo.Wait()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if algo.Status() != core.Sleeping {
+		t.Error("Sleeping expected", algo.Status())
+	}
+
+	err = algo.Push(nil)
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if !algo.Running() {
+		t.Error("running expected", algo.Status())
+	}
+
+	err = algo.Wait()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if algo.Status() != core.Sleeping {
+		t.Error("Sleeping expected", algo.Status())
+	}
+
+	err = algo.Stop()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+	if algo.Status() != core.Succeed {
+		t.Error("Succeed expected", algo.Status())
+	}
+}
+
 func Test_Scenario_Play(t *testing.T) {
-	var algo = newAlgo(t, -1, 10)
+	var algo = newAlgo(t, core.Conf{Iter: 20}, 10)
 	if algo.Status() != core.Created {
 		t.Error("status should be Created")
 	}
@@ -342,17 +587,27 @@ func Test_Scenario_Play(t *testing.T) {
 	var figures0, err0 = algo.RuntimeFigures()
 	var iter0, ok0 = figures0[figures.Iterations]
 
-	test.AssertError(t, err0)
-	test.AssertFalse(t, ok0)
-	test.AssertTrue(t, iter0 == 0)
-
-	_, err := algo.Centroids()
-
-	if err == nil {
-		t.Error("centroids exist")
+	if err0 != core.ErrNotStarted {
+		t.Error("not started error", err0)
+	}
+	if ok0 {
+		t.Error("no value expected", iter0)
 	}
 
-	_ = algo.Push(nil)
+	centroids, err := algo.Centroids()
+
+	if centroids != nil {
+		t.Error("nil centroids expected", centroids)
+	}
+	if err != core.ErrNotStarted {
+		t.Error("running expected", err)
+	}
+
+	err = algo.Push(nil)
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
 
 	var impl = algo.Impl().(*mockImpl)
 	var space = algo.Space().(mockSpace)
@@ -369,53 +624,159 @@ func Test_Scenario_Play(t *testing.T) {
 	if impl.iter > 0 {
 		t.Error("running before starting")
 	}
+	if impl.runningcount != 0 {
+		t.Error("running count before starting", impl.runningcount)
+	}
 	if impl.stoppedcount != 1 {
-		t.Error("count before starting")
+		t.Error("stopped count before starting", impl.stoppedcount)
 	}
 
-	_ = algo.Play()
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
 
 	if !algo.Running() {
 		t.Error("status should be Running", algo.Status())
 	}
 
+	algo.Wait()
+
 	var figures1, err1 = algo.RuntimeFigures()
-	var iter1, ok1 = figures1[figures.Iterations]
+	var iter1 = figures1[figures.Iterations]
 
-	test.AssertNoError(t, err1)
-	test.AssertTrue(t, ok1)
-	test.AssertTrue(t, iter1 > 0)
-
-	if impl.init == 0 {
-		t.Error("not initialized")
+	if err1 != nil {
+		t.Error("no error expected", err1)
 	}
-	var iter = impl.iter
-	if impl.iter == 0 {
-		t.Error("not running")
+	if int(iter1) != algo.Conf().AlgoConf().Iter {
+		t.Errorf("%d iterations expected. %d", algo.Conf().AlgoConf().Iter, int(iter1))
 	}
 
-	if impl.iter < iter {
-		t.Error("not running")
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+
+	if !algo.Running() {
+		t.Error("status should be Running", algo.Status())
+	}
+
+	algo.Wait()
+
+	var figures2, err2 = algo.RuntimeFigures()
+	var iter2 = figures2[figures.Iterations]
+
+	if err2 != nil {
+		t.Error("no error expected", err2)
+	}
+	if int(iter2) != (algo.Conf().AlgoConf().Iter * 2) {
+		t.Errorf("%d iterations expected. %d", algo.Conf().AlgoConf().Iter*2, int(iter1))
 	}
 
 	err = algo.Stop()
 
 	if err != nil {
-		t.Error("Error while stopping")
+		t.Error("Error while stopping", err)
 	}
 
-	if algo.Status() != core.Ready {
-		t.Error("status should be ready")
-	}
-	iter = impl.iter
-	if impl.iter != iter {
-		t.Error("running")
+	if algo.Status() != core.Succeed {
+		t.Error("status should be succeed", algo.Status())
 	}
 
-	var figures2, err2 = algo.RuntimeFigures()
-	var iter2, ok2 = figures2[figures.Iterations]
+	var figures3, err3 = algo.RuntimeFigures()
+	var iter3 = figures3[figures.Iterations]
 
-	test.AssertNoError(t, err2)
-	test.AssertTrue(t, ok2)
-	test.AssertTrue(t, iter2 >= iter1)
+	if err3 != nil {
+		t.Error("No error expected", err3)
+	}
+	if iter3 != iter2 {
+		t.Errorf("%d iterations expected. %d", int(iter2), int(iter3))
+	}
+}
+
+func Test_Timeout(t *testing.T) {
+	algo := newAlgo(t, core.Conf{Timeout: 0.0001, Iter: math.MaxInt64}, 10)
+
+	err := algo.Batch()
+
+	if err != core.ErrTimeOut {
+		t.Error("timeout expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+
+	err = algo.Wait()
+
+	if err != core.ErrTimeOut {
+		t.Error("timeout expected", err)
+	}
+
+}
+func Test_Freq(t *testing.T) {
+	algo := newAlgo(t, core.Conf{IterFreq: 1}, 10)
+
+	algo.Play()
+	time.Sleep(1)
+	algo.Pause()
+
+	var runtimeFigures, _ = algo.RuntimeFigures()
+
+	if runtimeFigures[figures.Iterations] > 1 {
+		t.Error("1 iteration expected", runtimeFigures[figures.Iterations])
+	}
+}
+
+func Test_StatusNotifier(t *testing.T) {
+	var statusChan = make(chan core.ClustStatus, 10)
+	var errorChan = make(chan error, 10)
+
+	var statusNotifier = func(status core.ClustStatus, err error) {
+		statusChan <- status
+		errorChan <- err
+	}
+
+	algo := newAlgo(t, core.Conf{Iter: 1, StatusNotifier: statusNotifier}, 2)
+
+	algo.Batch()
+
+	var status = []core.ClustStatus{
+		core.Ready, core.Running, core.Stopping, core.Failed,
+	}
+	var errors = []error{nil, nil, errIter, errIter}
+	for _, s := range status {
+		var ss, ok = <-statusChan
+		if !ok {
+			t.Error("status expected")
+		} else {
+			if ss != s {
+				t.Errorf("%d expected. %d", s, ss)
+			}
+		}
+	}
+
+	if len(statusChan) != 0 {
+		t.Error("no more status expected", len(statusChan))
+	}
+
+	for _, e := range errors {
+		var ee, ok = <-errorChan
+		if !ok {
+			t.Error("error expected")
+		} else {
+			if ee != e {
+				t.Errorf("%d expected. %d", e, ee)
+			}
+		}
+	}
+
+	if len(errorChan) != 0 {
+		t.Error("no more error expected", len(errorChan))
+	}
+
 }

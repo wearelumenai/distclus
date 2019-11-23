@@ -32,7 +32,7 @@ func Test_ParPredict_Given(t *testing.T) {
 	var initializer = kmeans.GivenInitializer
 	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
-	test.DoTestRunSyncGiven(t, algo)
+	test.DoTestInitGiven(t, algo)
 }
 
 func Test_ParPredictPP(t *testing.T) {
@@ -45,6 +45,9 @@ func Test_ParPredictPP(t *testing.T) {
 		Amp:       0.1,
 		Norm:      2,
 		Par:       true,
+		Conf: core.Conf{
+			Iter: 20,
+		},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -66,6 +69,7 @@ func Test_ParRunAsync(t *testing.T) {
 		B:         100,
 		Amp:       0.1,
 		Par:       true,
+		Conf:      core.Conf{Iter: 5},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -97,7 +101,7 @@ func TestParStrategy_Loss(t *testing.T) {
 	var initializer = kmeans.GivenInitializer
 	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
-	test.PushAndRunSync(algo)
+	test.PushAndInit(algo)
 
 	var strategy = mcmc.ParStrategy{}
 	buffer := core.NewDataBuffer(test.Vectors, implConf.FrameSize)
@@ -121,6 +125,7 @@ func Test_Normal(t *testing.T) {
 		Amp:       .05,
 		Norm:      2,
 		Par:       true,
+		Conf:      core.Conf{Iter: 60},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 3,

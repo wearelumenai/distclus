@@ -67,7 +67,7 @@ func Test_RunSyncGiven(t *testing.T) {
 	var initializer = kmeans.GivenInitializer
 	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
-	test.DoTestRunSyncGiven(t, algo)
+	test.DoTestInitGiven(t, algo)
 }
 
 func Test_RunSyncKMeansPP(t *testing.T) {
@@ -78,6 +78,7 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 0.1,
 		Norm: 2,
+		Conf: core.Conf{Iter: 1},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -98,6 +99,7 @@ func Test_RunAsync(t *testing.T) {
 		B:    100, Amp: 0.1,
 		Norm:   2,
 		ProbaK: []float64{1, 8, 1},
+		Conf:   core.Conf{Iter: 20},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -118,6 +120,7 @@ func Test_Workflow(t *testing.T) {
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1,
 		Norm: 2,
+		Conf: core.Conf{Iter: 20},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -138,6 +141,7 @@ func Test_MaxK(t *testing.T) {
 		B:         100, Amp: 1e6,
 		Norm: 2,
 		MaxK: 6,
+		Conf: core.Conf{Iter: 10},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -162,6 +166,7 @@ func Test_AcceptRatio(t *testing.T) {
 		RGen:      rand.New(rand.NewSource(6305689164243)),
 		B:         100, Amp: 1,
 		Norm: 2,
+		Conf: core.Conf{Iter: 20},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -176,30 +181,5 @@ func Test_AcceptRatio(t *testing.T) {
 	var r = rf["acceptations"] / rf["iterations"]
 	if r < 0 || r > 1 {
 		t.Error("Expected ratio in [0 1], got", r)
-	}
-}
-
-func Test_TimeOut(t *testing.T) {
-	var implConf = mcmc.Conf{
-		InitK:     3,
-		FrameSize: 8,
-		RGen:      rand.New(rand.NewSource(6305689164243)),
-		B:         100, Amp: 1,
-		Norm: 2,
-	}
-	var tConf = mcmc.MultivTConf{
-		Dim: 5,
-		Nu:  3,
-	}
-	var distrib = mcmc.NewMultivT(tConf)
-	var initializer = kmeans.GivenInitializer
-	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
-
-	for _, elemt := range test.Vectors {
-		_ = algo.Push(elemt)
-	}
-	var err = algo.Batch()
-	if err != core.ErrTimeOut {
-		t.Error("time out expected")
 	}
 }

@@ -3,6 +3,7 @@ package streaming_test
 import (
 	"distclus/core"
 	"distclus/euclid"
+	"distclus/figures"
 	"distclus/internal/test"
 	"distclus/streaming"
 	"testing"
@@ -13,7 +14,7 @@ import (
 )
 
 func Test_Async(t *testing.T) {
-	var algo = streaming.NewAlgo(streaming.Conf{Conf: core.Conf{Iter: -1}}, euclid.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{Conf: core.Conf{Iter: 0}}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()
 	err := algo.Push(distr())
 	if err != nil {
@@ -99,7 +100,7 @@ func mix() func() []float64 {
 
 func Test_AlgoPush(t *testing.T) {
 	var data = mix()
-	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5, Conf: core.Conf{Iter: -1}}, euclid.Space{}, []core.Elemt{})
+	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5, Conf: core.Conf{Iter: 0}}, euclid.Space{}, []core.Elemt{})
 	_ = algo.Push(data())
 	_ = algo.Play()
 	var d = make([][]float64, 10000)
@@ -110,8 +111,8 @@ func Test_AlgoPush(t *testing.T) {
 		_ = algo.Push(d[i])
 	}
 	_ = algo.Stop()
-	var figures, _ = algo.RuntimeFigures()
-	if figures["maxDistance"] < 10 {
-		t.Error("max distance should be grater than 1")
+	var rfigures, _ = algo.RuntimeFigures()
+	if rfigures[figures.MaxDistance] < 10 {
+		t.Error("max distance should be grater than 1", rfigures[figures.MaxDistance])
 	}
 }

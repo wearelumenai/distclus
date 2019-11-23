@@ -24,6 +24,12 @@ func TestKMeans_ConfErrorTimeout(t *testing.T) {
 	conf.Verify()
 }
 
+func TestKMeans_ConfErrorIter(t *testing.T) {
+	defer test.AssertPanic(t)
+	var conf = core.Conf{Iter: -10}
+	conf.Verify()
+}
+
 func TestKMeans_ConfErrorNumCPU(t *testing.T) {
 	var conf = core.Conf{}
 	conf.Verify()

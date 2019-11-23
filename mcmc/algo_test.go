@@ -18,5 +18,5 @@ func Test_Distrib(t *testing.T) {
 	var initializer = kmeans.GivenInitializer
 	var distrib = mcmc.NewMultivT(tConf)
 	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
-	test.DoTestRunSyncGiven(t, algo)
+	test.DoTestInitGiven(t, algo)
 }

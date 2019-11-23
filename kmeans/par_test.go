@@ -14,7 +14,7 @@ func Test_ParPredictGiven(t *testing.T) {
 	kmeansConf := kmeans.Conf{K: 3, Par: true}
 	var algo = kmeans.NewAlgo(kmeansConf, space, []core.Elemt{}, kmeans.GivenInitializer)
 
-	test.DoTestRunSyncGiven(t, algo)
+	test.DoTestInitGiven(t, algo)
 }
 
 func Test_ParRunSyncPP(t *testing.T) {

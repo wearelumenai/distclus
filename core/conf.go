@@ -7,12 +7,12 @@ import (
 
 // Conf specific to algo/space configuration
 type Conf struct {
-	Iter     int
-	IterFreq float64
-	Timeout  float64
-	NumCPU   int
+	Iter     int     // minimal number of iteration before sleeping. Default unlimited
+	IterFreq float64 // maximal number of iteration per seconds
+	Timeout  float64 // minimal number of nanoseconds before stopping the algorithm
+	NumCPU   int     // maximal number of CPU to use
 	// Online Clustering specific properties
-	DataPerIter    int
+	DataPerIter    int // minimal pushed data number before iterating
 	StatusNotifier StatusNotifier
 }
 
@@ -27,6 +27,9 @@ func (conf *Conf) Verify() {
 	}
 	if conf.Timeout < 0 {
 		panic(errors.New("Timeout must be greater or equal than 0"))
+	}
+	if conf.Iter < 0 {
+		panic(errors.New("Iter must be greater or equal than 0"))
 	}
 }
 

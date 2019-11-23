@@ -28,6 +28,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 		Amp:   1000000,
 		B:     .00001,
 		MaxK:  50,
+		Conf:  core.Conf{Iter: 2000},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 1,
@@ -45,7 +46,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 	var centroids, _ = algo.Centroids()
 
 	if len(centroids) != 4 {
-		t.Error("Expected 4 centroids")
+		t.Error("Expected 4 centroids", len(centroids))
 	}
 
 	for _, e := range ints {

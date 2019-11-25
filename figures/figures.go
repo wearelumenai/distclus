@@ -10,7 +10,7 @@ type Value float64
 type RuntimeFigures map[Key]Value
 
 const (
-	Iterations   = "iterations"
-	Acceptations = "acceptations"
-	MaxDistance  = "maxDistance"
+	Iterations   = Key("iterations")
+	Acceptations = Key("acceptations")
+	MaxDistance  = Key("maxDistance")
 )

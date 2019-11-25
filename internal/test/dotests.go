@@ -432,7 +432,7 @@ func DoTestScenarioBatch(t *testing.T, algo *core.Algo) {
 		t.Error("centroids exist")
 	}
 
-	err = algo.Push(nil)
+	err = algo.Push([]float64{0, 1, 2})
 
 	if err != nil {
 		t.Error("error while pushing a nil element")
@@ -581,7 +581,7 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 }
 
 // DoTestScenarioFinite test finite case
-func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter > 0
+func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter = 1000
 	if algo.Status() != core.Created {
 		t.Error("created expected", algo.Status())
 	}
@@ -643,7 +643,7 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter > 0
 		t.Error("Sleeping expected", algo.Status())
 	}
 
-	err = algo.Push(nil)
+	err = algo.Push([]float64{0, 1, 2})
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -651,8 +651,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter > 0
 
 	err = algo.Play()
 
-	if err != nil {
-		t.Error("no error expected", err)
+	if err != core.ErrRunning {
+		t.Error("running expected", err)
 	}
 	if !algo.Running() {
 		t.Error("running expected", algo.Status())
@@ -702,7 +702,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 		t.Error("running expected", err)
 	}
 
-	err = algo.Push(nil)
+	err = algo.Push([]float64{0, 1, 2})
 
 	if err != nil {
 		t.Error("No error expected", err)

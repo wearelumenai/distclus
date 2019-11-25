@@ -31,7 +31,7 @@ func Test_scenario_infinite(t *testing.T) {
 }
 
 func Test_scenario_finite(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 10}, 10)
+	var algo = newAlgo(t, core.Conf{Iter: 1000}, 10)
 
 	test.DoTestScenarioFinite(t, algo)
 }

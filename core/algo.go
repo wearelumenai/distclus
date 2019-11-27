@@ -4,6 +4,7 @@ package core
 import (
 	"distclus/figures"
 	"log"
+	"math"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -30,6 +31,8 @@ type OnlineClust interface {
 	Running() bool                                   // true iif algo is running (running, idle and sleeping)
 	Status() ClustStatus                             // algo status
 	RuntimeFigures() (figures.RuntimeFigures, error) // clustering figures
+	Reconfigure(ImplConf, Space) error               // reconfigure the online clust
+	Copy(ImplConf, Space) (OnlineClust, error)       // make a copy of this algo with new configuration and space
 }
 
 // StatusNotifier for being notified by Online clustering change status
@@ -47,9 +50,9 @@ type Algo struct {
 	mutex          sync.RWMutex
 	runtimeFigures figures.RuntimeFigures
 	statusNotifier StatusNotifier
-	waitChannel    chan error
 	newData        int64
 	failedError    error
+	iterations     int
 }
 
 // AlgoConf algorithm configuration
@@ -88,9 +91,10 @@ func (algo *Algo) receiveStatus() {
 }
 
 // sendStatus status to run go routine
-func (algo *Algo) sendStatus(status ClustStatus) {
+func (algo *Algo) sendStatus(status ClustStatus) (ok bool) {
 	algo.statusChannel <- status
-	<-algo.ackChannel
+	_, ok = <-algo.ackChannel
+	return
 }
 
 // Centroids Get the centroids currently found by the algorithm
@@ -118,9 +122,9 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	err = algo.impl.Push(elemt, algo.Running())
 	if err == nil {
 		atomic.AddInt64(&algo.newData, 1)
-		// wakeup sleeping
-		if algo.Status() == Sleeping {
-			algo.sendStatus(Running)
+		// try to play
+		if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
+			algo.Play()
 		}
 	}
 	return
@@ -134,9 +138,6 @@ func (algo *Algo) Batch() (err error) {
 		err = algo.Play()
 		if err == nil {
 			err = algo.Wait()
-			if err == nil {
-				err = algo.Stop()
-			}
 		}
 	}
 	return
@@ -169,16 +170,16 @@ func (algo *Algo) Play() (err error) {
 	case Failed:
 		fallthrough
 	case Succeed:
-		go algo.run()
+		if algo.canIterate(0) {
+			go algo.run()
+		}
 		fallthrough
 	case Idle:
-		fallthrough
-	case Sleeping:
 		algo.sendStatus(Running)
+	case Sleeping:
+		err = ErrSleeping
 	case Running:
 		err = ErrRunning
-	case Stopping:
-		err = ErrStopping
 	}
 	return
 }
@@ -189,7 +190,9 @@ func (algo *Algo) Pause() (err error) {
 	case Sleeping:
 		fallthrough
 	case Running:
-		algo.sendStatus(Idle)
+		if !algo.sendStatus(Idle) {
+			err = ErrNotRunning
+		}
 	case Idle:
 		err = ErrIdle
 	default:
@@ -198,25 +201,24 @@ func (algo *Algo) Pause() (err error) {
 	return
 }
 
-// Wait for online sleeping/ending status
+// Wait for online ending status
 func (algo *Algo) Wait() (err error) {
+
 	switch algo.Status() {
 	case Idle:
 		err = ErrIdle
-	case Running:
-		if algo.conf.AlgoConf().Iter == 0 && algo.conf.AlgoConf().DataPerIter == 0 {
-			return ErrNeverSleeping
-		}
-		fallthrough
-	case Stopping:
-		err = <-algo.waitChannel
-		if err == nil {
-			err = algo.failedError
-		}
 	case Sleeping:
-	case Succeed:
+		fallthrough
+	case Running:
+		var conf = algo.conf.AlgoConf()
+		if conf.Iter == 0 && conf.DataPerIter == 0 {
+			return ErrNeverEnd
+		}
+		<-algo.ackChannel
+		fallthrough
 	case Failed:
 		err = algo.failedError
+	case Succeed:
 	case Created:
 		fallthrough
 	case Ready:
@@ -229,7 +231,8 @@ func (algo *Algo) Wait() (err error) {
 func (algo *Algo) Stop() (err error) {
 	if algo.Running() {
 		algo.sendStatus(Stopping)
-		err = algo.Wait()
+		<-algo.ackChannel
+		err = algo.failedError
 	} else {
 		err = ErrNotRunning
 	}
@@ -283,18 +286,14 @@ func (algo *Algo) Status() ClustStatus {
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
 func (algo *Algo) run() {
-	var err error
-
-	var conf = algo.conf.AlgoConf()
-
-	algo.waitChannel = make(chan error)
 	algo.ackChannel = make(chan bool)
 
 	algo.receiveStatus()
 
+	var err error
+	var conf = algo.conf.AlgoConf()
 	var centroids Clust
 	var runtimeFigures figures.RuntimeFigures
-	var start = time.Now()
 	var iterFreq time.Duration
 	if conf.IterFreq > 0 {
 		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
@@ -302,91 +301,142 @@ func (algo *Algo) run() {
 	var lastIterationTime time.Time
 
 	var iterations = 0
-	var iterationsPerSleep = 0
+
+	var newData int64
 
 	atomic.StoreInt64(&algo.newData, 0)
+	var start = time.Now()
 
-	for (algo.status == Running || algo.status == Idle) && err == nil {
-		if algo.status == Idle {
-			algo.receiveStatus()
-		}
+	for algo.status == Running && algo.canIterate(iterations) {
 		select { // check for algo status update
 		case status := <-algo.statusChannel:
-			switch status {
-			case Idle:
-				algo.setStatus(Idle, nil)
+			algo.setStatus(status, nil)
+			if status == Idle || status == Reconfiguring {
 				algo.ackChannel <- true
-			case Stopping:
-				algo.setStatus(Stopping, nil)
+				algo.receiveStatus()
 			}
 		default:
-			select {
-			case algo.ackChannel <- true:
-			default:
-			}
 			if conf.Timeout > 0 && time.Now().Sub(start).Seconds() > conf.Timeout { // check timeout
-				err = ErrTimeOut
-				algo.setStatus(Stopping, err)
-			} else { // check sleeping
-				var iterSleep = conf.Iter == 0 || (conf.Iter > 0 && conf.Iter <= iterationsPerSleep)
-				var dataPerIterSleep = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
-				if (conf.DataPerIter > 0 || conf.Iter > 0) && (iterSleep && dataPerIterSleep) {
-					algo.setStatus(Sleeping, nil)
-					select { // wait for waiters
-					case algo.waitChannel <- nil:
-					default:
-					}
-					algo.receiveStatus()
-					atomic.StoreInt64(&algo.newData, 0)
-					iterationsPerSleep = 0
-				} else {
-					// run implementation
-					lastIterationTime = time.Now()
-					centroids, runtimeFigures, err = algo.impl.Iterate(
-						algo.conf,
-						algo.space,
-						algo.centroids,
-					)
-					if err == nil {
-						iterationsPerSleep++
-						iterations++
-						algo.saveIterContext(centroids, runtimeFigures, iterations)
-						// temporize iteration
-						if conf.IterFreq > 0 { // with iteration freqency
-							var diff = iterFreq - time.Now().Sub(lastIterationTime)
-							if diff > 0 {
-								time.Sleep(diff)
-							}
+				algo.setStatus(Failed, ErrTimeOut)
+			} else {
+				// run implementation
+				lastIterationTime = time.Now()
+				newData = atomic.LoadInt64(&algo.newData)
+				centroids, runtimeFigures, err = algo.impl.Iterate(
+					algo.conf,
+					algo.space,
+					algo.centroids,
+				)
+				if err == nil {
+					algo.iterations++
+					iterations++
+					algo.saveIterContext(centroids, runtimeFigures)
+					// temporize iteration
+					if conf.IterFreq > 0 { // with iteration freqency
+						var diff = iterFreq - time.Now().Sub(lastIterationTime)
+						if diff > 0 {
+							algo.setStatus(Sleeping, nil)
+							time.Sleep(diff)
+							algo.setStatus(Running, nil)
 						}
-					} else { // impl has finished
-						algo.setStatus(Stopping, err)
 					}
+				} else { // impl has finished
+					algo.setStatus(Failed, err)
 				}
 			}
 		}
 	}
 
-	if err == nil {
-		algo.setStatus(Succeed, nil)
+	atomic.StoreInt64(
+		&algo.newData,
+		int64(math.Max(0, float64(atomic.LoadInt64(&algo.newData)-newData))),
+	)
+
+	if algo.status == Failed {
+		log.Println(algo.failedError)
 	} else {
-		algo.setStatus(Failed, err)
-		log.Println(err)
+		algo.setStatus(Succeed, nil)
 	}
-	// close(algo.statusChannel)
-	close(algo.waitChannel)
+
 	close(algo.ackChannel)
+
+	select { // free user send status
+	case <-algo.statusChannel:
+	default:
+	}
 }
 
-func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures, iterations int) {
+// FailedError is the error in case of algo failure
+func (algo *Algo) FailedError() (err error) {
+	algo.mutex.RLock()
+	defer algo.mutex.RUnlock()
+	return algo.failedError
+}
+
+func (algo *Algo) canIterate(iterations int) bool {
+	var conf = algo.conf.AlgoConf()
+	var iterSleep = conf.Iter == 0 || iterations < conf.Iter
+	var dataPerIterSleep = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
+	return iterSleep && dataPerIterSleep
+}
+
+func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures) {
 	if runtimeFigures != nil {
-		runtimeFigures[figures.Iterations] = figures.Value(iterations)
+		runtimeFigures[figures.Iterations] = figures.Value(algo.iterations)
 	} else {
 		runtimeFigures = figures.RuntimeFigures{
-			figures.Iterations: figures.Value(iterations),
+			figures.Iterations: figures.Value(algo.iterations),
 		}
 	}
 	algo.mutex.Lock()
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures
 	algo.mutex.Unlock()
+}
+
+func (algo *Algo) reconfigure(conf ImplConf, space Space) (err error) {
+	impl, err := algo.impl.Copy(conf, space)
+	if err == nil {
+		algo.impl = impl
+		algo.conf = conf
+		algo.space = space
+	}
+	return
+}
+
+// Reconfigure algo configuration and space
+func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
+	var status = algo.Status()
+	switch status {
+	case Created:
+		fallthrough
+	case Ready:
+		err = ErrNotStarted
+	case Failed:
+		fallthrough
+	case Succeed:
+		fallthrough
+	case Idle:
+		algo.setStatus(Reconfiguring, nil)
+		err = algo.reconfigure(conf, space)
+		algo.setStatus(status, nil)
+	case Running:
+		fallthrough
+	case Sleeping:
+		var sent = algo.sendStatus(Reconfiguring)
+		err = algo.reconfigure(conf, space)
+		if sent {
+			algo.sendStatus(status)
+		}
+	}
+	return
+}
+
+// Copy make a copy of this algo with new conf and space
+func (algo *Algo) Copy(conf ImplConf, space Space) (oc OnlineClust, err error) {
+	impl, err := algo.impl.Copy(conf, space)
+	if err == nil {
+		oc = NewAlgo(conf, impl, space)
+	}
+	return
 }

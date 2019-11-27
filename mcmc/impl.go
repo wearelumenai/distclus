@@ -22,6 +22,13 @@ type Impl struct {
 	current     proposal
 }
 
+// Copy impl
+func (impl *Impl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
+	var newConf = conf.(*Conf)
+	var algo = NewAlgo(*newConf, space, impl.buffer.Data(), impl.initializer, impl.distrib)
+	return algo.Impl(), nil
+}
+
 // Strategy specifies strategy methods
 type Strategy interface {
 	Iterate(Conf, core.Space, core.Clust, []core.Elemt, int) core.Clust

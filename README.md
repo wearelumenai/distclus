@@ -66,7 +66,7 @@ type Conf struct {
 Where :
 
 - `Iter`: maximal number of iterations if given. 0 by default. Infinite if negative.
-- `IterFreq`: maximal number of iterations per second. Unlimited by default.
+- `IterFreq`: maximal number of iterations per second. Unlimited by default. If > 0, set algorithm to status `Sleeping` during execution temporization.
 - `Timeout`: maximal algorithm execution duration in seconds. Unlimited by default.
 - `NumCPU`: number of CPU to use for algorithm execution. Default is maximal number of CPU.
 - `DataPerIter`: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
@@ -305,8 +305,8 @@ We have covered almost all methods so far:
  - `Push(elemt Elemt) error`: push an element.
  - `Stop() error`: stop execution.
  - `Pause() error`: pause execution. The method `Play` goes back to execution.
- - `Wait() error`: wait until algorithm status equals Sleeping or ends the execution.
- - `Batch() error` execute the algo in batch mode. Similar to the call sequence of `Run`, `Wait` and `Stop`.
+ - `Wait() error`: wait until algorithm terminates.
+ - `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Run` and `Wait`.
  - `Status() core.ClustStatus`: get algo status.
  - `Running() bool`: true iif algo is in running status (`core.Running`, `core.Idle` and `core.Sleeping`).
 
@@ -366,9 +366,9 @@ In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `Conf` 
 
 Remainding methods allow you to dynamically interact with the algorithm:
 - `Init() (Clust, error)`: initialize the algorithm if not yet created, and set status to ready.
-- `Play() error`: start the algorithm if not running (status `Created`, `Ready` or `Failed`), otherwise (status `Idle` and `Sleeping`), goes back to execution. Release when algorithm status equals `Running`.
+- `Play() error`: start the algorithm if not running (status `Created`, `Ready`, `Succeed` or `Failed`) or goes back to execution if `Idle`.
 - `Pause() error`: pause the algorithm. Wait until the algo is `Idle`.
-- `Wait() error`: wait until the algorithm is `Sleeping`, `Ready` or `Failed` status.
+- `Wait() error`: wait until the algorithm terminates.
 - `Stop() error`: stop the algorithm and wait until it is ready. Such algorithm enters in `Stopping` before `Ready`.
 - `Status() ClustStatus`: get algo status.
 - `Running() bool`: true iif algo is in running status (`Running`, `Idle` and `Sleeping`).

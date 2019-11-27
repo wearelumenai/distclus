@@ -28,3 +28,8 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 func (impl *Impl) Push(elemt core.Elemt, running bool) (err error) {
 	return
 }
+
+// Copy the impl
+func (impl *Impl) Copy(core.ImplConf, core.Space) (core.Impl, error) {
+	return impl, nil
+}

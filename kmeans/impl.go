@@ -35,3 +35,10 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 func (impl *Impl) Push(elemt core.Elemt, running bool) error {
 	return impl.buffer.Push(elemt, running)
 }
+
+// Copy impl
+func (impl *Impl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
+	var newConf = conf.(*Conf)
+	var algo = NewAlgo(*newConf, space, impl.buffer.Data(), impl.initializer)
+	return algo.Impl(), nil
+}

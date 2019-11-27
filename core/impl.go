@@ -10,6 +10,8 @@ type Impl interface {
 	Iterate(ImplConf, Space, Clust) (Clust, figures.RuntimeFigures, error)
 	// push a data. The second argument is true if algo is running
 	Push(Elemt, bool) error
+	// Get a copy of  impl with new conf and space
+	Copy(ImplConf, Space) (Impl, error)
 }
 
 // ImplConf is implementation configuration interface

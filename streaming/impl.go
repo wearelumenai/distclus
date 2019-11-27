@@ -19,6 +19,13 @@ type Impl struct {
 	count       int
 }
 
+// Copy impl
+func (impl *Impl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
+	var newConf = conf.(*Conf)
+	var algo = NewAlgo(*newConf, space, impl.clust)
+	return algo.Impl(), nil
+}
+
 // NewImpl creates a new Impl instance.
 func NewImpl(conf Conf, elemts []core.Elemt) Impl {
 	var c = make(chan core.Elemt, conf.BufferSize)

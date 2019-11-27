@@ -10,7 +10,10 @@ type Value float64
 type RuntimeFigures map[Key]Value
 
 const (
-	Iterations   = Key("iterations")
+	// Iterations is the number of iterations
+	Iterations = Key("iterations")
+	// Acceptations is the number of acceptations of mcmc
 	Acceptations = Key("acceptations")
-	MaxDistance  = Key("maxDistance")
+	// MaxDistance is the max distance of streaming
+	MaxDistance = Key("maxDistance")
 )

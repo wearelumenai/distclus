@@ -84,15 +84,12 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	RunAsyncAndPush(algo)
 
 	algo.Wait()
-	// time.Sleep(500 * time.Millisecond)
 
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
 	var c, _, _ = algo.Predict(obs)
 	_ = algo.Push(obs)
 
-	algo.Play()
-	algo.Wait()
-	// time.Sleep(500 * time.Millisecond)
+	algo.Batch()
 
 	var cn, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
@@ -112,9 +109,7 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	AssertNoError(t, err0)
 	AssertTrue(t, iter0 > 0)
 
-	algo.Play()
-	algo.Wait()
-	// time.Sleep(500 * time.Millisecond)
+	algo.Batch()
 
 	var figures1, err1 = algo.RuntimeFigures()
 	var iter1, ok1 = figures1[figures.Iterations]
@@ -131,9 +126,7 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	_ = algo.Push(Vectors[3])
 	_ = algo.Push(Vectors[5])
 
-	algo.Play()
-	algo.Wait()
-	// time.Sleep(500 * time.Millisecond)
+	algo.Batch()
 
 	var figures2, erri2 = algo.RuntimeFigures()
 	var iter2, ok2 = figures2[figures.Iterations]
@@ -232,7 +225,8 @@ func DoTestEmpty(t *testing.T, builder func(core.Initializer) core.OnlineClust) 
 	var algorithm = builder(init.Initializer)
 
 	PushAndRunAsync(algorithm)
-	time.Sleep(300 * time.Millisecond)
+
+	algorithm.Wait()
 
 	var clust, _ = algorithm.Centroids()
 
@@ -446,7 +440,7 @@ func DoTestScenarioBatch(t *testing.T, algo *core.Algo) {
 	err = algo.Batch()
 
 	if err != nil {
-		t.Error("Error while stopping")
+		t.Error("Error while stopping", err)
 	}
 
 	if algo.Status() != core.Succeed {
@@ -528,8 +522,8 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 
 	err = algo.Wait()
 
-	if err != core.ErrNeverSleeping {
-		t.Error("never sleeping expected", err)
+	if err != core.ErrNeverEnd {
+		t.Error("never end expected", err)
 	}
 	if algo.Status() != core.Running {
 		t.Error("Sleeping expected", algo.Status())
@@ -581,7 +575,7 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 }
 
 // DoTestScenarioFinite test finite case
-func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter = 1000
+func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 1000
 	if algo.Status() != core.Created {
 		t.Error("created expected", algo.Status())
 	}
@@ -630,8 +624,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter = 1000
 	if err != nil {
 		t.Error("never sleeping expected", err)
 	}
-	if algo.Status() != core.Sleeping {
-		t.Error("Sleeping expected", algo.Status())
+	if algo.Status() != core.Succeed {
+		t.Error("succeed expected", algo.Status())
 	}
 
 	err = algo.Wait()
@@ -639,8 +633,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter = 1000
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if algo.Status() != core.Sleeping {
-		t.Error("Sleeping expected", algo.Status())
+	if algo.Status() != core.Succeed {
+		t.Error("succeed expected", algo.Status())
 	}
 
 	err = algo.Push([]float64{0, 1, 2})
@@ -651,8 +645,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter = 1000
 
 	err = algo.Play()
 
-	if err != core.ErrRunning {
-		t.Error("running expected", err)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 	if !algo.Running() {
 		t.Error("running expected", algo.Status())
@@ -663,14 +657,14 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // must iter = 1000
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if algo.Status() != core.Sleeping {
-		t.Error("Sleeping expected", algo.Status())
+	if algo.Status() != core.Succeed {
+		t.Error("Succeed expected", algo.Status())
 	}
 
 	err = algo.Stop()
 
-	if err != nil {
-		t.Error("no error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("no running expected", err)
 	}
 	if algo.Status() != core.Succeed {
 		t.Error("Succeed expected", algo.Status())
@@ -716,7 +710,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	err = algo.Play()
 
 	if err != nil {
-		t.Error("No error expected", err)
+		t.Error("no error expected", err)
 	}
 
 	if !algo.Running() {
@@ -753,13 +747,13 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	if err2 != nil {
 		t.Error("no error expected", err2)
 	}
-	if int(iter2) != (algo.Conf().AlgoConf().Iter * 2) {
+	if int(iter2) != algo.Conf().AlgoConf().Iter*2 {
 		t.Errorf("%d iterations expected. %d", algo.Conf().AlgoConf().Iter*2, int(iter1))
 	}
 
 	err = algo.Stop()
 
-	if err != nil {
+	if err != core.ErrNotRunning {
 		t.Error("Error while stopping", err)
 	}
 
@@ -810,5 +804,109 @@ func DoTestFreq(t *testing.T, algo core.OnlineClust) { // must IterFreq = 1
 
 	if runtimeFigures[figures.Iterations] > 1 {
 		t.Error("1 iteration expected", runtimeFigures[figures.Iterations])
+	}
+}
+
+// DoTestReconfigure test reconfiguration
+func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
+
+	var err = algo.Reconfigure(algo.Conf(), algo.Space())
+
+	if err != core.ErrNotStarted {
+		t.Error("not started expected", err)
+	}
+
+	err = algo.Init()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+
+	err = algo.Reconfigure(algo.Conf(), algo.Space())
+
+	if err != core.ErrNotStarted {
+		t.Error("not started expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+
+	err = algo.Reconfigure(algo.Conf(), algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status() != core.Running {
+		t.Error("running expected", algo.Status())
+	}
+
+	err = algo.Pause()
+
+	if err != nil {
+		t.Error("not started expected", err)
+	}
+
+	if algo.Status() != core.Idle {
+		t.Error("idle expected", algo.Status())
+	}
+
+	err = algo.Reconfigure(algo.Conf(), algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status() != core.Idle {
+		t.Error("running expected", algo.Status())
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("running expected", err)
+	}
+
+	err = algo.Wait()
+
+	if err != nil {
+		t.Error("ended expected", err)
+	}
+
+	if algo.Status() != core.Succeed {
+		t.Error("succeed expected", algo.Status())
+	}
+
+	err = algo.Reconfigure(algo.Conf(), algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status() != core.Succeed {
+		t.Error("succeed expected", algo.Status())
+	}
+
+	err = algo.Stop()
+
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
+	}
+
+	if algo.Running() {
+		t.Error("not running expected", algo.Status())
+	}
+
+	err = algo.Reconfigure(algo.Conf(), algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status() != core.Succeed {
+		t.Error("succeed expected", algo.Status())
 	}
 }

@@ -67,6 +67,10 @@ func (impl *mockImpl) Push(elemt core.Elemt, running bool) (err error) {
 	return
 }
 
+func (impl *mockImpl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
+	return impl, nil
+}
+
 type mockSpace struct {
 	combine int
 	copy    int
@@ -352,9 +356,9 @@ func Test_StatusNotifier(t *testing.T) {
 	algo.Batch()
 
 	var status = []core.ClustStatus{
-		core.Ready, core.Running, core.Stopping, core.Failed,
+		core.Ready, core.Running, core.Failed,
 	}
-	var errors = []error{nil, nil, errIter, errIter}
+	var errors = []error{nil, nil, errIter}
 	for _, s := range status {
 		var ss, ok = <-statusChan
 		if !ok {
@@ -385,4 +389,10 @@ func Test_StatusNotifier(t *testing.T) {
 		t.Error("no more error expected", len(errorChan))
 	}
 
+}
+
+func Test_Reconfiguration(t *testing.T) {
+	algo := newAlgo(t, core.Conf{Iter: 1000}, 10)
+
+	test.DoTestReconfigure(t, &algo)
 }

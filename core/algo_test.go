@@ -281,8 +281,8 @@ func Test_Predict(t *testing.T) {
 
 	err = algo.Stop()
 
-	if err != core.ErrNotRunning {
-		t.Error("error while stopping the algorithm", err)
+	if err != nil {
+		t.Error("no error while stopping the algorithm", err)
 	}
 
 	_, _, err = algo.Predict(nil)

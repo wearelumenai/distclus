@@ -464,8 +464,8 @@ func DoTestScenarioBatch(t *testing.T, algo *core.Algo) {
 		t.Error("no iterations expected")
 	}
 
-	if err != core.ErrNotRunning {
-		t.Error("Error while stopping", err)
+	if err != nil {
+		t.Error("no error while stopping", err)
 	}
 }
 
@@ -663,8 +663,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 
 	err = algo.Stop()
 
-	if err != core.ErrNotRunning {
-		t.Error("no running expected", err)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 	if algo.Status() != core.Succeed {
 		t.Error("Succeed expected", algo.Status())
@@ -753,8 +753,8 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 
 	err = algo.Stop()
 
-	if err != core.ErrNotRunning {
-		t.Error("Error while stopping", err)
+	if err != nil {
+		t.Error("no error while stopping", err)
 	}
 
 	if algo.Status() != core.Succeed {
@@ -892,8 +892,8 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 
 	err = algo.Stop()
 
-	if err != core.ErrNotRunning {
-		t.Error("not running expected", err)
+	if err != nil {
+		t.Error("not error expected", err)
 	}
 
 	if algo.Running() {

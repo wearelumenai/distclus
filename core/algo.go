@@ -229,12 +229,19 @@ func (algo *Algo) Wait() (err error) {
 
 // Stop the algorithm
 func (algo *Algo) Stop() (err error) {
-	if algo.Running() {
+	switch algo.Status() {
+	case Idle:
+		fallthrough
+	case Running:
+		fallthrough
+	case Sleeping:
 		algo.sendStatus(Stopping)
 		<-algo.ackChannel
 		err = algo.failedError
-	} else {
-		err = ErrNotRunning
+	case Created:
+		fallthrough
+	case Ready:
+		err = ErrNotStarted
 	}
 	return
 }

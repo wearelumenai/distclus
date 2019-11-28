@@ -16,4 +16,6 @@ const (
 	Acceptations = Key("acceptations")
 	// MaxDistance is the max distance of streaming
 	MaxDistance = Key("maxDistance")
+	// PushedData is the number of pushed data
+	PushedData = Key("pushedData")
 )

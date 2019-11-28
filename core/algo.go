@@ -51,6 +51,7 @@ type Algo struct {
 	runtimeFigures figures.RuntimeFigures
 	statusNotifier StatusNotifier
 	newData        int64
+	pushedData     int64
 	failedError    error
 	iterations     int
 }
@@ -122,6 +123,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	err = algo.impl.Push(elemt, algo.Running())
 	if err == nil {
 		atomic.AddInt64(&algo.newData, 1)
+		atomic.AddInt64(&algo.pushedData, 1)
 		// try to play
 		if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
 			algo.Play()
@@ -390,9 +392,11 @@ func (algo *Algo) canIterate(iterations int) bool {
 func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures) {
 	if runtimeFigures != nil {
 		runtimeFigures[figures.Iterations] = figures.Value(algo.iterations)
+		runtimeFigures[figures.PushedData] = figures.Value(algo.pushedData)
 	} else {
 		runtimeFigures = figures.RuntimeFigures{
 			figures.Iterations: figures.Value(algo.iterations),
+			figures.PushedData: figures.Value(atomic.LoadInt64(&algo.pushedData)),
 		}
 	}
 	algo.mutex.Lock()

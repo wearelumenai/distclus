@@ -59,7 +59,7 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 
 	var data = impl.buffer.Data()
 	impl.current, clust = impl.doIter(*mcmcConf, space, impl.current, centroids, data, impl.getCurrentTime(data))
-	return clust, runtimeFigures, impl.buffer.Apply()
+	return clust, impl.runtimeFigures(), impl.buffer.Apply()
 }
 
 func (impl *Impl) getCurrentTime(data []core.Elemt) int {

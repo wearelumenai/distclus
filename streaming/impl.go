@@ -71,7 +71,7 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 }
 
 func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
-	return figures.RuntimeFigures{figures.MaxDistance: figures.Value(impl.maxDistance)}
+	return figures.RuntimeFigures{figures.MaxDistance: impl.maxDistance}
 }
 
 // Push pushes a new element

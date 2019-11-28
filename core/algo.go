@@ -391,12 +391,12 @@ func (algo *Algo) canIterate(iterations int) bool {
 
 func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures) {
 	if runtimeFigures != nil {
-		runtimeFigures[figures.Iterations] = figures.Value(algo.iterations)
-		runtimeFigures[figures.PushedData] = figures.Value(algo.pushedData)
+		runtimeFigures[figures.Iterations] = float64(algo.iterations)
+		runtimeFigures[figures.PushedData] = float64(algo.pushedData)
 	} else {
 		runtimeFigures = figures.RuntimeFigures{
-			figures.Iterations: figures.Value(algo.iterations),
-			figures.PushedData: figures.Value(atomic.LoadInt64(&algo.pushedData)),
+			figures.Iterations: float64(algo.iterations),
+			figures.PushedData: float64(atomic.LoadInt64(&algo.pushedData)),
 		}
 	}
 	algo.mutex.Lock()

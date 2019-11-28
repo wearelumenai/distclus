@@ -49,7 +49,7 @@ func (impl *mockImpl) Iterate(conf core.ImplConf, space core.Space, centroids co
 	impl.iter++
 	clust = impl.clust
 	if impl.iter%2 == 0 {
-		runtimeFigures = figures.RuntimeFigures{"iter": figures.Value(impl.iter)}
+		runtimeFigures = figures.RuntimeFigures{"iter": float64(impl.iter)}
 	}
 	if len(centroids) == 2 {
 		err = errIter

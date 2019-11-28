@@ -1,21 +1,15 @@
 package figures
 
-// Key figure name
-type Key string
-
-// Value figure value
-type Value float64
-
 // RuntimeFigures are meta values given by respective impl
-type RuntimeFigures map[Key]Value
+type RuntimeFigures map[string]float64
 
 const (
 	// Iterations is the number of iterations
-	Iterations = Key("iterations")
+	Iterations = "iterations"
 	// Acceptations is the number of acceptations of mcmc
-	Acceptations = Key("acceptations")
+	Acceptations = "acceptations"
 	// MaxDistance is the max distance of streaming
-	MaxDistance = Key("maxDistance")
+	MaxDistance = "maxDistance"
 	// PushedData is the number of pushed data
-	PushedData = Key("pushedData")
+	PushedData = "pushedData"
 )

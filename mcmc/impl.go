@@ -161,6 +161,6 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 // runtimeFigures returns specific kmeans properties
 func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
 	return figures.RuntimeFigures{
-		figures.Acceptations: figures.Value(impl.acc),
+		figures.Acceptations: float64(impl.acc),
 	}
 }

@@ -3,6 +3,7 @@ package mcmc_test
 import (
 	"distclus/core"
 	"distclus/euclid"
+	"distclus/figures"
 	"distclus/internal/test"
 	"distclus/kmeans"
 	"distclus/mcmc"
@@ -178,7 +179,7 @@ func Test_AcceptRatio(t *testing.T) {
 
 	test.PushAndRunSync(algo)
 	var rf, _ = algo.RuntimeFigures()
-	var r = rf["acceptations"] / rf["iterations"]
+	var r = rf[figures.Acceptations] / rf[figures.Iterations]
 	if r < 0 || r > 1 {
 		t.Error("Expected ratio in [0 1], got", r)
 	}

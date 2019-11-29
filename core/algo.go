@@ -54,6 +54,7 @@ type Algo struct {
 	pushedData     int64
 	failedError    error
 	iterations     int
+	duration       time.Duration
 }
 
 // AlgoConf algorithm configuration
@@ -339,7 +340,13 @@ func (algo *Algo) run() {
 				if err == nil {
 					algo.iterations++
 					iterations++
-					algo.saveIterContext(centroids, runtimeFigures)
+					var duration = time.Now().Sub(start)
+					algo.duration += duration
+					algo.saveIterContext(
+						centroids, runtimeFigures,
+						iterations,
+						duration,
+					)
 					// temporize iteration
 					if conf.IterFreq > 0 { // with iteration freqency
 						var diff = iterFreq - time.Now().Sub(lastIterationTime)
@@ -389,16 +396,15 @@ func (algo *Algo) canIterate(iterations int) bool {
 	return iterSleep && dataPerIterSleep
 }
 
-func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures) {
-	if runtimeFigures != nil {
-		runtimeFigures[figures.Iterations] = float64(algo.iterations)
-		runtimeFigures[figures.PushedData] = float64(algo.pushedData)
-	} else {
-		runtimeFigures = figures.RuntimeFigures{
-			figures.Iterations: float64(algo.iterations),
-			figures.PushedData: float64(atomic.LoadInt64(&algo.pushedData)),
-		}
+func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures, iterations int, duration time.Duration) {
+	if runtimeFigures == nil {
+		runtimeFigures = figures.RuntimeFigures{}
 	}
+	runtimeFigures[figures.Iterations] = float64(algo.iterations)
+	runtimeFigures[figures.LastIterations] = float64(iterations)
+	runtimeFigures[figures.PushedData] = float64(algo.pushedData)
+	runtimeFigures[figures.LastDuration] = float64(duration)
+	runtimeFigures[figures.Duration] = float64(algo.duration)
 	algo.mutex.Lock()
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures

@@ -18,4 +18,6 @@ const (
 	Duration = "duration"
 	// LastDuration is the last execution duration
 	LastDuration = "lastDuration"
+	// LastPushedDataTimestamp is the last pushed data time
+	LastPushedDataTimestamp = "lastPushedDataTimestamp"
 )

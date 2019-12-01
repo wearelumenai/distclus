@@ -40,21 +40,22 @@ type StatusNotifier = func(ClustStatus, error)
 
 // Algo in charge of algorithm execution with both implementation and user configuration
 type Algo struct {
-	conf           ImplConf
-	impl           Impl
-	space          Space
-	centroids      Clust
-	status         ClustStatus
-	statusChannel  chan ClustStatus
-	ackChannel     chan bool
-	mutex          sync.RWMutex
-	runtimeFigures figures.RuntimeFigures
-	statusNotifier StatusNotifier
-	newData        int64
-	pushedData     int64
-	failedError    error
-	iterations     int
-	duration       time.Duration
+	conf                    ImplConf
+	impl                    Impl
+	space                   Space
+	centroids               Clust
+	status                  ClustStatus
+	statusChannel           chan ClustStatus
+	ackChannel              chan bool
+	mutex                   sync.RWMutex
+	runtimeFigures          figures.RuntimeFigures
+	statusNotifier          StatusNotifier
+	newData                 int64
+	pushedData              int64
+	failedError             error
+	iterations              int
+	duration                time.Duration
+	lastPushedDataTimestamp int64
 }
 
 // AlgoConf algorithm configuration
@@ -125,6 +126,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	if err == nil {
 		atomic.AddInt64(&algo.newData, 1)
 		atomic.AddInt64(&algo.pushedData, 1)
+		atomic.StoreInt64(&algo.lastPushedDataTimestamp, time.Now().Unix())
 		// try to play
 		if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
 			algo.Play()
@@ -316,6 +318,7 @@ func (algo *Algo) run() {
 
 	atomic.StoreInt64(&algo.newData, 0)
 	var start = time.Now()
+	var duration time.Duration
 
 	for algo.status == Running && algo.canIterate(iterations) {
 		select { // check for algo status update
@@ -340,8 +343,7 @@ func (algo *Algo) run() {
 				if err == nil {
 					algo.iterations++
 					iterations++
-					var duration = time.Now().Sub(start)
-					algo.duration += duration
+					duration = time.Now().Sub(start)
 					algo.saveIterContext(
 						centroids, runtimeFigures,
 						iterations,
@@ -367,6 +369,7 @@ func (algo *Algo) run() {
 		&algo.newData,
 		int64(math.Max(0, float64(atomic.LoadInt64(&algo.newData)-newData))),
 	)
+	algo.duration += time.Now().Sub(start)
 
 	if algo.status == Failed {
 		log.Println(algo.failedError)
@@ -404,7 +407,8 @@ func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.Runtim
 	runtimeFigures[figures.LastIterations] = float64(iterations)
 	runtimeFigures[figures.PushedData] = float64(algo.pushedData)
 	runtimeFigures[figures.LastDuration] = float64(duration)
-	runtimeFigures[figures.Duration] = float64(algo.duration)
+	runtimeFigures[figures.Duration] = float64(algo.duration + duration)
+	runtimeFigures[figures.LastPushedDataTimestamp] = float64(atomic.LoadInt64(&algo.lastPushedDataTimestamp))
 	algo.mutex.Lock()
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures

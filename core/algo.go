@@ -174,6 +174,8 @@ func (algo *Algo) Play() (err error) {
 		fallthrough
 	case Failed:
 		fallthrough
+	case Interrupted:
+		fallthrough
 	case Succeed:
 		if algo.canIterate(0) {
 			go algo.run()
@@ -224,6 +226,7 @@ func (algo *Algo) Wait() (err error) {
 	case Failed:
 		err = algo.failedError
 	case Succeed:
+	case Interrupted:
 	case Created:
 		fallthrough
 	case Ready:
@@ -373,6 +376,8 @@ func (algo *Algo) run() {
 
 	if algo.status == Failed {
 		log.Println(algo.failedError)
+	} else if algo.status == Stopping {
+		algo.setStatus(Interrupted, nil)
 	} else {
 		algo.setStatus(Succeed, nil)
 	}
@@ -434,6 +439,8 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 	case Ready:
 		err = ErrNotStarted
 	case Failed:
+		fallthrough
+	case Interrupted:
 		fallthrough
 	case Succeed:
 		fallthrough

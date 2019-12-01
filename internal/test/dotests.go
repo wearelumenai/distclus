@@ -540,8 +540,8 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 	if err != nil {
 		t.Error("No error expected")
 	}
-	if algo.Status() != core.Succeed {
-		t.Error("succeed expected", algo.Status())
+	if algo.Status() != core.Interrupted {
+		t.Error("Interrupted expected", algo.Status())
 	}
 
 	err = algo.Play()
@@ -569,8 +569,8 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 		t.Error("No error expected")
 	}
 
-	if algo.Status() != core.Succeed {
-		t.Error("Succeed expected", algo.Status())
+	if algo.Status() != core.Interrupted {
+		t.Error("Interrupted expected", algo.Status())
 	}
 }
 

@@ -14,12 +14,13 @@ const (
 	Failed                    // if an error occured during execution
 	Succeed                   // if clustering succeed
 	Reconfiguring             // reconfiguration in progress
+	Interrupted               // after stopping the algorithm
 )
 
 var names = []string{
 	"Created", "Ready",
 	"Running", "Idle", "Sleeping", "Stopping",
-	"Failed", "Succeed", "Reconfiguring",
+	"Failed", "Succeed", "Reconfiguring", "Interrupted",
 }
 
 // String display value message

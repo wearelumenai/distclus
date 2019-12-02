@@ -40,22 +40,22 @@ type StatusNotifier = func(ClustStatus, error)
 
 // Algo in charge of algorithm execution with both implementation and user configuration
 type Algo struct {
-	conf                    ImplConf
-	impl                    Impl
-	space                   Space
-	centroids               Clust
-	status                  ClustStatus
-	statusChannel           chan ClustStatus
-	ackChannel              chan bool
-	mutex                   sync.RWMutex
-	runtimeFigures          figures.RuntimeFigures
-	statusNotifier          StatusNotifier
-	newData                 int64
-	pushedData              int64
-	failedError             error
-	iterations              int
-	duration                time.Duration
-	lastPushedDataTimestamp int64
+	conf           ImplConf
+	impl           Impl
+	space          Space
+	centroids      Clust
+	status         ClustStatus
+	statusChannel  chan ClustStatus
+	ackChannel     chan bool
+	mutex          sync.RWMutex
+	runtimeFigures figures.RuntimeFigures
+	statusNotifier StatusNotifier
+	newData        int64
+	pushedData     int64
+	failedError    error
+	iterations     int
+	duration       time.Duration
+	lastDataTime   int64
 }
 
 // AlgoConf algorithm configuration
@@ -126,7 +126,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	if err == nil {
 		atomic.AddInt64(&algo.newData, 1)
 		atomic.AddInt64(&algo.pushedData, 1)
-		atomic.StoreInt64(&algo.lastPushedDataTimestamp, time.Now().Unix())
+		atomic.StoreInt64(&algo.lastDataTime, time.Now().Unix())
 		// try to play
 		if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
 			algo.Play()
@@ -413,7 +413,7 @@ func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.Runtim
 	runtimeFigures[figures.PushedData] = float64(algo.pushedData)
 	runtimeFigures[figures.LastDuration] = float64(duration)
 	runtimeFigures[figures.Duration] = float64(algo.duration + duration)
-	runtimeFigures[figures.LastPushedDataTimestamp] = float64(atomic.LoadInt64(&algo.lastPushedDataTimestamp))
+	runtimeFigures[figures.LastDataTime] = float64(atomic.LoadInt64(&algo.lastDataTime))
 	algo.mutex.Lock()
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures

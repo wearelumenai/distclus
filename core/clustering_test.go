@@ -185,7 +185,7 @@ func TestClust_Empty(t *testing.T) {
 func TestClust_ReduceDBA2(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
-	var dbas, cards = centroids.ReduceDBA(data, euclid.NewSpace(euclid.Conf{}))
+	var dbas, cards = centroids.ReduceDBA(data, euclid.NewSpace())
 
 	var dbasAverage = test.Mean(dbas, cards)
 	var dataAverage = test.Mean(data, nil)
@@ -197,7 +197,7 @@ func TestClust_DBAForLabels(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
 	var labels = make([]int, 10000)
-	var space = euclid.NewSpace(euclid.Conf{})
+	var space = euclid.NewSpace()
 	var means, cards = centroids.ReduceDBAForLabels(data, labels, space)
 
 	var meansAverage = test.Mean(means, cards)
@@ -210,7 +210,7 @@ func TestClust_LossForLabels(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 
 	var labels = make([]int, 10000)
-	var space = euclid.NewSpace(euclid.Conf{})
+	var space = euclid.NewSpace()
 	var loss, cards = centroids.ReduceLossForLabels(data, labels, space, 2.)
 
 	if cards[0] != 10000 {

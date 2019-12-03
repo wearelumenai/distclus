@@ -25,7 +25,7 @@ func Test_Cosinus(t *testing.T) {
 }
 
 func TestSpace_Dist(t *testing.T) {
-	var space = cosinus.NewSpace(cosinus.Conf{})
+	var space = cosinus.NewSpace()
 
 	var v1 = []float64{1., 1.}
 	var v2 = []float64{1., 2.}
@@ -37,7 +37,7 @@ func TestSpace_Dist(t *testing.T) {
 }
 
 func TestSpace_Dim(t *testing.T) {
-	var space = cosinus.NewSpace(cosinus.Conf{})
+	var space = cosinus.NewSpace()
 
 	var v1 = []float64{1., 1.}
 
@@ -49,7 +49,7 @@ func TestSpace_Dim(t *testing.T) {
 }
 
 func TestSpace_Combine(t *testing.T) {
-	var space = cosinus.NewSpace(cosinus.Conf{})
+	var space = cosinus.NewSpace()
 
 	var v1 = []float64{1., 1.}
 	var v2 = []float64{1., 2.}
@@ -62,7 +62,7 @@ func TestSpace_Combine(t *testing.T) {
 }
 
 func TestSpace_Copy(t *testing.T) {
-	var space = cosinus.NewSpace(cosinus.Conf{})
+	var space = cosinus.NewSpace()
 
 	var v1 = []float64{1., 1.}
 	var v2 = space.Copy(v1).([]float64)

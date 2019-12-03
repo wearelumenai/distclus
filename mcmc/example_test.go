@@ -39,7 +39,7 @@ func Example() {
 }
 
 func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.Space) {
-	space = euclid.NewSpace(euclid.Conf{})
+	space = euclid.NewSpace()
 	var distrib = mcmc.NewMultivT(tConf) // the alteration distribution
 	algo = mcmc.NewAlgo(conf, space, nil, kmeans.PPInitializer, distrib)
 	return

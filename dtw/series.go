@@ -11,11 +11,10 @@ type Space struct {
 }
 
 // NewSpace create a new series space
-func NewSpace(conf core.SpaceConf) Space {
-	var sconf = conf.(Conf)
+func NewSpace(conf Conf) Space {
 	return Space{
-		window:     sconf.Window,
-		innerSpace: sconf.InnerSpace,
+		window:     conf.Window,
+		innerSpace: conf.InnerSpace,
 	}
 }
 

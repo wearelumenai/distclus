@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-var lateSpace = euclid.NewSpace(euclid.Conf{})
+var lateSpace = euclid.NewSpace()
 
 func initializer(elemt core.Elemt) mcmc.Distrib {
 	var tConf = mcmc.MultivTConf{

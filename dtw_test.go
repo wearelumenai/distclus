@@ -47,7 +47,7 @@ func getSeriesConf() (mcmc.Conf, dtw.Space) {
 		},
 	}
 	var space = dtw.NewSpace(dtw.Conf{
-		InnerSpace: euclid.NewSpace(euclid.Conf{}),
+		InnerSpace: euclid.NewSpace(),
 		Window:     4,
 	})
 	return mcmcConf, space

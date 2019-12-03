@@ -1,3 +1,4 @@
+// Package cosinus allows to computes cosinus similarity based clusters.
 package cosinus
 
 import (
@@ -12,9 +13,9 @@ type Space struct {
 }
 
 // NewSpace creates a new Space instance
-func NewSpace(conf Conf) Space {
+func NewSpace() Space {
 	return Space{
-		vspace: euclid.NewSpace(conf.Conf),
+		vspace: euclid.NewSpace(),
 	}
 }
 
@@ -25,6 +26,7 @@ func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 	return space.PointDist(v1, v2)
 }
 
+// PointDist return distance of points
 func (space Space) PointDist(point1 []float64, point2 []float64) float64 {
 	return 1 - Cosinus(point1, point2)
 }
@@ -34,6 +36,7 @@ func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, we
 	return space.vspace.Combine(elemt1, weight1, elemt2, weight2)
 }
 
+// PointCombine return combination of points
 func (space Space) PointCombine(point1 []float64, weight1 int, point2 []float64, weight2 int) []float64 {
 	return space.vspace.PointCombine(point1, weight1, point2, weight2)
 }
@@ -43,6 +46,7 @@ func (space Space) Copy(elemt core.Elemt) core.Elemt {
 	return space.vspace.Copy(elemt)
 }
 
+// PointCopy copy points
 func (space Space) PointCopy(point []float64) []float64 {
 	return space.vspace.PointCopy(point)
 }

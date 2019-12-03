@@ -1,3 +1,4 @@
+// Package euclid allows to computes Euclidean distance based clusters.
 package euclid
 
 import (
@@ -9,7 +10,7 @@ import (
 type Space struct{}
 
 // NewSpace creates a new Space
-func NewSpace(conf Conf) Space {
+func NewSpace() Space {
 	return Space{}
 }
 
@@ -20,6 +21,7 @@ func (space Space) Dist(elemt1, elemt2 core.Elemt) float64 {
 	return space.PointDist(e1, e2)
 }
 
+// PointDist returns distance points
 func (space Space) PointDist(point1 []float64, point2 []float64) float64 {
 	var sum = 0.
 	for i := 0; i < len(point1); i++ {
@@ -37,6 +39,7 @@ func (space Space) Combine(elemt1 core.Elemt, weight1 int, elemt2 core.Elemt, we
 	return space.PointCombine(e1, weight1, e2, weight2)
 }
 
+// PointCombine returns combination of points
 func (space Space) PointCombine(point1 []float64, weight1 int, point2 []float64, weight2 int) []float64 {
 	var dim = len(point1)
 	var w1 = float64(weight1)
@@ -55,6 +58,7 @@ func (space Space) Copy(elemt core.Elemt) core.Elemt {
 	return space.PointCopy(point)
 }
 
+// PointCopy copy points
 func (space Space) PointCopy(point []float64) []float64 {
 	var newPoint = make([]float64, len(point))
 	copy(newPoint, point)

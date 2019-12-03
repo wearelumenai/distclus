@@ -44,7 +44,7 @@ func getVectorsConf() (mcmc.Conf, euclid.Space) {
 			Iter: 50,
 		},
 	}
-	var space = euclid.NewSpace(euclid.Conf{})
+	var space = euclid.NewSpace()
 	return mcmcConf, space
 }
 

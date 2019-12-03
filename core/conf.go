@@ -7,13 +7,12 @@ import (
 
 // Conf specific to algo/space configuration
 type Conf struct {
-	Iter     int     // minimal number of iteration before sleeping. Default unlimited
-	IterFreq float64 // maximal number of iteration per seconds
-	Timeout  int     // minimal number of nanoseconds before stopping the algorithm
-	NumCPU   int     // maximal number of CPU to use
-	// Online Clustering specific properties
-	DataPerIter    int // minimal pushed data number before iterating
-	StatusNotifier StatusNotifier
+	Iter           int            // minimal number of iteration before sleeping. Default unlimited
+	IterFreq       float64        // maximal number of iteration per seconds
+	Timeout        int            // minimal number of nanoseconds before stopping the algorithm
+	NumCPU         int            // maximal number of CPU to use
+	DataPerIter    int            // minimal pushed data number before iterating
+	StatusNotifier StatusNotifier // algo execution notifier
 }
 
 // Verify conf parameters

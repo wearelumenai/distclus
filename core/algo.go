@@ -177,7 +177,7 @@ func (algo *Algo) Play() (err error) {
 	case Interrupted:
 		fallthrough
 	case Succeed:
-		if algo.canIterate(0) {
+		if algo.Status() == Ready || algo.canIterate(0) {
 			go algo.run()
 			algo.sendStatus(Running)
 		} else {
@@ -401,9 +401,9 @@ func (algo *Algo) FailedError() (err error) {
 
 func (algo *Algo) canIterate(iterations int) bool {
 	var conf = algo.conf.AlgoConf()
-	var iterSleep = conf.Iter == 0 || iterations < conf.Iter
-	var dataPerIterSleep = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
-	return iterSleep && dataPerIterSleep
+	var iterDone = conf.Iter == 0 || iterations < conf.Iter
+	var dataPerIterDone = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
+	return iterDone && dataPerIterDone
 }
 
 func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures, iterations int, duration time.Duration) {

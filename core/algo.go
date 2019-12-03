@@ -332,7 +332,7 @@ func (algo *Algo) run() {
 				algo.receiveStatus()
 			}
 		default:
-			if conf.Timeout > 0 && time.Now().Sub(start).Seconds() > conf.Timeout { // check timeout
+			if conf.Timeout > 0 && time.Duration(conf.Timeout) <= (duration+algo.duration) { // check timeout
 				algo.setStatus(Failed, ErrTimeOut)
 			} else {
 				// run implementation

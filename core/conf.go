@@ -9,7 +9,7 @@ import (
 type Conf struct {
 	Iter     int     // minimal number of iteration before sleeping. Default unlimited
 	IterFreq float64 // maximal number of iteration per seconds
-	Timeout  float64 // minimal number of nanoseconds before stopping the algorithm
+	Timeout  int     // minimal number of nanoseconds before stopping the algorithm
 	NumCPU   int     // maximal number of CPU to use
 	// Online Clustering specific properties
 	DataPerIter    int // minimal pushed data number before iterating

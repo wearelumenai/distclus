@@ -331,7 +331,7 @@ func Test_Scenario_Play(t *testing.T) {
 }
 
 func Test_Timeout(t *testing.T) {
-	algo := newAlgo(t, core.Conf{Timeout: 0.0001, Iter: math.MaxInt64}, 10)
+	algo := newAlgo(t, core.Conf{Timeout: 1, Iter: math.MaxInt64}, 10)
 
 	test.DoTestTimeout(t, &algo)
 }

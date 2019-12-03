@@ -179,8 +179,10 @@ func (algo *Algo) Play() (err error) {
 	case Succeed:
 		if algo.canIterate(0) {
 			go algo.run()
+			algo.sendStatus(Running)
+		} else {
+			err = ErrNotIterate
 		}
-		fallthrough
 	case Idle:
 		algo.sendStatus(Running)
 	case Sleeping:

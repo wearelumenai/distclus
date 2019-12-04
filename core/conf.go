@@ -12,6 +12,7 @@ type Conf struct {
 	Timeout        int            // minimal number of nanoseconds before stopping the algorithm
 	NumCPU         int            // maximal number of CPU to use
 	DataPerIter    int            // minimal pushed data number before iterating
+	FrameSize      int            // framesize
 	StatusNotifier StatusNotifier // algo execution notifier
 }
 

@@ -11,10 +11,9 @@ import (
 // Conf of KMeans
 type Conf struct {
 	core.Conf
-	Par       bool
-	K         int
-	FrameSize int
-	RGen      *rand.Rand
+	Par  bool
+	K    int
+	RGen *rand.Rand
 }
 
 // Verify configuratio

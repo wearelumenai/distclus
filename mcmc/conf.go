@@ -13,7 +13,6 @@ type Conf struct {
 	core.Conf
 	Par            bool
 	InitK          int // number of initial number of clusters
-	FrameSize      int
 	RGen           *rand.Rand
 	B, Amp, R      float64
 	Norm           float64

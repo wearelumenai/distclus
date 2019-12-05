@@ -3,6 +3,7 @@ package kmeans
 import (
 	"distclus/core"
 	"fmt"
+	"runtime"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -11,9 +12,11 @@ import (
 // Conf of KMeans
 type Conf struct {
 	core.Conf
-	Par  bool
-	K    int
-	RGen *rand.Rand
+	Par       bool
+	K         int
+	FrameSize int
+	RGen      *rand.Rand
+	NumCPU    int // maximal number of CPU to use
 }
 
 // Verify configuratio
@@ -30,5 +33,8 @@ func (conf *Conf) SetConfigDefaults() {
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
 		conf.RGen = rand.New(rand.NewSource(seed))
+	}
+	if conf.NumCPU == 0 {
+		conf.NumCPU = runtime.NumCPU()
 	}
 }

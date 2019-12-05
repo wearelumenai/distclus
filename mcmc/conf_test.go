@@ -31,3 +31,11 @@ func Test_Defaults(t *testing.T) {
 	test.AssertTrue(t, conf.MaxK == 16)
 	test.AssertTrue(t, conf.B == 1)
 }
+
+func TestKMeans_ConfErrorNumCPU(t *testing.T) {
+	var conf = mcmcConf
+	conf.Verify()
+	if conf.NumCPU == 0 {
+		t.Error("0 CPU. Positive expected")
+	}
+}

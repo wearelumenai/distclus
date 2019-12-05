@@ -10,12 +10,12 @@ import (
 )
 
 var mcmcConf = mcmc.Conf{
-	InitK: 3,
-	RGen:  rand.New(rand.NewSource(6305689164243)),
-	B:     100,
-	Amp:   1,
-	Norm:  2,
-	Conf:  core.Conf{FrameSize: 8},
+	InitK:     3,
+	RGen:      rand.New(rand.NewSource(6305689164243)),
+	B:         100,
+	Amp:       1,
+	Norm:      2,
+	FrameSize: 8,
 }
 
 var mvtConf = mcmc.MultivTConf{

@@ -16,13 +16,13 @@ import (
 
 func Test_ParPredict_Given(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK: 3,
-		RGen:  rand.New(rand.NewSource(6305689164243)),
-		B:     100,
-		Amp:   1,
-		Norm:  2,
-		Par:   true,
-		Conf:  core.Conf{FrameSize: 8},
+		InitK:     3,
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         100,
+		Amp:       1,
+		Norm:      2,
+		Par:       true,
+		FrameSize: 8,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -37,16 +37,16 @@ func Test_ParPredict_Given(t *testing.T) {
 
 func Test_ParPredictPP(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK:  3,
-		ProbaK: []float64{1, 8, 1},
-		RGen:   rand.New(rand.NewSource(6305689164243)),
-		B:      100,
-		Amp:    0.1,
-		Norm:   2,
-		Par:    true,
+		InitK:     3,
+		ProbaK:    []float64{1, 8, 1},
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         100,
+		Amp:       0.1,
+		Norm:      2,
+		Par:       true,
+		FrameSize: 8,
 		Conf: core.Conf{
-			Iter:      20,
-			FrameSize: 8,
+			Iter: 20,
 		},
 	}
 	var tConf = mcmc.MultivTConf{
@@ -62,13 +62,14 @@ func Test_ParPredictPP(t *testing.T) {
 
 func Test_ParRunAsync(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK:  3,
-		ProbaK: []float64{1, 8, 1},
-		RGen:   rand.New(rand.NewSource(6305689164243)),
-		B:      100,
-		Amp:    0.1,
-		Par:    true,
-		Conf:   core.Conf{Iter: 1000, FrameSize: 8},
+		InitK:     3,
+		ProbaK:    []float64{1, 8, 1},
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         100,
+		Amp:       0.1,
+		Par:       true,
+		FrameSize: 8,
+		Conf:      core.Conf{Iter: 1000},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -84,13 +85,13 @@ func Test_ParRunAsync(t *testing.T) {
 
 func TestParStrategy_Loss(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK: 3,
-		RGen:  rand.New(rand.NewSource(6305689164243)),
-		B:     100,
-		Amp:   1,
-		Norm:  2,
-		Par:   true,
-		Conf:  core.Conf{FrameSize: 8},
+		InitK:     3,
+		RGen:      rand.New(rand.NewSource(6305689164243)),
+		B:         100,
+		Amp:       1,
+		Norm:      2,
+		Par:       true,
+		FrameSize: 8,
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,

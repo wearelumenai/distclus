@@ -3,6 +3,7 @@ package mcmc
 import (
 	"distclus/core"
 	"fmt"
+	"runtime"
 	"time"
 
 	"golang.org/x/exp/rand"
@@ -19,6 +20,8 @@ type Conf struct {
 	MaxK           int
 	ProbaK         []float64
 	lamb, l2b, tau float64
+	FrameSize      int
+	NumCPU         int // maximal number of CPU to use
 }
 
 // SetConfigDefaults initializes nil parameter values
@@ -38,6 +41,9 @@ func (conf *Conf) SetConfigDefaults() {
 	}
 	if conf.B == 0 {
 		conf.B = 1
+	}
+	if conf.NumCPU == 0 {
+		conf.NumCPU = runtime.NumCPU()
 	}
 }
 

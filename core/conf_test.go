@@ -29,11 +29,3 @@ func TestKMeans_ConfErrorIter(t *testing.T) {
 	var conf = core.Conf{Iter: -10}
 	conf.Verify()
 }
-
-func TestKMeans_ConfErrorNumCPU(t *testing.T) {
-	var conf = core.Conf{}
-	conf.Verify()
-	if conf.NumCPU == 0 {
-		t.Error("0 CPU. Positive expected")
-	}
-}

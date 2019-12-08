@@ -6,6 +6,7 @@ type ClustStatus int64
 // ClustStatus const values
 const (
 	Created       ClustStatus = iota
+	Initializing              // initializing
 	Ready                     // ready to run
 	Running                   // used when algorithm run
 	Idle                      // paused by user
@@ -18,7 +19,7 @@ const (
 )
 
 var names = []string{
-	"Created", "Ready",
+	"Created", "Initializing", "Ready",
 	"Running", "Idle", "Sleeping", "Stopping",
 	"Failed", "Succeed", "Reconfiguring", "Interrupted",
 }

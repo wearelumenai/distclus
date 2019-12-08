@@ -356,9 +356,9 @@ func Test_StatusNotifier(t *testing.T) {
 	algo.Batch()
 
 	var status = []core.ClustStatus{
-		core.Ready, core.Running, core.Failed,
+		core.Initializing, core.Ready, core.Running, core.Failed,
 	}
-	var errors = []error{nil, nil, errIter}
+	var errors = []error{nil, nil, nil, errIter}
 	for _, s := range status {
 		var ss, ok = <-statusChan
 		if !ok {

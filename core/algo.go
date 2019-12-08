@@ -151,9 +151,12 @@ func (algo *Algo) Batch() (err error) {
 // Init initialize centroids and set status to Ready
 func (algo *Algo) Init() (err error) {
 	if algo.Status() == Created {
+		algo.setStatus(Initializing, nil)
 		algo.centroids, err = algo.impl.Init(algo.conf, algo.space, algo.centroids)
 		if err == nil {
 			algo.setStatus(Ready, nil)
+		} else {
+			algo.setStatus(Created, err)
 		}
 	} else {
 		err = ErrAlreadyCreated

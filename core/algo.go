@@ -30,6 +30,7 @@ type OnlineClust interface {
 	Batch() error                                    // execute in batch mode (do play, wait, then stop)
 	Running() bool                                   // true iif algo is running (running, idle and sleeping)
 	Status() ClustStatus                             // algo status
+	FailedError() error                              // error in case of failure
 	RuntimeFigures() (figures.RuntimeFigures, error) // clustering figures
 	Reconfigure(ImplConf, Space) error               // reconfigure the online clust
 	Copy(ImplConf, Space) (OnlineClust, error)       // make a copy of this algo with new configuration and space

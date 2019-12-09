@@ -12,6 +12,7 @@ const (
 	Idle                      // paused by user
 	Sleeping                  // iteration frequency brake
 	Stopping                  // stopped by user
+	Waiting                   // waiting for pushing data or user playing
 	Failed                    // if an error occured during execution
 	Succeed                   // if clustering succeed
 	Reconfiguring             // reconfiguration in progress
@@ -20,7 +21,7 @@ const (
 
 var names = []string{
 	"Created", "Initializing", "Ready",
-	"Running", "Idle", "Sleeping", "Stopping",
+	"Running", "Idle", "Sleeping", "Stopping", "Waiting",
 	"Failed", "Succeed", "Reconfiguring", "Interrupted",
 }
 

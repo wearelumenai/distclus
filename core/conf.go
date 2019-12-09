@@ -10,11 +10,15 @@ type Conf struct {
 	IterFreq       float64        // maximal number of iteration per seconds
 	Timeout        int            // minimal number of nanoseconds before stopping the algorithm
 	DataPerIter    int            // minimal pushed data number before iterating
+	IterPerData    int            // minimal iterations per `DataPerIter` data
 	StatusNotifier StatusNotifier // algo execution notifier
 }
 
 // Verify conf parameters
 func (conf *Conf) Verify() {
+	if conf.IterPerData < 0 {
+		panic(errors.New("IterPerData must be greater or equal than 1"))
+	}
 	if conf.DataPerIter < 0 {
 		panic(errors.New("DataPerIter must be greater or equal than 1"))
 	}

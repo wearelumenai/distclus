@@ -23,6 +23,9 @@ var ErrNotIdle = errors.New("Algorithm is not idle")
 // ErrIdle raised if algo is idle
 var ErrIdle = errors.New("Algorithm is idle")
 
+// ErrWaiting raised if algo is waiting
+var ErrWaiting = errors.New("Algorithm is waiting")
+
 // ErrReconfiguring raised if algo is reconfiguring
 var ErrReconfiguring = errors.New("Algorithm is reconfiguring")
 
@@ -33,7 +36,7 @@ var ErrInfiniteIterations = errors.New("Infinite iterations in static mode")
 var ErrTimeOut = errors.New("algorithm timed out")
 
 // ErrNeverEnd raised when wait method is called while the algorithm will never end
-var ErrNeverEnd = errors.New("algorithm can not end. Specify core.Conf.Iter or core.Conf.DataPerIter for allowing your algorithm to sleep")
+var ErrNeverEnd = errors.New("algorithm can not end. Specify core.Conf.Iter, core.Conf.IterPerData or core.Conf.DataPerIter for allowing your algorithm to sleep")
 
 // ErrSleeping raised when sleeping methods is called while the algorithm will never sleep
 var ErrSleeping = errors.New("algorithm is sleeping")

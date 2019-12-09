@@ -12,6 +12,12 @@ func TestKMeans_ConfErrorDataPerIter(t *testing.T) {
 	conf.Verify()
 }
 
+func TestKMeans_ConfErrorIterPerData(t *testing.T) {
+	defer test.AssertPanic(t)
+	var conf = core.Conf{IterPerData: -10}
+	conf.Verify()
+}
+
 func TestKMeans_ConfErrorIterFreq(t *testing.T) {
 	defer test.AssertPanic(t)
 	var conf = core.Conf{IterFreq: -10}

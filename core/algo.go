@@ -25,7 +25,9 @@ type OnlineClust interface {
 	Stop() error            // stop the algorithm
 	Push(elemt Elemt) error // add element
 	// only if algo has runned once
-	Centroids() (Clust, error)                       // clustering result
+	Centroids() (Clust, error) // clustering result
+	Conf() ImplConf
+	Impl() Impl
 	Predict(elemt Elemt) (Elemt, int, error)         // input elemt centroid/label
 	Batch() error                                    // execute in batch mode (do play, wait, then stop)
 	Running() bool                                   // true iif algo is running (running, idle and sleeping)
@@ -57,6 +59,7 @@ type Algo struct {
 	iterations     int
 	duration       time.Duration
 	lastDataTime   int64
+	succeedOnce    bool
 }
 
 // AlgoConf algorithm configuration
@@ -118,7 +121,7 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 func (algo *Algo) Running() bool {
 	algo.mutex.RLock()
 	defer algo.mutex.RUnlock()
-	return algo.status == Running || algo.status == Idle || algo.status == Sleeping
+	return algo.status == Running || algo.status == Idle || algo.status == Sleeping || algo.status == Waiting
 }
 
 // Push a new observation in the algorithm
@@ -141,9 +144,29 @@ func (algo *Algo) Batch() (err error) {
 	if algo.conf.AlgoConf().Iter == 0 {
 		err = ErrInfiniteIterations
 	} else {
-		err = algo.Play()
-		if err == nil {
-			err = algo.Wait()
+		switch algo.Status() {
+		case Succeed:
+			fallthrough
+		case Failed:
+			fallthrough
+		case Interrupted:
+			fallthrough
+		case Waiting:
+			algo.succeedOnce = false
+			fallthrough
+		case Created:
+			fallthrough
+		case Ready:
+			err = algo.Play()
+			if err == nil {
+				err = algo.Wait()
+				if err == nil {
+					algo.setStatus(Succeed, nil)
+				}
+				return
+			}
+		default:
+			err = ErrRunning
 		}
 	}
 	return
@@ -180,6 +203,8 @@ func (algo *Algo) Play() (err error) {
 		fallthrough
 	case Interrupted:
 		fallthrough
+	case Waiting:
+		fallthrough
 	case Succeed:
 		if algo.Status() == Ready || algo.canIterate(0) {
 			go algo.run()
@@ -206,12 +231,20 @@ func (algo *Algo) Pause() (err error) {
 		if !algo.sendStatus(Idle) {
 			err = ErrNotRunning
 		}
+	case Waiting:
+		err = ErrWaiting
 	case Idle:
 		err = ErrIdle
 	default:
 		err = ErrNotRunning
 	}
 	return
+}
+
+func (algo *Algo) canNeverEnd() bool {
+	var conf = algo.conf.AlgoConf()
+	return ((conf.Iter == 0 && !algo.succeedOnce) ||
+		(algo.succeedOnce && conf.IterPerData == 0)) && conf.DataPerIter == 0
 }
 
 // Wait for online ending status
@@ -223,8 +256,7 @@ func (algo *Algo) Wait() (err error) {
 	case Sleeping:
 		fallthrough
 	case Running:
-		var conf = algo.conf.AlgoConf()
-		if conf.Iter == 0 && conf.DataPerIter == 0 {
+		if algo.canNeverEnd() {
 			return ErrNeverEnd
 		}
 		<-algo.ackChannel
@@ -233,6 +265,7 @@ func (algo *Algo) Wait() (err error) {
 		err = algo.failedError
 	case Succeed:
 	case Interrupted:
+	case Waiting:
 	case Created:
 		fallthrough
 	case Ready:
@@ -252,6 +285,8 @@ func (algo *Algo) Stop() (err error) {
 		algo.sendStatus(Stopping)
 		<-algo.ackChannel
 		err = algo.failedError
+	case Waiting:
+		algo.setStatus(Interrupted, nil)
 	case Created:
 		fallthrough
 	case Ready:
@@ -379,13 +414,14 @@ func (algo *Algo) run() {
 		int64(math.Max(0, float64(atomic.LoadInt64(&algo.newData)-newData))),
 	)
 	algo.duration += time.Now().Sub(start)
+	algo.succeedOnce = true
 
 	if algo.status == Failed {
 		log.Println(algo.failedError)
 	} else if algo.status == Stopping {
 		algo.setStatus(Interrupted, nil)
 	} else {
-		algo.setStatus(Succeed, nil)
+		algo.setStatus(Waiting, nil)
 	}
 
 	close(algo.ackChannel)
@@ -405,7 +441,11 @@ func (algo *Algo) FailedError() (err error) {
 
 func (algo *Algo) canIterate(iterations int) bool {
 	var conf = algo.conf.AlgoConf()
-	var iterDone = conf.Iter == 0 || iterations < conf.Iter
+	var iter = conf.Iter
+	if algo.succeedOnce {
+		iter = conf.IterPerData
+	}
+	var iterDone = iter == 0 || iterations < iter
 	var dataPerIterDone = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
 	return iterDone && dataPerIterDone
 }
@@ -449,6 +489,8 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 	case Interrupted:
 		fallthrough
 	case Succeed:
+		fallthrough
+	case Waiting:
 		fallthrough
 	case Idle:
 		algo.setStatus(Reconfiguring, nil)

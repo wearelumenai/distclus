@@ -154,8 +154,6 @@ func (algo *Algo) Batch() (err error) {
 			fallthrough
 		case Failed:
 			fallthrough
-		case Interrupted:
-			fallthrough
 		case Waiting:
 			algo.succeedOnce = false
 			fallthrough
@@ -209,8 +207,6 @@ func (algo *Algo) Play() (err error) {
 	case Ready:
 		fallthrough
 	case Failed:
-		fallthrough
-	case Interrupted:
 		fallthrough
 	case Waiting:
 		fallthrough
@@ -276,7 +272,6 @@ func (algo *Algo) Wait() (err error) {
 	case Failed:
 		err = algo.failedError
 	case Succeed:
-	case Interrupted:
 	case Waiting:
 	case Created:
 		fallthrough
@@ -299,8 +294,6 @@ func (algo *Algo) Stop() (err error) {
 		algo.sendStatus(Stopping)
 		<-algo.ackChannel
 		err = algo.failedError
-	case Waiting:
-		algo.setStatus(Interrupted, nil)
 	case Created:
 		fallthrough
 	case Ready:
@@ -434,8 +427,6 @@ func (algo *Algo) run() {
 
 	if algo.status == Failed {
 		log.Println(algo.failedError)
-	} else if algo.status == Stopping {
-		algo.setStatus(Interrupted, nil)
 	} else {
 		algo.setStatus(Waiting, nil)
 	}
@@ -502,8 +493,6 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 		err = ErrNotStarted
 	case Failed:
 		fallthrough
-	case Interrupted:
-		fallthrough
 	case Succeed:
 		fallthrough
 	case Waiting:
@@ -511,14 +500,24 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 	case Idle:
 		algo.setStatus(Reconfiguring, nil)
 		err = algo.reconfigure(conf, space)
-		algo.setStatus(status, nil)
+		var newStatus = algo.Status()
+		if newStatus == Reconfiguring {
+			newStatus = status
+		}
+		algo.setStatus(newStatus, nil)
 	case Running:
+		fallthrough
+	case Stopping:
 		fallthrough
 	case Sleeping:
 		var sent = algo.sendStatus(Reconfiguring)
 		err = algo.reconfigure(conf, space)
 		if sent {
-			algo.sendStatus(status)
+			var newStatus = algo.Status()
+			if newStatus == Reconfiguring {
+				newStatus = status
+			}
+			algo.sendStatus(newStatus)
 		}
 	case Closed:
 		err = ErrClosed

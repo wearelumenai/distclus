@@ -41,5 +41,8 @@ var ErrNeverEnd = errors.New("algorithm can not end. Specify core.Conf.Iter, cor
 // ErrSleeping raised when sleeping methods is called while the algorithm will never sleep
 var ErrSleeping = errors.New("algorithm is sleeping")
 
+// ErrClosed raised when algo is closed
+var ErrClosed = errors.New("algorithm is closed")
+
 // ErrNotIterate raised when play is called while algo can not iterate
 var ErrNotIterate = errors.New("algorithm can not iterate. Check iterations and dataPerIter conditions")

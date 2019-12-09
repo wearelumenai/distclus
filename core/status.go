@@ -16,13 +16,15 @@ const (
 	Failed                    // if an error occured during execution
 	Succeed                   // if clustering succeed
 	Reconfiguring             // reconfiguration in progress
-	Interrupted               // after stopping the algorithm
+	Interrupted               // stopped by user
+	Closed                    // algo is stopped and can not run anymore
 )
 
 var names = []string{
 	"Created", "Initializing", "Ready",
 	"Running", "Idle", "Sleeping", "Stopping", "Waiting",
 	"Failed", "Succeed", "Reconfiguring", "Interrupted",
+	"Closed",
 }
 
 // String display value message

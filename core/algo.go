@@ -18,11 +18,12 @@ import (
 // a prediction can't be done before the algorithm is run,
 // no centroid can be returned before the algorithm is run.
 type OnlineClust interface {
-	Init() error            // initialize algo centroids with impl strategy
-	Play() error            // play the algorithm
-	Pause() error           // pause the algorithm (idle)
-	Wait() error            // wait for algorithm sleeping, ready or failed
-	Stop() error            // stop the algorithm
+	Init() error  // initialize algo centroids with impl strategy
+	Play() error  // play the algorithm
+	Pause() error // pause the algorithm (idle)
+	Wait() error  // wait for algorithm sleeping, ready or failed
+	Stop() error  // stop the algorithm
+	Close() error
 	Push(elemt Elemt) error // add element
 	// only if algo has runned once
 	Centroids() (Clust, error) // clustering result
@@ -126,14 +127,18 @@ func (algo *Algo) Running() bool {
 
 // Push a new observation in the algorithm
 func (algo *Algo) Push(elemt Elemt) (err error) {
-	err = algo.impl.Push(elemt, algo.Running())
-	if err == nil {
-		atomic.AddInt64(&algo.newData, 1)
-		atomic.AddInt64(&algo.pushedData, 1)
-		atomic.StoreInt64(&algo.lastDataTime, time.Now().Unix())
-		// try to play
-		if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
-			algo.Play()
+	if algo.Status() == Closed {
+		err = ErrClosed
+	} else {
+		err = algo.impl.Push(elemt, algo.Running())
+		if err == nil {
+			atomic.AddInt64(&algo.newData, 1)
+			atomic.AddInt64(&algo.pushedData, 1)
+			atomic.StoreInt64(&algo.lastDataTime, time.Now().Unix())
+			// try to play
+			if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
+				algo.Play()
+			}
 		}
 	}
 	return
@@ -163,8 +168,9 @@ func (algo *Algo) Batch() (err error) {
 				if err == nil {
 					algo.setStatus(Succeed, nil)
 				}
-				return
 			}
+		case Closed:
+			err = ErrClosed
 		default:
 			err = ErrRunning
 		}
@@ -174,7 +180,8 @@ func (algo *Algo) Batch() (err error) {
 
 // Init initialize centroids and set status to Ready
 func (algo *Algo) Init() (err error) {
-	if algo.Status() == Created {
+	switch algo.Status() {
+	case Created:
 		algo.setStatus(Initializing, nil)
 		algo.centroids, err = algo.impl.Init(algo.conf, algo.space, algo.centroids)
 		if err == nil {
@@ -182,7 +189,9 @@ func (algo *Algo) Init() (err error) {
 		} else {
 			algo.setStatus(Created, err)
 		}
-	} else {
+	case Closed:
+		err = ErrClosed
+	default:
 		err = ErrAlreadyCreated
 	}
 	return
@@ -218,6 +227,8 @@ func (algo *Algo) Play() (err error) {
 		err = ErrSleeping
 	case Running:
 		err = ErrRunning
+	case Closed:
+		err = ErrClosed
 	}
 	return
 }
@@ -235,6 +246,8 @@ func (algo *Algo) Pause() (err error) {
 		err = ErrWaiting
 	case Idle:
 		err = ErrIdle
+	case Closed:
+		err = ErrClosed
 	default:
 		err = ErrNotRunning
 	}
@@ -249,7 +262,6 @@ func (algo *Algo) canNeverEnd() bool {
 
 // Wait for online ending status
 func (algo *Algo) Wait() (err error) {
-
 	switch algo.Status() {
 	case Idle:
 		err = ErrIdle
@@ -270,6 +282,8 @@ func (algo *Algo) Wait() (err error) {
 		fallthrough
 	case Ready:
 		err = ErrNotStarted
+	case Closed:
+		err = ErrClosed
 	}
 	return
 }
@@ -291,6 +305,8 @@ func (algo *Algo) Stop() (err error) {
 		fallthrough
 	case Ready:
 		err = ErrNotStarted
+	case Closed:
+		err = ErrClosed
 	}
 	return
 }
@@ -504,6 +520,8 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 		if sent {
 			algo.sendStatus(status)
 		}
+	case Closed:
+		err = ErrClosed
 	}
 	return
 }
@@ -514,5 +532,12 @@ func (algo *Algo) Copy(conf ImplConf, space Space) (oc OnlineClust, err error) {
 	if err == nil {
 		oc = NewAlgo(conf, impl, space)
 	}
+	return
+}
+
+// Close close the algorithm
+func (algo *Algo) Close() (err error) {
+	algo.Stop()
+	algo.setStatus(Closed, nil)
 	return
 }

@@ -143,6 +143,50 @@ func TestInitError(t *testing.T) {
 	}
 }
 
+func TestClose(t *testing.T) {
+	algo := newAlgo(t, core.Conf{Iter: 1}, 2)
+	err := algo.Close()
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+
+	if algo.Status() != core.Closed {
+		t.Error("closed expected")
+	}
+
+	err = algo.Wait()
+
+	if err != core.ErrClosed {
+		t.Error("closed error expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != core.ErrClosed {
+		t.Error("closed error expected", err)
+	}
+
+	err = algo.Pause()
+
+	if err != core.ErrClosed {
+		t.Error("closed error expected", err)
+	}
+
+	err = algo.Stop()
+
+	if err != core.ErrClosed {
+		t.Error("closed error expected", err)
+	}
+
+	err = algo.Reconfigure(nil, nil)
+
+	if err != core.ErrClosed {
+		t.Error("closed error expected", err)
+	}
+
+}
+
 func TestIterError(t *testing.T) {
 	algo := newAlgo(t, core.Conf{Iter: 1}, 2)
 	err := algo.Play()

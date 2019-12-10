@@ -31,7 +31,7 @@ type OnlineClust interface {
 	Impl() Impl
 	Predict(elemt Elemt) (Elemt, int, error)         // input elemt centroid/label
 	Batch() error                                    // execute in batch mode (do play, wait, then stop)
-	Running() bool                                   // true iif algo is running (running, idle and sleeping)
+	Alive() bool                                     // true iif algo is running (running, idle and sleeping)
 	Status() ClustStatus                             // algo status
 	FailedError() error                              // error in case of failure
 	RuntimeFigures() (figures.RuntimeFigures, error) // clustering figures
@@ -49,7 +49,7 @@ type Algo struct {
 	space          Space
 	centroids      Clust
 	status         ClustStatus
-	statusChannel  chan ClustStatus
+	statusChannel  chan statusScope
 	ackChannel     chan bool
 	mutex          sync.RWMutex
 	runtimeFigures figures.RuntimeFigures
@@ -74,10 +74,15 @@ func NewAlgo(conf ImplConf, impl Impl, space Space) *Algo {
 		impl:           impl,
 		space:          space,
 		status:         Created,
-		statusChannel:  make(chan ClustStatus),
+		statusChannel:  make(chan statusScope),
 		ackChannel:     make(chan bool),
 		statusNotifier: conf.AlgoConf().StatusNotifier,
 	}
+}
+
+type statusScope struct {
+	status ClustStatus
+	err    error
 }
 
 // change of status
@@ -93,14 +98,14 @@ func (algo *Algo) setStatus(status ClustStatus, err error) {
 
 // receiveStatus status from main routine
 func (algo *Algo) receiveStatus() {
-	var status = <-algo.statusChannel
-	algo.setStatus(status, nil)
+	var statusScope = <-algo.statusChannel
+	algo.setStatus(statusScope.status, statusScope.err)
 	algo.ackChannel <- true
 }
 
 // sendStatus status to run go routine
-func (algo *Algo) sendStatus(status ClustStatus) (ok bool) {
-	algo.statusChannel <- status
+func (algo *Algo) sendStatus(status ClustStatus, err error) (ok bool) {
+	algo.statusChannel <- statusScope{status, err}
 	_, ok = <-algo.ackChannel
 	return
 }
@@ -118,11 +123,11 @@ func (algo *Algo) Centroids() (centroids Clust, err error) {
 	return
 }
 
-// Running is true only if the algorithm is running
-func (algo *Algo) Running() bool {
+// Alive is true only if the algorithm is alive (running/idle/waiting)
+func (algo *Algo) Alive() bool {
 	algo.mutex.RLock()
 	defer algo.mutex.RUnlock()
-	return algo.status == Running || algo.status == Idle || algo.status == Sleeping || algo.status == Waiting
+	return algo.status == Running || algo.status == Idle || algo.status == Waiting
 }
 
 // Push a new observation in the algorithm
@@ -130,13 +135,13 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	if algo.Status() == Closed {
 		err = ErrClosed
 	} else {
-		err = algo.impl.Push(elemt, algo.Running())
+		err = algo.impl.Push(elemt, algo.Alive())
 		if err == nil {
 			atomic.AddInt64(&algo.newData, 1)
 			atomic.AddInt64(&algo.pushedData, 1)
 			atomic.StoreInt64(&algo.lastDataTime, time.Now().Unix())
-			// try to play
-			if (!algo.Running()) && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
+			// try to play if waiting
+			if algo.Status() == Waiting && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
 				algo.Play()
 			}
 		}
@@ -153,6 +158,8 @@ func (algo *Algo) Batch() (err error) {
 		case Succeed:
 			fallthrough
 		case Failed:
+			fallthrough
+		case Stopped:
 			fallthrough
 		case Waiting:
 			algo.succeedOnce = false
@@ -210,17 +217,20 @@ func (algo *Algo) Play() (err error) {
 		fallthrough
 	case Waiting:
 		fallthrough
+	case Stopped:
+		fallthrough
 	case Succeed:
 		if algo.Status() == Ready || algo.canIterate(0) {
 			go algo.run()
-			algo.sendStatus(Running)
+			algo.sendStatus(Running, nil)
+			if algo.Conf().AlgoConf().Timeout > 0 && !algo.succeedOnce {
+				go algo.timeout()
+			}
 		} else {
 			err = ErrNotIterate
 		}
 	case Idle:
-		algo.sendStatus(Running)
-	case Sleeping:
-		err = ErrSleeping
+		algo.sendStatus(Running, nil)
 	case Running:
 		err = ErrRunning
 	case Closed:
@@ -232,16 +242,11 @@ func (algo *Algo) Play() (err error) {
 // Pause the algorithm and set status to idle
 func (algo *Algo) Pause() (err error) {
 	switch algo.Status() {
-	case Sleeping:
-		fallthrough
 	case Running:
-		if !algo.sendStatus(Idle) {
+		if !algo.sendStatus(Idle, nil) {
 			err = ErrNotRunning
 		}
-	case Waiting:
-		err = ErrWaiting
 	case Idle:
-		err = ErrIdle
 	case Closed:
 		err = ErrClosed
 	default:
@@ -261,8 +266,6 @@ func (algo *Algo) Wait() (err error) {
 	switch algo.Status() {
 	case Idle:
 		err = ErrIdle
-	case Sleeping:
-		fallthrough
 	case Running:
 		if algo.canNeverEnd() {
 			return ErrNeverEnd
@@ -279,29 +282,47 @@ func (algo *Algo) Wait() (err error) {
 		err = ErrNotStarted
 	case Closed:
 		err = ErrClosed
+	case Stopped:
+		err = ErrStopped
+	}
+	return
+}
+
+// interrupt the algorithm
+func (algo *Algo) interrupt(status ClustStatus, error error) (err error) {
+	switch algo.Status() {
+	case Succeed:
+		fallthrough
+	case Stopped:
+		if status == Stopped {
+			return
+		}
+		fallthrough
+	case Ready:
+		fallthrough
+	case Waiting:
+		algo.setStatus(status, err)
+	case Idle:
+		fallthrough
+	case Running:
+		algo.sendStatus(status, error)
+		<-algo.ackChannel
+		err = algo.failedError
+	case Created:
+		err = ErrNotStarted
+	case Closed:
+		if status != Closed {
+			err = ErrClosed
+		}
+	default:
+		err = ErrNotRunning
 	}
 	return
 }
 
 // Stop the algorithm
 func (algo *Algo) Stop() (err error) {
-	switch algo.Status() {
-	case Idle:
-		fallthrough
-	case Running:
-		fallthrough
-	case Sleeping:
-		algo.sendStatus(Stopping)
-		<-algo.ackChannel
-		err = algo.failedError
-	case Created:
-		fallthrough
-	case Ready:
-		err = ErrNotStarted
-	case Closed:
-		err = ErrClosed
-	}
-	return
+	return algo.interrupt(Stopped, nil)
 }
 
 // Space returns space
@@ -375,45 +396,39 @@ func (algo *Algo) run() {
 
 	for algo.status == Running && algo.canIterate(iterations) {
 		select { // check for algo status update
-		case status := <-algo.statusChannel:
-			algo.setStatus(status, nil)
-			if status == Idle || status == Reconfiguring {
+		case statusScope := <-algo.statusChannel:
+			algo.setStatus(statusScope.status, statusScope.err)
+			if statusScope.status == Idle {
 				algo.ackChannel <- true
 				algo.receiveStatus()
 			}
 		default:
-			if conf.Timeout > 0 && time.Duration(conf.Timeout) <= (duration+algo.duration) { // check timeout
-				algo.setStatus(Failed, ErrTimeOut)
-			} else {
-				// run implementation
-				lastIterationTime = time.Now()
-				newData = atomic.LoadInt64(&algo.newData)
-				centroids, runtimeFigures, err = algo.impl.Iterate(
-					algo.conf,
-					algo.space,
-					algo.centroids,
+			// run implementation
+			lastIterationTime = time.Now()
+			newData = atomic.LoadInt64(&algo.newData)
+			centroids, runtimeFigures, err = algo.impl.Iterate(
+				algo.conf,
+				algo.space,
+				algo.centroids,
+			)
+			if err == nil {
+				algo.iterations++
+				iterations++
+				duration = time.Now().Sub(start)
+				algo.saveIterContext(
+					centroids, runtimeFigures,
+					iterations,
+					duration,
 				)
-				if err == nil {
-					algo.iterations++
-					iterations++
-					duration = time.Now().Sub(start)
-					algo.saveIterContext(
-						centroids, runtimeFigures,
-						iterations,
-						duration,
-					)
-					// temporize iteration
-					if conf.IterFreq > 0 { // with iteration freqency
-						var diff = iterFreq - time.Now().Sub(lastIterationTime)
-						if diff > 0 {
-							algo.setStatus(Sleeping, nil)
-							time.Sleep(diff)
-							algo.setStatus(Running, nil)
-						}
+				// temporize iteration
+				if conf.IterFreq > 0 { // with iteration freqency
+					var diff = iterFreq - time.Now().Sub(lastIterationTime)
+					if diff > 0 {
+						time.Sleep(diff)
 					}
-				} else { // impl has finished
-					algo.setStatus(Failed, err)
 				}
+			} else { // impl has finished
+				algo.setStatus(Failed, err)
 			}
 		}
 	}
@@ -424,19 +439,16 @@ func (algo *Algo) run() {
 	)
 	algo.duration += time.Now().Sub(start)
 	algo.succeedOnce = true
-
 	if algo.status == Failed {
 		log.Println(algo.failedError)
-	} else {
+	} else if algo.status != Closed {
 		algo.setStatus(Waiting, nil)
 	}
-
-	close(algo.ackChannel)
-
 	select { // free user send status
 	case <-algo.statusChannel:
 	default:
 	}
+	close(algo.ackChannel)
 }
 
 // FailedError is the error in case of algo failure
@@ -485,44 +497,31 @@ func (algo *Algo) reconfigure(conf ImplConf, space Space) (err error) {
 
 // Reconfigure algo configuration and space
 func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
-	var status = algo.Status()
-	switch status {
+	switch algo.Status() {
+	case Closed:
+		err = ErrClosed
 	case Created:
 		fallthrough
 	case Ready:
 		err = ErrNotStarted
-	case Failed:
-		fallthrough
-	case Succeed:
-		fallthrough
-	case Waiting:
-		fallthrough
-	case Idle:
+	default:
+		var status = algo.Status()
+		if status == Running {
+			algo.Pause()
+		}
 		algo.setStatus(Reconfiguring, nil)
 		err = algo.reconfigure(conf, space)
-		var newStatus = algo.Status()
-		if newStatus == Reconfiguring {
-			newStatus = status
+		algo.setStatus(status, algo.FailedError())
+		if status == Running {
+			algo.Play()
 		}
-		algo.setStatus(newStatus, nil)
-	case Running:
-		fallthrough
-	case Stopping:
-		fallthrough
-	case Sleeping:
-		var sent = algo.sendStatus(Reconfiguring)
-		err = algo.reconfigure(conf, space)
-		if sent {
-			var newStatus = algo.Status()
-			if newStatus == Reconfiguring {
-				newStatus = status
-			}
-			algo.sendStatus(newStatus)
-		}
-	case Closed:
-		err = ErrClosed
 	}
 	return
+}
+
+func (algo *Algo) timeout() {
+	time.Sleep(time.Duration(algo.conf.AlgoConf().Timeout))
+	algo.interrupt(Failed, ErrTimeOut)
 }
 
 // Copy make a copy of this algo with new conf and space
@@ -536,7 +535,5 @@ func (algo *Algo) Copy(conf ImplConf, space Space) (oc OnlineClust, err error) {
 
 // Close close the algorithm
 func (algo *Algo) Close() (err error) {
-	algo.Stop()
-	algo.setStatus(Closed, nil)
-	return
+	return algo.interrupt(Closed, nil)
 }

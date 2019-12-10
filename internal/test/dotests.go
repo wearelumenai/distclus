@@ -501,8 +501,8 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 
 	err = algo.Pause()
 
-	if err != core.ErrIdle {
-		t.Error("EddIdle expected", err)
+	if err != nil {
+		t.Error("No error expected", err)
 	}
 
 	err = algo.Wait()
@@ -516,7 +516,7 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if !algo.Running() {
+	if !algo.Alive() {
 		t.Error("Running expected", algo.Status())
 	}
 
@@ -587,7 +587,7 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if !algo.Running() {
+	if !algo.Alive() {
 		t.Error("Running expected", algo.Status())
 	}
 
@@ -602,8 +602,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 
 	err = algo.Pause()
 
-	if err != core.ErrIdle {
-		t.Error("EddIdle expected", err)
+	if err != nil {
+		t.Error("No error expected", err)
 	}
 
 	err = algo.Wait()
@@ -617,7 +617,7 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if !algo.Running() {
+	if !algo.Alive() {
 		t.Error("Running expected", algo.Status())
 	}
 
@@ -650,7 +650,7 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if !algo.Running() {
+	if !algo.Alive() {
 		t.Error("running expected", algo.Status())
 	}
 
@@ -668,8 +668,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if algo.Status() != core.Waiting {
-		t.Error("Waiting expected", algo.Status())
+	if algo.Status() != core.Stopped {
+		t.Error("Stopped expected", algo.Status())
 	}
 }
 
@@ -715,7 +715,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 		t.Error("no error expected", err)
 	}
 
-	if !algo.Running() {
+	if !algo.Alive() {
 		t.Error("status should be Running", algo.Status())
 	}
 
@@ -737,7 +737,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 		t.Error("No error expected", err)
 	}
 
-	if !algo.Running() {
+	if !algo.Alive() {
 		t.Error("status should be Running", algo.Status())
 	}
 
@@ -785,7 +785,6 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-
 	err = algo.Wait()
 
 	if err != core.ErrTimeOut {
@@ -795,7 +794,7 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 	err = algo.Batch()
 
 	if err != core.ErrTimeOut {
-		t.Error("timeout expected", err)
+		t.Error("timeout expected", err, algo.Status())
 	}
 
 }
@@ -904,7 +903,7 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("not error expected", err)
 	}
 
-	if !algo.Running() {
+	if algo.Alive() {
 		t.Error("not running expected", algo.Status())
 	}
 
@@ -914,7 +913,7 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("reconfiguration expected", err)
 	}
 
-	if algo.Status() != core.Waiting {
-		t.Error("waiting expected", algo.Status())
+	if algo.Status() != core.Stopped {
+		t.Error("stopped expected", algo.Status())
 	}
 }

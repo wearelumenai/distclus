@@ -41,6 +41,9 @@ var ErrNeverEnd = errors.New("algorithm can not end. Specify core.Conf.Iter, cor
 // ErrSleeping raised when sleeping methods is called while the algorithm will never sleep
 var ErrSleeping = errors.New("algorithm is sleeping")
 
+// ErrStopped raised when sleeping methods is called while the algorithm is sttopped
+var ErrStopped = errors.New("algorithm is stopped")
+
 // ErrClosed raised when algo is closed
 var ErrClosed = errors.New("algorithm is closed")
 

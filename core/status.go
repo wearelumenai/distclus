@@ -8,11 +8,10 @@ const (
 	Created       ClustStatus = iota
 	Initializing              // initializing
 	Ready                     // ready to run
-	Running                   // used when algorithm run
+	Running                   // used when algorithm is playing
 	Idle                      // paused by user
-	Sleeping                  // iteration frequency brake
-	Stopping                  // stopped by user
 	Waiting                   // waiting for pushing data or user playing
+	Stopped                   // stopped by user
 	Failed                    // if an error occured during execution
 	Succeed                   // if clustering succeed
 	Reconfiguring             // reconfiguration in progress
@@ -21,7 +20,7 @@ const (
 
 var names = []string{
 	"Created", "Initializing", "Ready",
-	"Running", "Idle", "Sleeping", "Stopping", "Waiting",
+	"Running", "Idle", "Waiting", "Stopped",
 	"Failed", "Succeed", "Reconfiguring",
 	"Closed",
 }

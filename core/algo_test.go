@@ -147,12 +147,30 @@ func TestClose(t *testing.T) {
 	algo := newAlgo(t, core.Conf{Iter: 1}, 2)
 	err := algo.Close()
 
-	if err != nil {
+	if err != core.ErrNotStarted {
 		t.Error("no error expected", err)
 	}
 
+	if algo.Status() != core.Created {
+		t.Error("created expected", algo.Status())
+	}
+
+	err = algo.Init()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+	if algo.Status() != core.Ready {
+		t.Error("Ready expected", algo.Status())
+	}
+
+	err = algo.Close()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
 	if algo.Status() != core.Closed {
-		t.Error("closed expected")
+		t.Error("Closed expected", algo.Status())
 	}
 
 	err = algo.Wait()
@@ -160,11 +178,17 @@ func TestClose(t *testing.T) {
 	if err != core.ErrClosed {
 		t.Error("closed error expected", err)
 	}
+	if algo.Status() != core.Closed {
+		t.Error("Closed expected", algo.Status())
+	}
 
 	err = algo.Play()
 
 	if err != core.ErrClosed {
 		t.Error("closed error expected", err)
+	}
+	if algo.Status() != core.Closed {
+		t.Error("Closed expected", algo.Status())
 	}
 
 	err = algo.Pause()
@@ -172,17 +196,26 @@ func TestClose(t *testing.T) {
 	if err != core.ErrClosed {
 		t.Error("closed error expected", err)
 	}
+	if algo.Status() != core.Closed {
+		t.Error("Closed expected", algo.Status())
+	}
 
 	err = algo.Stop()
 
 	if err != core.ErrClosed {
 		t.Error("closed error expected", err)
 	}
+	if algo.Status() != core.Closed {
+		t.Error("Closed expected", algo.Status())
+	}
 
 	err = algo.Reconfigure(nil, nil)
 
 	if err != core.ErrClosed {
 		t.Error("closed error expected", err)
+	}
+	if algo.Status() != core.Closed {
+		t.Error("Closed expected", algo.Status())
 	}
 
 }
@@ -239,8 +272,8 @@ func TestPause(t *testing.T) {
 		t.Error("error while playing", err)
 	}
 
-	if algo.Status() != core.Running && algo.Status() != core.Sleeping {
-		t.Error("wrong status. Running or sleeping expected", algo.Status())
+	if algo.Status() != core.Running {
+		t.Error("wrong status. Running expected", algo.Status())
 	}
 
 	_ = algo.Stop()

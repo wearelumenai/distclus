@@ -313,12 +313,16 @@ We have covered almost all methods so far:
  - `Centroids() (Clust, error)`: get array of clustering centroids.
  - `Predict(elemt Elemt) (Elemt, int, error)`: according to previous method, get centroid and its index in array of clustering centroids for input elemt.
  - `Push(elemt Elemt) error`: push an element.
- - `Stop() error`: stop execution.
  - `Pause() error`: pause execution. The method `Play` goes back to execution.
- - `Wait() error`: wait until algorithm terminates.
- - `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Run` and `Wait`.
+ - `Wait() error`: wait until algorithm terminates iterations.
+ - `Stop() error`: stop execution. Play back is possible.
+ - `Close() error`: stop execution. Play back is impossible.
+ - `Copy() (OnlineClust, error)`: return a copy of this algorrithm with entire execution context.
+ - `Reconfigure(ImplConf, Space) error`: reconfigure at runtime this algorithm with new impl and space.
+ - `FailedError() error`: get failure error in case of failed execution.
+ - `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Run` and `Wait`. End with `Succeed` status.
  - `Status() core.ClustStatus`: get algo status.
- - `Running() bool`: true iif algo is in running status (`core.Running`, `core.Idle` and `core.Sleeping`).
+ - `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`).
 
 Algorithms may return specific figures that describes their running state. These can be obtained by the
 `RuntimeFigures` method.
@@ -379,9 +383,13 @@ Remainding methods allow you to dynamically interact with the algorithm:
 - `Play() error`: start the algorithm if not running (status `Created`, `Ready`, `Succeed` or `Failed`) or goes back to execution if `Idle`.
 - `Pause() error`: pause the algorithm. Wait until the algo is `Idle`.
 - `Wait() error`: wait until the algorithm terminates.
-- `Stop() error`: stop the algorithm and wait until it is ready. Such algorithm enters in `Stopping` before `Ready`.
+- `Stop() error`: stop the algorithm execution (`Stopped` status). `Play` is possible.
+- `Close() error`: close the algorithm execution (`Closed` status). Impossible to play back the algorithm.
+- `FailedError() error`: get failed error if the algorithm failed to execute.
+- `Copy() (OnlineClust, error)`: return a copy of this algorithm with entire execution context.
+- `Reconfigure(ImplConf, Space) error`: reconfigure a runtime the algorithm with new implementation and space.
 - `Status() ClustStatus`: get algo status.
-- `Running() bool`: true iif algo is in running status (`Running`, `Idle` and `Sleeping`).
+- `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`).
 - `StatusNotifier(ClustStatus, error)`: callback function when algo status change or an error is raised. Setted in `Conf.StatusNotifier`.
 
 The `RunAndFeed` function above may be modified like this:

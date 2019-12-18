@@ -1,3 +1,6 @@
 .idea
 debug.test
 coverage.out
+mem.out
+trace.out
+cpu.out

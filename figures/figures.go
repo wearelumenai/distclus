@@ -8,6 +8,10 @@ const (
 	Iterations = "iterations"
 	// Acceptations is the number of acceptations of mcmc
 	Acceptations = "acceptations"
+	Lambda       = "lambda"
+	Rho          = "rho"
+	RGibbs       = "rGibbs"
+	Time         = "time"
 	// MaxDistance is the max distance of streaming
 	MaxDistance = "maxDistance"
 	// PushedData is the number of pushed data

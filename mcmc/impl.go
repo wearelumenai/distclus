@@ -18,6 +18,10 @@ type Impl struct {
 	distrib     Distrib
 	store       CenterStore
 	acc         int
+	lambda      float64
+	rho         float64
+	rGibbs      float64
+	time        int
 	dim         int
 	current     proposal
 }
@@ -43,12 +47,14 @@ func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (cent
 	if err == nil {
 		var data = impl.buffer.Data()
 		impl.dim = space.Dim(centroids)
+		var currentTime = impl.getCurrentTime(data)
 		impl.current = proposal{
 			k:       mcmcConf.InitK,
 			centers: centroids,
 			loss:    impl.strategy.Loss(*mcmcConf, space, centroids, data),
-			pdf:     impl.proba(*mcmcConf, space, centroids, centroids, impl.getCurrentTime(data)),
+			pdf:     impl.proba(*mcmcConf, space, centroids, centroids, currentTime),
 		}
+		impl.time = currentTime
 	}
 	return
 }
@@ -58,7 +64,9 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 	var mcmcConf = conf.(*Conf)
 
 	var data = impl.buffer.Data()
-	impl.current, clust = impl.doIter(*mcmcConf, space, impl.current, centroids, data, impl.getCurrentTime(data))
+	var currentTime = impl.getCurrentTime(data)
+	impl.current, clust = impl.doIter(*mcmcConf, space, impl.current, centroids, data, currentTime)
+	impl.time = currentTime
 	return clust, impl.runtimeFigures(), impl.buffer.Apply()
 }
 
@@ -121,6 +129,11 @@ func (impl *Impl) accept(conf Conf, current proposal, prop proposal, time int) b
 	var rGibbs = lambda * (current.loss - prop.loss)
 
 	var rho = math.Exp(rGibbs + rInit + rProp)
+
+	impl.lambda = lambda
+	impl.rho = rho
+	impl.rGibbs = rGibbs
+
 	return impl.uniform.Rand() < rho
 }
 
@@ -162,5 +175,9 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
 	return figures.RuntimeFigures{
 		figures.Acceptations: float64(impl.acc),
+		figures.Lambda:       impl.lambda,
+		figures.Rho:          impl.rho,
+		figures.RGibbs:       impl.rGibbs,
+		figures.Time:         float64(impl.time),
 	}
 }

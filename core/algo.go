@@ -517,7 +517,7 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 }
 
 func (algo *Algo) timeout() {
-	time.Sleep(time.Duration(algo.conf.AlgoConf().Timeout))
+	time.Sleep(algo.conf.AlgoConf().Timeout)
 	algo.interrupt(Failed, ErrTimeOut)
 }
 

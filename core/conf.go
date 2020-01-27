@@ -2,13 +2,14 @@ package core
 
 import (
 	"errors"
+	"time"
 )
 
 // Conf specific to algo/space configuration
 type Conf struct {
 	Iter           int            // minimal number of iteration before sleeping. Default unlimited
 	IterFreq       float64        // maximal number of iteration per seconds
-	Timeout        int            // minimal number of nanoseconds before stopping the algorithm
+	Timeout        time.Duration  // minimal number of nanoseconds before stopping the algorithm
 	DataPerIter    int            // minimal pushed data number before iterating
 	IterPerData    int            // minimal iterations per `DataPerIter` data
 	StatusNotifier StatusNotifier // algo execution notifier

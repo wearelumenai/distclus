@@ -379,7 +379,7 @@ func (algo *Algo) run() {
 	var runtimeFigures figures.RuntimeFigures
 	var iterFreq time.Duration
 	if conf.IterFreq > 0 {
-		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
+		iterFreq = time.Nanosecond * time.Duration(conf.IterFreq*1e6)
 	}
 	var lastIterationTime time.Time
 
@@ -418,11 +418,9 @@ func (algo *Algo) run() {
 					duration,
 				)
 				// temporize iteration
-				if conf.IterFreq > 0 { // with iteration freqency
+				if iterFreq > 0 { // with iteration freqency
 					var diff = iterFreq - time.Now().Sub(lastIterationTime)
-					if diff > 0 {
-						time.Sleep(diff)
-					}
+					time.Sleep(diff)
 				}
 			} else { // impl has finished
 				algo.setStatus(Failed, err)

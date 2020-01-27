@@ -14,6 +14,43 @@ import (
 	"gonum.org/v1/gonum/stat/distuv"
 )
 
+func Test_(t *testing.T) {
+	const n = 1000
+	var dataset = [n]core.Elemt{}
+	for i := 0; i < n; i++ {
+		dataset[i] = []float64{4, 1, 2}
+	}
+
+	var algo = streaming.NewAlgo(
+		streaming.Conf{
+			Conf:       core.Conf{Iter: 0},
+			Mu:         0.5,
+			Sigma:      0.1,
+			OutRatio:   2,
+			OutAfter:   7,
+			BufferSize: 1000,
+		},
+		euclid.Space{},
+		[]core.Elemt{},
+	)
+
+	algo.Push(dataset[0])
+
+	algo.Play()
+
+	for _, data := range dataset[1:] {
+		algo.Push(data)
+	}
+
+	algo.Centroids()
+
+	// monitoring during 1 seconds since algo is running in a asynchronous mode
+	for k := 0; k < 10; k++ {
+		algo.Centroids()
+	}
+	algo.Close()
+}
+
 func Test_Async(t *testing.T) {
 	var algo = streaming.NewAlgo(streaming.Conf{Conf: core.Conf{Iter: 0}}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()

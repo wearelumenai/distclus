@@ -109,13 +109,13 @@ func (algo *Algo) sendStatus(status ClustStatus, err error) (ok bool) {
 
 // Centroids Get the centroids currently found by the algorithm
 func (algo *Algo) Centroids() (centroids Clust, err error) {
-	algo.mutex.RLock()
-	defer algo.mutex.RUnlock()
 	switch algo.Status() {
 	case Created:
 		err = ErrNotStarted
 	default:
+		algo.mutex.RLock()
 		centroids = algo.centroids
+		defer algo.mutex.RUnlock()
 	}
 	return
 }

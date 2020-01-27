@@ -59,7 +59,6 @@ func (impl *Impl) Init(_ core.ImplConf, _ core.Space, _ core.Clust) (clust core.
 
 // Iterate runs the streaming algorithm.
 func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
-	runtimeFigures = impl.runtimeFigures()
 	select {
 	case elemt := <-impl.c:
 		impl.Process(elemt, space)
@@ -67,6 +66,7 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 	default:
 		clust = centroids
 	}
+	runtimeFigures = impl.runtimeFigures()
 	return
 }
 

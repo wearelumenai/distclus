@@ -39,9 +39,6 @@ type OnlineClust interface {
 	Copy(ImplConf, Space) (OnlineClust, error)       // make a copy of this algo with new configuration and space
 }
 
-// StatusNotifier for being notified by Online clustering change status
-type StatusNotifier = func(ClustStatus, error)
-
 // Algo in charge of algorithm execution with both implementation and user configuration
 type Algo struct {
 	conf           ImplConf
@@ -92,7 +89,7 @@ func (algo *Algo) setStatus(status ClustStatus, err error) {
 	algo.status = status
 	algo.mutex.Unlock()
 	if algo.statusNotifier != nil {
-		algo.statusNotifier(status, err)
+		algo.statusNotifier(algo, status, err)
 	}
 }
 

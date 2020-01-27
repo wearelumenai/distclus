@@ -29,3 +29,6 @@ var names = []string{
 func (clustStatus ClustStatus) String() string {
 	return names[int(clustStatus)]
 }
+
+// StatusNotifier for being notified by Online clustering change status
+type StatusNotifier = func(OnlineClust, ClustStatus, error)

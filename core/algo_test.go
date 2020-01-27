@@ -423,7 +423,7 @@ func Test_StatusNotifier(t *testing.T) {
 	var statusChan = make(chan core.ClustStatus, 10)
 	var errorChan = make(chan error, 10)
 
-	var statusNotifier = func(status core.ClustStatus, err error) {
+	var statusNotifier = func(_ core.OnlineClust, status core.ClustStatus, err error) {
 		statusChan <- status
 		errorChan <- err
 	}

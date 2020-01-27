@@ -379,7 +379,7 @@ func (algo *Algo) run() {
 	var runtimeFigures figures.RuntimeFigures
 	var iterFreq time.Duration
 	if conf.IterFreq > 0 {
-		iterFreq = time.Nanosecond * time.Duration(conf.IterFreq*1e6)
+		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
 	}
 	var lastIterationTime time.Time
 

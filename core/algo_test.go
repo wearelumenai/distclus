@@ -272,7 +272,7 @@ func TestPause(t *testing.T) {
 		t.Error("error while playing", err)
 	}
 
-	if algo.Status() != core.Running {
+	if algo.Status() != core.Running && algo.Status() != core.Waiting {
 		t.Error("wrong status. Running expected", algo.Status())
 	}
 

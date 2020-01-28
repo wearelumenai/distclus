@@ -29,6 +29,7 @@ type OnlineClust interface {
 	Centroids() (Clust, error) // clustering result
 	Conf() ImplConf
 	Impl() Impl
+	Space() Space
 	Predict(elemt Elemt) (Elemt, int, error)         // input elemt centroid/label
 	Batch() error                                    // execute in batch mode (do play, wait, then stop)
 	Alive() bool                                     // true iif algo is running (running, idle and sleeping)

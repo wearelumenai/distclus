@@ -10,6 +10,28 @@ var conf = dtw.Conf{
 	InnerSpace: space,
 }
 
+func TestSpace_Copy(t *testing.T) {
+	var space = dtw.NewSpace(conf)
+	var check = func(vectors [][]float64) {
+		var copied = space.Copy(vectors).([][]float64)
+		if len(vectors) != len(copied) {
+			t.Error("array length is different")
+		}
+		for i, vector := range vectors {
+			if len(vector) != len(copied[i]) {
+				t.Error("array sub length is different")
+			}
+			for j, data := range vector {
+				if data != copied[i][j] {
+					t.Error("value is different")
+				}
+			}
+		}
+	}
+	check(cumCost)
+	check(cumCost1)
+}
+
 func TestSpace_Dist(t *testing.T) {
 	var space = dtw.NewSpace(conf)
 	var dist = space.Dist(s1, s2)

@@ -381,7 +381,7 @@ func (algo *Algo) run() {
 	if conf.IterFreq > 0 {
 		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
 	}
-	var lastIterationTime time.Time
+	var lastIterationTime = time.Now()
 
 	var iterations = 0
 
@@ -401,7 +401,6 @@ func (algo *Algo) run() {
 			}
 		default:
 			// run implementation
-			lastIterationTime = time.Now()
 			newData = atomic.LoadInt64(&algo.newData)
 			centroids, runtimeFigures, err = algo.impl.Iterate(
 				algo.conf,
@@ -421,6 +420,7 @@ func (algo *Algo) run() {
 				if iterFreq > 0 { // with iteration freqency
 					var diff = iterFreq - time.Now().Sub(lastIterationTime)
 					time.Sleep(diff)
+					lastIterationTime = time.Now()
 				}
 			} else { // impl has finished
 				algo.setStatus(Failed, err)

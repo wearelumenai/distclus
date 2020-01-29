@@ -10,13 +10,13 @@ func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.In
 	return core.NewAlgo(&conf, impl, space)
 }
 
-func getImpl(mcmcConf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) *Impl {
+func getImpl(conf Conf, initializer core.Initializer, data []core.Elemt, distrib Distrib) *Impl {
 	var implFunc func(Conf, core.Initializer, []core.Elemt, Distrib) Impl
-	if mcmcConf.Par {
+	if conf.Par {
 		implFunc = NewParImpl
 	} else {
 		implFunc = NewSeqImpl
 	}
-	var impl = implFunc(mcmcConf, initializer, data, distrib)
+	var impl = implFunc(conf, initializer, data, distrib)
 	return &impl
 }

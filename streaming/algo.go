@@ -12,6 +12,6 @@ func NewAlgo(conf Conf, space core.Space, data []core.Elemt) *core.Algo {
 	return core.NewAlgo(&conf, &impl, space)
 }
 
-func getImpl(strConf Conf, elemts []core.Elemt) Impl {
-	return NewImpl(strConf, elemts)
+func getImpl(conf Conf, elemts []core.Elemt) Impl {
+	return NewImpl(conf, elemts)
 }

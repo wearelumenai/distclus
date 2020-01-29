@@ -38,6 +38,7 @@ type OnlineClust interface {
 	RuntimeFigures() (figures.RuntimeFigures, error) // clustering figures
 	Reconfigure(ImplConf, Space) error               // reconfigure the online clust
 	Copy(ImplConf, Space) (OnlineClust, error)       // make a copy of this algo with new configuration and space
+	SetStatusNotifier(StatusNotifier)
 }
 
 // Algo in charge of algorithm execution with both implementation and user configuration
@@ -88,10 +89,18 @@ func (algo *Algo) setStatus(status ClustStatus, err error) {
 	algo.mutex.Lock()
 	algo.failedError = err
 	algo.status = status
+	var statusNotifier = algo.statusNotifier
 	algo.mutex.Unlock()
-	if algo.statusNotifier != nil {
-		algo.statusNotifier(algo, status, err)
+	if statusNotifier != nil {
+		statusNotifier(algo, status, err)
 	}
+}
+
+// SetStatusNotifier change of statusNotifier
+func (algo *Algo) SetStatusNotifier(statusNotifier StatusNotifier) {
+	algo.mutex.Lock()
+	defer algo.mutex.Unlock()
+	algo.statusNotifier = statusNotifier
 }
 
 // receiveStatus status from main routine

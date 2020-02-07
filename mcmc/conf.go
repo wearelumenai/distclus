@@ -54,7 +54,6 @@ func (conf *Conf) Verify() {
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}
-
 	if conf.InitK > conf.MaxK && conf.MaxK != 0 {
 		panic(fmt.Sprintf("Illegal value for Max K / Init K: %v / %v", conf.MaxK, conf.InitK))
 	}

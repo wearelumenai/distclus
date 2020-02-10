@@ -20,6 +20,7 @@ func (impl *Impl) Init(core.ImplConf, core.Space, core.Clust) (clust core.Clust,
 }
 
 // Iterate runs one iteration of the streaming algorithm.
+// If clust is nil, algorithm execution does not increment iterations
 func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
 	return
 }

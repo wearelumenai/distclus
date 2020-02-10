@@ -135,7 +135,7 @@ func Test_Normal(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 	var algo = mcmc.NewAlgo(implConf, space, data, initializer, distrib)
 
-	_ = algo.Batch()
+	_ = algo.Batch(0, 0)
 	var result, _ = algo.Centroids()
 
 	var _, cards = result.ParReduceLoss(data, space, implConf.Norm, runtime.NumCPU())

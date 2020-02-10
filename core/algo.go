@@ -3,6 +3,7 @@ package core
 
 import (
 	"distclus/figures"
+	"fmt"
 	"log"
 	"math"
 	"sync"
@@ -18,20 +19,20 @@ import (
 // a prediction can't be done before the algorithm is run,
 // no centroid can be returned before the algorithm is run.
 type OnlineClust interface {
-	Init() error  // initialize algo centroids with impl strategy
-	Play() error  // play the algorithm
-	Pause() error // pause the algorithm (idle)
-	Wait() error  // wait for algorithm sleeping, ready or failed
-	Stop() error  // stop the algorithm
+	Init() error                   // initialize algo centroids with impl strategy
+	Play(int, time.Duration) error // play (with x iterations if given, otherwise depends on conf.Iter/conf.IterPerData, and maximal duration in ns if given, otherwise conf.Timeout) the algorithm
+	Pause() error                  // pause the algorithm (idle)
+	Wait(int, time.Duration) error // wait (max x iterations if given, , and maximal duration in ns if given) for algorithm sleeping, ready or failed
+	Stop() error                   // stop the algorithm
 	Close() error
-	Push(elemt Elemt) error // add element
+	Push(Elemt) error // add element
 	// only if algo has runned once
 	Centroids() (Clust, error) // clustering result
 	Conf() ImplConf
 	Impl() Impl
 	Space() Space
 	Predict(elemt Elemt) (Elemt, int, error)         // input elemt centroid/label
-	Batch() error                                    // execute in batch mode (do play, wait, then stop)
+	Batch(int, time.Duration) error                  // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
 	Alive() bool                                     // true iif algo is running (running, idle and sleeping)
 	Status() ClustStatus                             // algo status
 	FailedError() error                              // error in case of failure
@@ -43,23 +44,25 @@ type OnlineClust interface {
 
 // Algo in charge of algorithm execution with both implementation and user configuration
 type Algo struct {
-	conf           ImplConf
-	impl           Impl
-	space          Space
-	centroids      Clust
-	status         ClustStatus
-	statusChannel  chan statusScope
-	ackChannel     chan bool
-	mutex          sync.RWMutex
-	runtimeFigures figures.RuntimeFigures
-	statusNotifier StatusNotifier
-	newData        int64
-	pushedData     int64
-	failedError    error
-	iterations     int
-	duration       time.Duration
-	lastDataTime   int64
-	succeedOnce    bool
+	conf            ImplConf
+	impl            Impl
+	space           Space
+	centroids       Clust
+	status          ClustStatus
+	statusChannel   chan statusScope
+	ackChannel      chan bool
+	mutex           sync.RWMutex
+	runtimeFigures  figures.RuntimeFigures
+	statusNotifier  StatusNotifier
+	newData         int64
+	pushedData      int64
+	failedError     error
+	totalIterations int
+	iterToRun       int64 // specific number of iterations to do
+	duration        time.Duration
+	lastDataTime    int64
+	succeedOnce     bool
+	timeout         Timeout
 }
 
 // AlgoConf algorithm configuration
@@ -149,7 +152,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 			atomic.StoreInt64(&algo.lastDataTime, time.Now().Unix())
 			// try to play if waiting
 			if algo.Status() == Waiting && algo.conf.AlgoConf().DataPerIter > 0 && algo.conf.AlgoConf().DataPerIter <= int(atomic.LoadInt64(&algo.newData)) {
-				algo.Play()
+				algo.Play(0, 0)
 			}
 		}
 	}
@@ -157,8 +160,8 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 }
 
 // Batch executes the algorithm in batch mode
-func (algo *Algo) Batch() (err error) {
-	if algo.conf.AlgoConf().Iter == 0 {
+func (algo *Algo) Batch(iter int, timeout time.Duration) (err error) {
+	if algo.conf.AlgoConf().Iter == 0 && iter == 0 {
 		err = ErrInfiniteIterations
 	} else {
 		switch algo.Status() {
@@ -174,11 +177,14 @@ func (algo *Algo) Batch() (err error) {
 		case Created:
 			fallthrough
 		case Ready:
-			err = algo.Play()
+			err = algo.Play(iter, timeout)
 			if err == nil {
-				err = algo.Wait()
+				err = algo.Wait(0, 0)
 				if err == nil {
 					algo.setStatus(Succeed, nil)
+					if algo.timeout != nil {
+						algo.timeout.Disable()
+					}
 				}
 			}
 		case Closed:
@@ -210,7 +216,7 @@ func (algo *Algo) Init() (err error) {
 }
 
 // Play the algorithm in online mode
-func (algo *Algo) Play() (err error) {
+func (algo *Algo) Play(iter int, timeout time.Duration) (err error) {
 	switch algo.Status() {
 	case Created:
 		err = algo.Init()
@@ -227,11 +233,20 @@ func (algo *Algo) Play() (err error) {
 	case Stopped:
 		fallthrough
 	case Succeed:
-		if algo.Status() == Ready || algo.canIterate(0) {
-			go algo.run()
+		if algo.Status() == Ready || algo.canIterate(iter) {
+			go algo.run(iter)
 			algo.sendStatus(Running, nil)
-			if algo.Conf().AlgoConf().Timeout > 0 && !algo.succeedOnce {
-				go algo.timeout()
+			if algo.timeout != nil {
+				algo.timeout.Disable()
+			}
+			var interruptionTimeout time.Duration
+			if timeout > 0 {
+				interruptionTimeout = timeout
+			} else if algo.Conf().AlgoConf().Timeout > 0 { // && !algo.succeedOnce {
+				interruptionTimeout = algo.Conf().AlgoConf().Timeout
+			}
+			if interruptionTimeout > 0 {
+				algo.timeout = InterruptionTimeout(interruptionTimeout, algo.interrupt)
 			}
 		} else {
 			err = ErrNotIterate
@@ -264,12 +279,12 @@ func (algo *Algo) Pause() (err error) {
 
 func (algo *Algo) canNeverEnd() bool {
 	var conf = algo.conf.AlgoConf()
-	return ((conf.Iter == 0 && !algo.succeedOnce) ||
+	return algo.timeout == nil && atomic.LoadInt64(&algo.iterToRun) == 0 && ((conf.Iter == 0 && !algo.succeedOnce) ||
 		(algo.succeedOnce && conf.IterPerData == 0)) && conf.DataPerIter == 0
 }
 
 // Wait for online ending status
-func (algo *Algo) Wait() (err error) {
+func (algo *Algo) Wait(iter int, timeout time.Duration) (err error) {
 	switch algo.Status() {
 	case Idle:
 		err = ErrIdle
@@ -277,10 +292,19 @@ func (algo *Algo) Wait() (err error) {
 		if algo.canNeverEnd() {
 			return ErrNeverEnd
 		}
-		<-algo.ackChannel
+		if iter > 0 && int(atomic.LoadInt64(&algo.iterToRun)) > iter {
+			atomic.StoreInt64(&algo.iterToRun, int64(iter))
+		}
+		if WaitTimeout(timeout, 100*time.Millisecond, algo.ackChannel) {
+			err = ErrTimeout
+		} else {
+			atomic.StoreInt64(&algo.iterToRun, 0)
+		}
 		fallthrough
 	case Failed:
-		err = algo.failedError
+		if err == nil {
+			err = algo.FailedError()
+		}
 	case Succeed:
 	case Waiting:
 	case Created:
@@ -377,8 +401,20 @@ func (algo *Algo) Status() ClustStatus {
 	return algo.status
 }
 
+func (algo *Algo) initIterToRun(iter int) {
+	if iter > 0 {
+		atomic.StoreInt64(&algo.iterToRun, int64(iter))
+	} else if algo.succeedOnce {
+		atomic.StoreInt64(&algo.iterToRun, int64(algo.conf.AlgoConf().IterPerData))
+	} else {
+		atomic.StoreInt64(&algo.iterToRun, int64(algo.conf.AlgoConf().Iter))
+	}
+}
+
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) run() {
+func (algo *Algo) run(iter int) {
+	algo.initIterToRun(iter)
+
 	algo.ackChannel = make(chan bool)
 
 	algo.receiveStatus()
@@ -401,6 +437,35 @@ func (algo *Algo) run() {
 	var start = time.Now()
 	var duration time.Duration
 
+	defer func() {
+		// recover from panic if one occured. Set err to nil otherwise.
+		var recovery = recover()
+		if recovery == nil {
+			if algo.failedError == nil {
+				algo.succeedOnce = true
+			}
+		} else {
+			var err = fmt.Errorf("%w", recovery)
+			algo.setStatus(Failed, err)
+		}
+		atomic.StoreInt64(
+			&algo.newData,
+			int64(math.Max(0, float64(atomic.LoadInt64(&algo.newData)-newData))),
+		)
+		algo.duration += time.Now().Sub(start)
+
+		select { // free user send status
+		case <-algo.statusChannel:
+		default:
+		}
+		select { // close ack channel
+		case <-algo.ackChannel:
+		default:
+			close(algo.ackChannel)
+		}
+		atomic.StoreInt64(&algo.iterToRun, 0)
+	}()
+
 	for algo.status == Running && algo.canIterate(iterations) {
 		select { // check for algo status update
 		case statusScope := <-algo.statusChannel:
@@ -417,15 +482,17 @@ func (algo *Algo) run() {
 				algo.space,
 				algo.centroids,
 			)
+			duration = time.Now().Sub(start)
 			if err == nil {
-				algo.iterations++
-				iterations++
-				duration = time.Now().Sub(start)
-				algo.saveIterContext(
-					centroids, runtimeFigures,
-					iterations,
-					duration,
-				)
+				if centroids != nil { // an iteration has been executed
+					algo.totalIterations++
+					iterations++
+					algo.saveIterContext(
+						centroids, runtimeFigures,
+						iterations,
+						duration,
+					)
+				}
 				// temporize iteration
 				if iterFreq > 0 { // with iteration freqency
 					var diff = iterFreq - time.Now().Sub(lastIterationTime)
@@ -438,22 +505,18 @@ func (algo *Algo) run() {
 		}
 	}
 
-	atomic.StoreInt64(
-		&algo.newData,
-		int64(math.Max(0, float64(atomic.LoadInt64(&algo.newData)-newData))),
-	)
-	algo.duration += time.Now().Sub(start)
-	algo.succeedOnce = true
 	if algo.status == Failed {
 		log.Println(algo.failedError)
 	} else if algo.status != Closed {
 		algo.setStatus(Waiting, nil)
 	}
-	select { // free user send status
-	case <-algo.statusChannel:
-	default:
-	}
-	close(algo.ackChannel)
+	/*
+		select { // free user send status
+		case <-algo.statusChannel:
+		default:
+		}
+		close(algo.ackChannel)
+		atomic.StoreInt64(&algo.iterToRun, 0) */
 }
 
 // FailedError is the error in case of algo failure
@@ -465,11 +528,9 @@ func (algo *Algo) FailedError() (err error) {
 
 func (algo *Algo) canIterate(iterations int) bool {
 	var conf = algo.conf.AlgoConf()
-	var iter = conf.Iter
-	if algo.succeedOnce {
-		iter = conf.IterPerData
-	}
-	var iterDone = iter == 0 || iterations < iter
+	var iterToRun = int(atomic.LoadInt64(&algo.iterToRun))
+
+	var iterDone = iterToRun == 0 || iterations < iterToRun
 	var dataPerIterDone = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
 	return iterDone && dataPerIterDone
 }
@@ -478,7 +539,7 @@ func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.Runtim
 	if runtimeFigures == nil {
 		runtimeFigures = figures.RuntimeFigures{}
 	}
-	runtimeFigures[figures.Iterations] = float64(algo.iterations)
+	runtimeFigures[figures.Iterations] = float64(algo.totalIterations)
 	runtimeFigures[figures.LastIterations] = float64(iterations)
 	runtimeFigures[figures.PushedData] = float64(algo.pushedData)
 	runtimeFigures[figures.LastDuration] = float64(duration)
@@ -517,16 +578,11 @@ func (algo *Algo) Reconfigure(conf ImplConf, space Space) (err error) {
 		algo.setStatus(Reconfiguring, nil)
 		err = algo.reconfigure(conf, space)
 		algo.setStatus(status, algo.FailedError())
-		if status == Running {
-			algo.Play()
-		}
+		// if status == Running {
+		//	algo.Play(algo.iterToRun)
+		// }
 	}
 	return
-}
-
-func (algo *Algo) timeout() {
-	time.Sleep(algo.conf.AlgoConf().Timeout)
-	algo.interrupt(Failed, ErrTimeOut)
 }
 
 // Copy make a copy of this algo with new conf and space

@@ -49,7 +49,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	for i := 0; i < len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
-	err = algo.Batch()
+	err = algo.Batch(0, 0)
 	return
 }
 

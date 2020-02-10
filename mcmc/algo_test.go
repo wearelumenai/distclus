@@ -71,3 +71,9 @@ func Test_Freq(t *testing.T) {
 
 	test.DoTestFreq(t, algo)
 }
+
+func Test_IterToRun(t *testing.T) {
+	algo := newAlgo(t, core.Conf{}, 10)
+
+	test.DoTestIterToRun(t, algo)
+}

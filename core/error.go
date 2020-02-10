@@ -32,8 +32,8 @@ var ErrReconfiguring = errors.New("Algorithm is reconfiguring")
 // ErrInfiniteIterations occure when static execution is asked with infinite iterations
 var ErrInfiniteIterations = errors.New("Infinite iterations in static mode")
 
-// ErrTimeOut is returned when an error occurs
-var ErrTimeOut = errors.New("algorithm timed out")
+// ErrTimeout is returned when an error occurs
+var ErrTimeout = errors.New("algorithm timed out")
 
 // ErrNeverEnd raised when wait method is called while the algorithm will never end
 var ErrNeverEnd = errors.New("algorithm can not end. Specify core.Conf.Iter, core.Conf.IterPerData or core.Conf.DataPerIter for allowing your algorithm to sleep")

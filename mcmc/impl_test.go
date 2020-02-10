@@ -41,7 +41,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 		algo.Push(v)
 	}
 
-	algo.Batch()
+	algo.Batch(0, 0)
 
 	var centroids, _ = algo.Centroids()
 

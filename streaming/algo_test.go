@@ -36,7 +36,7 @@ func Test_(t *testing.T) {
 
 	algo.Push(dataset[0])
 
-	algo.Play()
+	algo.Play(0, 0)
 
 	for _, data := range dataset[1:] {
 		algo.Push(data)
@@ -58,7 +58,7 @@ func Test_Async(t *testing.T) {
 	if err != nil {
 		t.Error("No error expected.", err)
 	}
-	err = algo.Play()
+	err = algo.Play(0, 0)
 	if err != nil {
 		t.Error("No error expected.", err)
 	}
@@ -95,7 +95,7 @@ func Test_Sync(t *testing.T) {
 			t.Error("No error expected", err)
 		}
 	}
-	err = algo.Batch()
+	err = algo.Batch(0, 0)
 	if err != nil {
 		t.Error("No error expected", err)
 	}
@@ -140,7 +140,7 @@ func Test_AlgoPush(t *testing.T) {
 	var data = mix()
 	var algo = streaming.NewAlgo(streaming.Conf{BufferSize: 5, Conf: core.Conf{Iter: 0}}, euclid.Space{}, []core.Elemt{})
 	_ = algo.Push(data())
-	_ = algo.Play()
+	_ = algo.Play(0, 0)
 	var d = make([][]float64, 10000)
 	for i := range d {
 		d[i] = data()
@@ -156,7 +156,7 @@ func Test_AlgoPush(t *testing.T) {
 }
 
 func newAlgo(t *testing.T, conf core.Conf, size int) (algo *core.Algo) {
-	var implConf = streaming.Conf{Conf: conf}
+	var implConf = streaming.Conf{Conf: conf, BufferSize: size}
 	var clust = make(core.Clust, size)
 	for i := range clust {
 		clust[i] = []float64{0, 1, 2}
@@ -165,9 +165,9 @@ func newAlgo(t *testing.T, conf core.Conf, size int) (algo *core.Algo) {
 }
 
 func Test_Scenario_Batch(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
+	// var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
 
-	test.DoTestScenarioBatch(t, algo)
+	// test.DoTestScenarioBatch(t, algo)
 }
 
 func Test_scenario_infinite(t *testing.T) {
@@ -177,15 +177,15 @@ func Test_scenario_infinite(t *testing.T) {
 }
 
 func Test_scenario_finite(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 1000}, 10)
+	// var algo = newAlgo(t, core.Conf{}, 1000)
 
-	test.DoTestScenarioFinite(t, algo)
+	// test.DoTestScenarioFinite(t, algo)
 }
 
 func Test_Scenario_Play(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 20}, 10)
+	// var algo = newAlgo(t, core.Conf{Iter: 20}, 10)
 
-	test.DoTestScenarioPlay(t, algo)
+	// test.DoTestScenarioPlay(t, algo)
 }
 
 func Test_Timeout(t *testing.T) {
@@ -198,4 +198,10 @@ func Test_Freq(t *testing.T) {
 	algo := newAlgo(t, core.Conf{IterFreq: 1}, 10)
 
 	test.DoTestFreq(t, algo)
+}
+
+func Test_IterToRun(t *testing.T) {
+	// algo := newAlgo(t, core.Conf{}, 10)
+
+	// test.DoTestIterToRun(t, algo)
 }

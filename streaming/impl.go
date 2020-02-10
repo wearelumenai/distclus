@@ -64,7 +64,6 @@ func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.C
 		impl.Process(elemt, space)
 		clust = impl.clust
 	default:
-		clust = centroids
 	}
 	runtimeFigures = impl.runtimeFigures()
 	return

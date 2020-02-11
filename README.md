@@ -309,18 +309,18 @@ The `core.OnlineClust` interface is implemented by the `core.Algo` struct.
 We have covered almost all methods so far:
 
  - `Init() (Clust, error)`: initialize the algorithm with implentation strategy (random, given, kmeans++, ...).
- - `Play() error`: execute the algorithm.
+ - `Play(int, time.Duration) error`: execute the algorithm, with specific number of iterations and timeout duration if given.
  - `Centroids() (Clust, error)`: get array of clustering centroids.
  - `Predict(elemt Elemt) (Elemt, int, error)`: according to previous method, get centroid and its index in array of clustering centroids for input elemt.
  - `Push(elemt Elemt) error`: push an element.
  - `Pause() error`: pause execution. The method `Play` goes back to execution.
- - `Wait() error`: wait until algorithm terminates iterations.
+ - `Wait(int, time.Duration) error`: wait until algorithm terminates iterations, with specific number of iterations and timeout duration if given.
  - `Stop() error`: stop execution. Play back is possible.
  - `Close() error`: stop execution. Play back is impossible.
  - `Copy() (OnlineClust, error)`: return a copy of this algorrithm with entire execution context.
  - `Reconfigure(ImplConf, Space) error`: reconfigure at runtime this algorithm with new impl and space.
  - `FailedError() error`: get failure error in case of failed execution.
- - `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Run` and `Wait`. End with `Succeed` status.
+ - `Batch(int, time.Duration) error` execute the algorithm in batch mode. Similar to the call sequence of `Run` and `Wait`. End with `Succeed` status, with specific number of iterations and timeout duration if given.
  - `Status() core.ClustStatus`: get algo status.
  - `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`).
 
@@ -380,9 +380,9 @@ In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `Conf` 
 
 Remainding methods allow you to dynamically interact with the algorithm:
 - `Init() (Clust, error)`: initialize the algorithm if not yet created, and set status to ready.
-- `Play() error`: start the algorithm if not running (status `Created`, `Ready`, `Succeed` or `Failed`) or goes back to execution if `Idle`.
+- `Play(int, time.Duration) error`: start the algorithm if not running (status `Created`, `Ready`, `Succeed` or `Failed`) or goes back to execution if `Idle`, with specific number of iterations and timeout duration if given.
 - `Pause() error`: pause the algorithm. Wait until the algo is `Idle`.
-- `Wait() error`: wait until the algorithm terminates.
+- `Wait(int, time.Duration) error`: wait until the algorithm terminates, with specific number of iterations and timeout duration if given.
 - `Stop() error`: stop the algorithm execution (`Stopped` status). `Play` is possible.
 - `Close() error`: close the algorithm execution (`Closed` status). Impossible to play back the algorithm.
 - `FailedError() error`: get failed error if the algorithm failed to execute.
@@ -405,11 +405,11 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
         err = algo.Push(observations[i])
     }
     if err != nil {
-        err = algo.Play()
+        err = algo.Play(0, 0)
         for i := conf.initK; i < len(observations) && err == nil; i++ {
             err = algo.Push(observations[i])
         }
-        algo.Wait()  // let the algorithm converge
+        algo.Wait(0, 0)  // let the algorithm converge
     }
     return
 }
@@ -469,6 +469,7 @@ We have seen above that 3 algorithms are provided with the library. In the examp
 ### The streaming algorithm
 
 The streaming algorithm requires few computing resources. It is especially suitable for online usage.
+
 Once again the modification is done at build time. The following modification of the ```Build``` function build
 a streaming algorithm for time series:
 
@@ -486,6 +487,49 @@ func Build(conf streaming.Conf) (algo *core.Algo, space core.Space) {
 	space = dtw.NewSpace(dtw.Conf{InnerSpace: inner})
 	algo = streaming.NewAlgo(conf, space, nil)
 	return
+}
+```
+
+We do not recommend to use the streaming in batch mode.
+
+Therefore, you have to take care to number of data to process with batch/play+wait methods, otherwise, the main go routine might occures a deadlock.
+
+Fortunately, in worst case, you can use a specific timeout.
+
+For example, if you know the number of data to process, do:
+
+```go
+package main
+import (
+  "distclus/core"
+  "distclus/streaming"
+  "time"
+)
+func main() {
+  var err error
+  var timeout = 60 * time.Second // for breaking deadlock
+  var data = [20]float64{0,1,2,...}
+  var algo = streaming.NewAlgo(..., data)
+  var iter = len(data)
+  if data.Status() == "Created" { // if algo is created, one data is processed at initialization time
+    iter = iter - 1
+  }
+  algo.Batch(iter, 0)
+  // or with play/wait
+  algo.Play(iter, 0)
+  algo.Wait(0, 0)
+  // if iteration is greater than number of data in buffersize, the algorithm will wait for new pushed data before relasing the batch/wait lock. For ensuring no deadlock, you can add a specific timeout such as:
+  var timeout = 60 * time.Second
+  err = algo.Batch(iter, timeout)
+  if err == core.ErrTimeout {
+    // timeout has been fired
+  }
+  // or with play/wait
+  algo.Play(iter, 0)
+  err = algo.Wait(0, timeout)
+  if err == core.ErrTimeout {
+    // timeout has been fired
+  }
 }
 ```
 

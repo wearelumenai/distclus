@@ -51,6 +51,20 @@ func Test_(t *testing.T) {
 	algo.Close()
 }
 
+func Test_Iter(t *testing.T) {
+	var size = 20
+	var algo = newAlgo(t, core.Conf{}, size)
+
+	algo.Batch(size-1, 0) // first data is processed at initialization
+
+	var rf, _ = algo.RuntimeFigures()
+	var iterations = rf[figures.Iterations]
+
+	if iterations != float64(size-1) {
+		t.Errorf("Wrong iterations number %f. %d Expected.", iterations, size-1)
+	}
+}
+
 func Test_Async(t *testing.T) {
 	var algo = streaming.NewAlgo(streaming.Conf{Conf: core.Conf{Iter: 0}}, euclid.Space{}, []core.Elemt{})
 	var distr = mix()

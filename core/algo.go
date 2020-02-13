@@ -292,14 +292,7 @@ func (algo *Algo) Wait(iter int, timeout time.Duration) (err error) {
 		if algo.canNeverEnd() {
 			return ErrNeverEnd
 		}
-		if iter > 0 && int(atomic.LoadInt64(&algo.iterToRun)) > iter {
-			atomic.StoreInt64(&algo.iterToRun, int64(iter))
-		}
-		if WaitTimeout(timeout, 100*time.Millisecond, algo.ackChannel) {
-			err = ErrTimeout
-		} else {
-			atomic.StoreInt64(&algo.iterToRun, 0)
-		}
+		err = WaitTimeout(iter, timeout, algo.RuntimeFigures, algo.ackChannel)
 		fallthrough
 	case Failed:
 		if err == nil {
@@ -510,13 +503,6 @@ func (algo *Algo) run(iter int) {
 	} else if algo.status != Closed {
 		algo.setStatus(Waiting, nil)
 	}
-	/*
-		select { // free user send status
-		case <-algo.statusChannel:
-		default:
-		}
-		close(algo.ackChannel)
-		atomic.StoreInt64(&algo.iterToRun, 0) */
 }
 
 // FailedError is the error in case of algo failure

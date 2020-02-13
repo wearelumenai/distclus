@@ -845,23 +845,45 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 		t.Error("iter and iter per data must be equal to 0", conf.Iter, conf.IterPerData)
 	}
 
-	algo.Play(10, 0)
-	algo.Wait(0, 0)
+	var err = algo.Play(10, 0)
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
+
+	err = algo.Wait(0, 0)
+
+	if err != nil {
+		t.Error("no error expected", err)
+	}
 
 	var runtimeFigures, _ = algo.RuntimeFigures()
 	if runtimeFigures[figures.LastIterations] != 10 {
 		t.Error("10 iterations expected", runtimeFigures[figures.LastIterations])
 	}
 
-	algo.Play(10000, 0)
-	algo.Wait(1000, 0)
-
-	runtimeFigures, _ = algo.RuntimeFigures()
-	if runtimeFigures[figures.LastIterations] != 1000 {
-		t.Error("1000 iterations expected", runtimeFigures[figures.LastIterations])
+	err = algo.Play(10000, 0)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 
-	algo.Batch(100, 0)
+	err = algo.Wait(1, 0)
+
+	if err != core.ErrElapsedIter {
+		t.Error("elaspsed iter expected", err)
+	}
+	algo.Wait(0, 0)
+
+	runtimeFigures, _ = algo.RuntimeFigures()
+	if runtimeFigures[figures.LastIterations] != 10000 {
+		t.Error("10000 iterations expected", runtimeFigures[figures.LastIterations])
+	}
+
+	err = algo.Batch(100, 0)
+
+	if err != nil {
+		t.Error("no err expected", err)
+	}
 
 	runtimeFigures, _ = algo.RuntimeFigures()
 	if runtimeFigures[figures.LastIterations] != 100 {

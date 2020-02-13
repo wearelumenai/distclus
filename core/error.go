@@ -35,6 +35,9 @@ var ErrInfiniteIterations = errors.New("Infinite iterations in static mode")
 // ErrTimeout is returned when an error occurs
 var ErrTimeout = errors.New("algorithm timed out")
 
+// ErrElapsedIter raised when amont of iterations is done
+var ErrElapsedIter = errors.New("amount of iterations done")
+
 // ErrNeverEnd raised when wait method is called while the algorithm will never end
 var ErrNeverEnd = errors.New("algorithm can not end. Specify core.Conf.Iter, core.Conf.IterPerData or core.Conf.DataPerIter for allowing your algorithm to sleep")
 

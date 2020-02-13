@@ -1,6 +1,7 @@
 package core
 
 import (
+	"distclus/figures"
 	"sync"
 	"time"
 )
@@ -13,12 +14,20 @@ type Timeout interface {
 
 // timeout algorithm timeout structure
 type timeout struct {
-	duration     time.Duration
-	enabled      bool
-	interruption func(ClustStatus, error) error
-	ack          <-chan bool
-	step         time.Duration
-	mutex        sync.RWMutex
+	duration         time.Duration
+	enabled          bool
+	ack              <-chan bool
+	interruption     func(ClustStatus, error) error
+	mutex            sync.RWMutex
+	maxIter          int
+	iterationsGetter func() int
+}
+
+func iterationsGetter(runtimeFiguresGetter func() (figures.RuntimeFigures, error)) func() int {
+	return func() int {
+		var rf, _ = runtimeFiguresGetter()
+		return int(rf[figures.Iterations])
+	}
 }
 
 func (timeout *timeout) Enabled() bool {
@@ -39,11 +48,17 @@ func InterruptionTimeout(duration time.Duration, interruption func(ClustStatus, 
 }
 
 // WaitTimeout process. Return true if timedout
-func WaitTimeout(duration time.Duration, step time.Duration, ack <-chan bool) bool {
+func WaitTimeout(iter int, duration time.Duration, runtimeFiguresGetter func() (figures.RuntimeFigures, error), ack <-chan bool) error {
+	var iterationsGetter = iterationsGetter(runtimeFiguresGetter)
+	var maxIter = iterationsGetter() + iter
+	if iter == 0 {
+		maxIter = 0
+	}
 	var t = timeout{
-		duration: duration,
-		ack:      ack,
-		step:     step,
+		duration:         duration,
+		ack:              ack,
+		maxIter:          maxIter,
+		iterationsGetter: iterationsGetter,
 	}
 	return t.wait()
 }
@@ -55,23 +70,31 @@ func (timeout *timeout) interrupt() {
 	}
 }
 
-func (timeout *timeout) wait() (timedout bool) {
-	if timeout.duration == 0 {
-		<-timeout.ack
-	} else {
-		timedout = true
-		var elapsedTime = time.Now().Add(timeout.duration)
-		for time.Now().Before(elapsedTime) {
-			time.Sleep(timeout.step)
-			select {
-			case <-timeout.ack:
-				timedout = false
-				break
-			default:
+func (timeout *timeout) isElapsedIter() bool {
+	return timeout.maxIter > 0 && timeout.maxIter <= timeout.iterationsGetter()
+}
+
+func (timeout *timeout) isAlive(lastTime time.Time) bool {
+	return timeout.duration == 0 || time.Now().Before(lastTime)
+}
+
+func (timeout *timeout) wait() (err error) {
+	err = ErrTimeout
+	var step = 1 * time.Millisecond
+	var elapsedTime = time.Now().Add(timeout.duration)
+	for err == ErrTimeout && timeout.isAlive(elapsedTime) {
+		select {
+		case <-timeout.ack:
+			err = nil
+			break
+		default:
+			if timeout.isElapsedIter() {
+				err = ErrElapsedIter
 			}
 		}
+		time.Sleep(step)
 	}
-	return timedout
+	return
 }
 
 func (timeout *timeout) Disable() {

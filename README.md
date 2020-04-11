@@ -89,7 +89,7 @@ two objects, one for the Metropolis Hastings and the other for the alteration di
 
 ```go
 package main
-import "distclus/mcmc"
+import "lumenai.fr/v0/distclus/pkg/mcmc"
 
 var conf = mcmc.Conf{
 	InitK: 1,
@@ -125,10 +125,10 @@ The algorithm is built using the ```mcmc.NewAlgo``` function. It takes the follo
  ```go
 package main
 import (
-	"distclus/core"
-	"distclus/euclid"
-	"distclus/kmeans"
-	"distclus/mcmc"
+	"lumenai.fr/v0/distclus/pkg/core"
+	"lumenai.fr/v0/distclus/pkg/euclid"
+	"lumenai.fr/v0/distclus/pkg/kmeans"
+	"lumenai.fr/v0/distclus/pkg/mcmc"
 )
 func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.Space) {
 	space = euclid.NewSpace(euclid.Conf{})
@@ -149,7 +149,7 @@ The following function starts the algorithm in online mode then pushes the obser
 ```go
 package main
 import (
-	"distclus/core"
+	"lumenai.fr/v0/distclus/pkg/core"
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
@@ -171,7 +171,7 @@ for observations for which real output is known.
 ```go
 package main
 import (
-	"distclus/core"
+	"lumenai.fr/v0/distclus/pkg/core"
 	"math"
 )
 
@@ -192,7 +192,7 @@ The ```core.Clust``` object method ```MapLabel``` is used to compute the real ou
 ```go
 package main
 import (
-	"distclus/core"
+	"lumenai.fr/v0/distclus/pkg/core"
 )
 
 func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space core.Space) (result core.Clust, rmse float64, err error) {
@@ -220,7 +220,7 @@ The following function returns real centers with the given number of sample obse
 ```go
 package main
 import (
-	"distclus/core"
+	"lumenai.fr/v0/distclus/pkg/core"
 	"golang.org/x/exp/rand"
 )
 
@@ -345,10 +345,10 @@ may be modified like this:
 ```go
 package main
 import (
-	"distclus/core"
-	"distclus/euclid"
-	"distclus/kmeans"
-	"distclus/mcmc"
+	"lumenai.fr/v0/distclus/pkg/core"
+	"lumenai.fr/v0/distclus/pkg/euclid"
+	"lumenai.fr/v0/distclus/pkg/kmeans"
+	"lumenai.fr/v0/distclus/pkg/mcmc"
 )
 
 func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *core.Algo, space euclid.Space) {
@@ -397,7 +397,7 @@ The `RunAndFeed` function above may be modified like this:
 ```go
 package main
 import (
-	"distclus/core"
+	"lumenai.fr/v0/distclus/pkg/core"
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
@@ -438,11 +438,11 @@ The library provides 3 different data types :
  ```go
 package main
 import (
-	"distclus/core"
-	"distclus/euclid"
-	"distclus/dtw"
-	"distclus/kmeans"
-	"distclus/mcmc"
+	"lumenai.fr/v0/distclus/pkg/core"
+	"lumenai.fr/v0/distclus/pkg/euclid"
+	"lumenai.fr/v0/distclus/pkg/dtw"
+	"lumenai.fr/v0/distclus/pkg/kmeans"
+	"lumenai.fr/v0/distclus/pkg/mcmc"
 )
 
 func Build(conf mcmc.Conf) (algo *core.Algo, space core.Space) {
@@ -476,10 +476,10 @@ a streaming algorithm for time series:
 ```go
 package main
 import (
-	"distclus/core"
-	"distclus/euclid"
-	"distclus/dtw"
-	"distclus/streaming"
+	"lumenai.fr/v0/distclus/pkg/core"
+	"lumenai.fr/v0/distclus/pkg/euclid"
+	"lumenai.fr/v0/distclus/pkg/dtw"
+	"lumenai.fr/v0/distclus/pkg/streaming"
 )
 
 func Build(conf streaming.Conf) (algo *core.Algo, space core.Space) {
@@ -501,8 +501,8 @@ For example, if you know the number of data to process, do:
 ```go
 package main
 import (
-  "distclus/core"
-  "distclus/streaming"
+  "lumenai.fr/v0/distclus/pkg/core"
+  "lumenai.fr/v0/distclus/pkg/streaming"
   "time"
 )
 func main() {

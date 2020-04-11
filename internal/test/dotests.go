@@ -1,9 +1,9 @@
 package test
 
 import (
-	"distclus/core"
-	"distclus/euclid"
-	"distclus/figures"
+	"lumenai.fr/v0/distclus/pkg/core"
+	"lumenai.fr/v0/distclus/pkg/euclid"
+	"lumenai.fr/v0/distclus/pkg/figures"
 	"math"
 	"reflect"
 	"testing"
@@ -845,7 +845,9 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 		t.Error("iter and iter per data must be equal to 0", conf.Iter, conf.IterPerData)
 	}
 
-	var err = algo.Play(10, 0)
+	var maxIter = 10
+
+	var err = algo.Play(maxIter, 0)
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -858,11 +860,13 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	}
 
 	var runtimeFigures, _ = algo.RuntimeFigures()
-	if runtimeFigures[figures.LastIterations] != 10 {
-		t.Error("10 iterations expected", runtimeFigures[figures.LastIterations])
+	if int(runtimeFigures[figures.LastIterations]) != maxIter {
+		t.Errorf("%v iterations expected, %v", maxIter, runtimeFigures[figures.LastIterations])
 	}
 
-	err = algo.Play(10000, 0)
+	maxIter = 100000
+
+	err = algo.Play(maxIter, 0)
 	if err != nil {
 		t.Error("no error expected", err)
 	}
@@ -875,19 +879,21 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	algo.Wait(0, 0)
 
 	runtimeFigures, _ = algo.RuntimeFigures()
-	if runtimeFigures[figures.LastIterations] != 10000 {
-		t.Error("10000 iterations expected", runtimeFigures[figures.LastIterations])
+	if int(runtimeFigures[figures.LastIterations]) != maxIter {
+		t.Errorf("%v iterations expected, %v", maxIter, runtimeFigures[figures.LastIterations])
 	}
 
-	err = algo.Batch(100, 0)
+	maxIter = 100
+
+	err = algo.Batch(maxIter, 0)
 
 	if err != nil {
 		t.Error("no err expected", err)
 	}
 
 	runtimeFigures, _ = algo.RuntimeFigures()
-	if runtimeFigures[figures.LastIterations] != 100 {
-		t.Error("100 iterations expected", runtimeFigures[figures.LastIterations])
+	if int(runtimeFigures[figures.LastIterations]) != maxIter {
+		t.Errorf("%v iterations expected, %v", maxIter, runtimeFigures[figures.LastIterations])
 	}
 }
 

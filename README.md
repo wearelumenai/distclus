@@ -14,9 +14,16 @@ In addition, static and dynamic concerns aim to address multi-platform cross-usa
 
 ## Installation
 
+### With internet
+
 ```
 go get github.com/wearelumenai/distclus/v0
 ```
+
+### Packaging
+
+1. Get a release here: https://github.com/wearelumenai/distclus/releases
+2. Uncompress it and tape `go get -v ./...` inside
 
 ## Test
 

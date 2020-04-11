@@ -438,7 +438,7 @@ func (algo *Algo) run(iter int) {
 				algo.succeedOnce = true
 			}
 		} else {
-			var err = fmt.Errorf("%w", recovery)
+			var err = fmt.Errorf("%v", recovery)
 			algo.setStatus(Failed, err)
 		}
 		atomic.StoreInt64(

@@ -1,10 +1,10 @@
 package mcmc_test
 
 import (
-	"lumenai.fr/v0/distclus/internal/test"
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/kmeans"
-	"lumenai.fr/v0/distclus/pkg/mcmc"
+	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/kmeans"
+	"github.com/wearelumenai/distclus/v0/pkg/mcmc"
 	"math"
 	"testing"
 )

@@ -1,8 +1,8 @@
 package dtw_test
 
 import (
-	"lumenai.fr/v0/distclus/pkg/dtw"
-	"lumenai.fr/v0/distclus/pkg/euclid"
+	"github.com/wearelumenai/distclus/v0/pkg/dtw"
+	"github.com/wearelumenai/distclus/v0/pkg/euclid"
 	"testing"
 )
 

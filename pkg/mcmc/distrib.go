@@ -1,6 +1,6 @@
 package mcmc
 
-import "lumenai.fr/v0/distclus/pkg/core"
+import "github.com/wearelumenai/distclus/v0/pkg/core"
 
 // Distrib defines distribution methods
 type Distrib interface {

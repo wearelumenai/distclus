@@ -1,11 +1,11 @@
 package test
 
 import (
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/dtw"
-	"lumenai.fr/v0/distclus/pkg/euclid"
-	"lumenai.fr/v0/distclus/pkg/kmeans"
-	"lumenai.fr/v0/distclus/pkg/mcmc"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/dtw"
+	"github.com/wearelumenai/distclus/v0/pkg/euclid"
+	"github.com/wearelumenai/distclus/v0/pkg/kmeans"
+	"github.com/wearelumenai/distclus/v0/pkg/mcmc"
 	"testing"
 
 	"gonum.org/v1/gonum/stat/distuv"

@@ -1,10 +1,10 @@
 package mcmc_test
 
 import (
-	"lumenai.fr/v0/distclus/internal/test"
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/kmeans"
-	"lumenai.fr/v0/distclus/pkg/mcmc"
+	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/kmeans"
+	"github.com/wearelumenai/distclus/v0/pkg/mcmc"
 	"math"
 	"runtime"
 	"testing"
@@ -145,11 +145,11 @@ func Test_Normal(t *testing.T) {
 
 	test.AssertArrayAlmostEqual(t, dataMean, resultMean)
 
-	var result0, _, _ = algo.Predict(centroids[0])
+	var result0, _, _, _ = algo.Predict(centroids[0])
 	AssertDistance(t, centroids[0], result0)
-	var result1, _, _ = algo.Predict(centroids[1])
+	var result1, _, _, _ = algo.Predict(centroids[1])
 	AssertDistance(t, centroids[1], result1)
-	var result2, _, _ = algo.Predict(centroids[2])
+	var result2, _, _, _ = algo.Predict(centroids[2])
 	AssertDistance(t, centroids[2], result2)
 }
 

@@ -1,7 +1,7 @@
 package mcmc
 
 import (
-	"lumenai.fr/v0/distclus/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
 )
 
 // Dirac represents a Distrib that always returns the conditional.

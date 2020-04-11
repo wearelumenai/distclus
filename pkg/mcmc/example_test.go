@@ -2,10 +2,10 @@ package mcmc_test
 
 import (
 	"fmt"
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/euclid"
-	"lumenai.fr/v0/distclus/pkg/kmeans"
-	"lumenai.fr/v0/distclus/pkg/mcmc"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/euclid"
+	"github.com/wearelumenai/distclus/v0/pkg/kmeans"
+	"github.com/wearelumenai/distclus/v0/pkg/mcmc"
 	"math"
 
 	"golang.org/x/exp/rand"
@@ -72,7 +72,7 @@ func getOutput(centers core.Clust, observations []core.Elemt, space core.Space) 
 func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space core.Space) float64 {
 	var mse = 0.
 	for i := range observations {
-		var prediction, _, _ = algo.Predict(observations[i])
+		var prediction, _, _, _ = algo.Predict(observations[i])
 		var dist = space.Dist(prediction, output[i])
 		mse += dist * dist / float64(len(observations))
 	}

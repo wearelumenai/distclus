@@ -1,7 +1,7 @@
 package dtw_test
 
 import (
-	"lumenai.fr/v0/distclus/pkg/dtw"
+	"github.com/wearelumenai/distclus/v0/pkg/dtw"
 	"math"
 	"testing"
 )

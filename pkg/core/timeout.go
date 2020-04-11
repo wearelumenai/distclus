@@ -1,7 +1,7 @@
 package core
 
 import (
-	"lumenai.fr/v0/distclus/pkg/figures"
+	"github.com/wearelumenai/distclus/v0/pkg/figures"
 	"sync"
 	"time"
 )

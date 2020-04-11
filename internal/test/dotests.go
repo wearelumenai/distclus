@@ -1,9 +1,9 @@
 package test
 
 import (
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/euclid"
-	"lumenai.fr/v0/distclus/pkg/figures"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/euclid"
+	"github.com/wearelumenai/distclus/v0/pkg/figures"
 	"math"
 	"reflect"
 	"testing"
@@ -56,9 +56,9 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 	var clust = PushAndRunSync(algo)
 	var actual, _ = clust.MapLabel(Vectors, euclid.Space{})
 
-	_, i0, _ := algo.Predict(Vectors[0])
-	_, i1, _ := algo.Predict(Vectors[1])
-	_, i2, _ := algo.Predict(Vectors[2])
+	_, i0, _, _ := algo.Predict(Vectors[0])
+	_, i1, _, _ := algo.Predict(Vectors[1])
+	_, i2, _, _ := algo.Predict(Vectors[2])
 	var expected = []int{i0, i1, i2, i0, i0, i1, i2, i2}
 
 	AssertArrayEqual(t, expected, actual)
@@ -66,9 +66,9 @@ func DoTestRunSyncPP(t *testing.T, algo core.OnlineClust) {
 
 // DoTestRunSyncCentroids Algorithm must be configured with 3 centers
 func DoTestRunSyncCentroids(t *testing.T, km core.OnlineClust) {
-	c0, _, _ := km.Predict(Vectors[0])
-	c1, _, _ := km.Predict(Vectors[1])
-	c2, _, _ := km.Predict(Vectors[2])
+	c0, _, _, _ := km.Predict(Vectors[0])
+	c1, _, _, _ := km.Predict(Vectors[1])
+	c2, _, _, _ := km.Predict(Vectors[2])
 	var actual = core.Clust{c0, c1, c2}
 	var expected = core.Clust{
 		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
@@ -86,15 +86,15 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	algo.Wait(0, 0)
 
 	var obs = []float64{-9, -10, -8.3, -8, -7.5}
-	var c, _, _ = algo.Predict(obs)
+	var c, _, _, _ = algo.Predict(obs)
 	_ = algo.Push(obs)
 
 	algo.Batch(0, 0)
 
-	var cn, _, _ = algo.Predict(obs)
+	var cn, _, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
 
-	var c0, _, _ = algo.Predict(Vectors[1])
+	var c0, _, _, _ = algo.Predict(Vectors[1])
 	AssertEqual(t, c0, cn)
 }
 
@@ -146,9 +146,9 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 
 // DoTestRunAsyncCentroids test
 func DoTestRunAsyncCentroids(t *testing.T, km core.OnlineClust) {
-	c0, _, _ := km.Predict(Vectors[0])
-	c1, _, _ := km.Predict(Vectors[1])
-	c2, _, _ := km.Predict(Vectors[2])
+	c0, _, _, _ := km.Predict(Vectors[0])
+	c1, _, _, _ := km.Predict(Vectors[1])
+	c2, _, _, _ := km.Predict(Vectors[2])
 	var actual = core.Clust{c0, c1, c2}
 	var expected = core.Clust{
 		[]float64{23.4 / 3, 20. / 3, 23. / 3, 29.5 / 3, 30. / 3},
@@ -176,13 +176,13 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 	err = algo.Push(Vectors[5])
 	AssertNoError(t, err)
 
-	_, _, err = algo.Predict(Vectors[5])
+	_, _, _, err = algo.Predict(Vectors[5])
 	if err == nil {
 		err = algo.Push(Vectors[5])
 	}
 	AssertNoError(t, err)
 
-	_, _, err = algo.Predict(Vectors[5])
+	_, _, _, err = algo.Predict(Vectors[5])
 	AssertNoError(t, err)
 
 	err = algo.Play(0, 0)
@@ -195,7 +195,7 @@ func DoTestAfterRun(algo core.OnlineClust, t *testing.T) {
 	err = algo.Push(Vectors[3])
 	AssertNoError(t, err)
 
-	_, _, err = algo.Predict(Vectors[4])
+	_, _, _, err = algo.Predict(Vectors[4])
 	_ = algo.Push(Vectors[4])
 
 	AssertNoError(t, err)
@@ -212,7 +212,7 @@ func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
 	_, err = algo.Centroids()
 	AssertError(t, err)
 
-	_, _, err = algo.Predict(Vectors[3])
+	_, _, _, err = algo.Predict(Vectors[3])
 	AssertError(t, err)
 }
 

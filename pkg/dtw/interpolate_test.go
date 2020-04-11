@@ -1,8 +1,8 @@
 package dtw_test
 
 import (
-	"lumenai.fr/v0/distclus/internal/test"
-	"lumenai.fr/v0/distclus/pkg/dtw"
+	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/v0/pkg/dtw"
 	"testing"
 )
 

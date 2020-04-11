@@ -4,7 +4,7 @@ package core
 import (
 	"fmt"
 	"log"
-	"lumenai.fr/v0/distclus/pkg/figures"
+	"github.com/wearelumenai/distclus/v0/pkg/figures"
 	"math"
 	"sync"
 	"sync/atomic"
@@ -31,7 +31,7 @@ type OnlineClust interface {
 	Conf() ImplConf
 	Impl() Impl
 	Space() Space
-	Predict(elemt Elemt) (Elemt, int, error)         // input elemt centroid/label
+	Predict(elemt Elemt) (Elemt, int, float64, error)         // input elemt centroid/label with distance to closest centroid
 	Batch(int, time.Duration) error                  // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
 	Alive() bool                                     // true iif algo is running (running, idle and sleeping)
 	Status() ClustStatus                             // algo status
@@ -355,11 +355,11 @@ func (algo *Algo) Space() Space {
 }
 
 // Predict the cluster for a new observation
-func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, err error) {
+func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, dist float64, err error) {
 	var clust Clust
 	clust, err = algo.Centroids()
 	if err == nil {
-		pred, label, _ = clust.Assign(elemt, algo.space)
+		pred, label, dist = clust.Assign(elemt, algo.space)
 	}
 	return
 }

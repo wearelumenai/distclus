@@ -1,6 +1,6 @@
 package core
 
-import "lumenai.fr/v0/distclus/pkg/figures"
+import "github.com/wearelumenai/distclus/v0/pkg/figures"
 
 // Impl concrete algorithms
 type Impl interface {

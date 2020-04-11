@@ -1,6 +1,6 @@
 package streaming
 
-import "lumenai.fr/v0/distclus/pkg/core"
+import "github.com/wearelumenai/distclus/v0/pkg/core"
 
 // NewAlgo creates a new algorithm with a streaming implementation
 func NewAlgo(conf Conf, space core.Space, data []core.Elemt) *core.Algo {

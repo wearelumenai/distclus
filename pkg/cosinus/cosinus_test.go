@@ -1,8 +1,8 @@
 package cosinus_test
 
 import (
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/cosinus"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/cosinus"
 	"testing"
 )
 

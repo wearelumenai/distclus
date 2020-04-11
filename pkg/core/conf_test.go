@@ -1,8 +1,8 @@
 package core_test
 
 import (
-	"lumenai.fr/v0/distclus/internal/test"
-	"lumenai.fr/v0/distclus/pkg/core"
+	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
 	"testing"
 )
 

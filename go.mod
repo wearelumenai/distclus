@@ -1,4 +1,4 @@
-module lumenai.fr/v0/distclus
+module github.com/wearelumenai/distclus/v0
 
 go 1.14
 

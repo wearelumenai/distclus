@@ -1,10 +1,10 @@
 package mcmc_test
 
 import (
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/euclid"
-	"lumenai.fr/v0/distclus/pkg/kmeans"
-	"lumenai.fr/v0/distclus/pkg/mcmc"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/euclid"
+	"github.com/wearelumenai/distclus/v0/pkg/kmeans"
+	"github.com/wearelumenai/distclus/v0/pkg/mcmc"
 	"reflect"
 	"testing"
 )
@@ -50,7 +50,7 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 	}
 
 	for _, e := range ints {
-		var pred, _, _ = algo.Predict(e)
+		var pred, _, _, _ = algo.Predict(e)
 		if !reflect.DeepEqual(pred, e) {
 			t.Error("Center and element should be equal")
 		}

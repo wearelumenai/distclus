@@ -2,7 +2,7 @@ package mcmc
 
 import (
 	"fmt"
-	"lumenai.fr/v0/distclus/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
 	"runtime"
 	"time"
 

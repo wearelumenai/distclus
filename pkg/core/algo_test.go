@@ -2,9 +2,9 @@ package core_test
 
 import (
 	"errors"
-	"lumenai.fr/v0/distclus/internal/test"
-	"lumenai.fr/v0/distclus/pkg/core"
-	"lumenai.fr/v0/distclus/pkg/figures"
+	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/figures"
 	"math"
 	"testing"
 )
@@ -308,7 +308,7 @@ func Test_Init(t *testing.T) {
 func Test_Predict(t *testing.T) {
 	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
 
-	_, _, err := algo.Predict(nil)
+	_, _, _, err := algo.Predict(nil)
 
 	if err == nil {
 		t.Error("initialized before running")
@@ -320,7 +320,7 @@ func Test_Predict(t *testing.T) {
 		t.Error("error while running", err)
 	}
 
-	pred, label, err := algo.Predict(nil)
+	pred, label, _, err := algo.Predict(nil)
 
 	if err != nil {
 		t.Error("Error while predict")
@@ -335,7 +335,7 @@ func Test_Predict(t *testing.T) {
 		t.Error("element has been pushed")
 	}
 
-	pred, label, err = algo.Predict(nil)
+	pred, label, _, err = algo.Predict(nil)
 
 	if err != nil {
 		t.Error("Error while predict", err)
@@ -362,7 +362,7 @@ func Test_Predict(t *testing.T) {
 		t.Error("no error while stopping the algorithm", err)
 	}
 
-	_, _, err = algo.Predict(nil)
+	_, _, _, err = algo.Predict(nil)
 	if err == nil {
 		err = algo.Push(nil)
 	}

@@ -1,6 +1,6 @@
 package dtw
 
-import "lumenai.fr/v0/distclus/pkg/core"
+import "github.com/wearelumenai/distclus/v0/pkg/core"
 
 // PointSpace represents a space for points in R
 type PointSpace interface {

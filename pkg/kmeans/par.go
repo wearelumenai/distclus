@@ -1,7 +1,7 @@
 package kmeans
 
 import (
-	"lumenai.fr/v0/distclus/pkg/core"
+	"github.com/wearelumenai/distclus/v0/pkg/core"
 )
 
 // NewParImpl parallelizes algorithm implementation

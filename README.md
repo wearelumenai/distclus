@@ -19,16 +19,14 @@ In addition, static and dynamic concerns aim to address multi-platform cross-usa
 #### Outside go file:
 
 ```
-# install all library artefacts
-go get go.lumenai.fr/distclus/v0/...
-# or install only one artefact
-go get go.lumenai.fr/distclus/v0/streaming
+# install, verbose and update if necessary
+go get -u -v go.lumenai.fr/distclus/v0/...
 ```
 
 #### Inside go file:
 
 ```go
-// load only mcmc algorithm and dtw space
+// import mcmc algo and dtw space
 import (
 	"go.lumenai.fr/distclus/v0/mcmc"
 	"go.lumenai.fr/distclus/v0/dtw"

@@ -3,12 +3,12 @@ package mcmc_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/euclid"
-	"go.lumenai.fr/distclus/v0/figures"
-	"go.lumenai.fr/distclus/v0/internal/test"
-	"go.lumenai.fr/distclus/v0/kmeans"
-	"go.lumenai.fr/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/figures"
+	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/kmeans"
+	"github.com/wearelumenai/distclus/mcmc"
 
 	"golang.org/x/exp/rand"
 )

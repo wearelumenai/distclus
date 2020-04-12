@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"go.lumenai.fr/distclus/v0/figures"
+	"github.com/wearelumenai/distclus/figures"
 )
 
 // OnlineClust interface

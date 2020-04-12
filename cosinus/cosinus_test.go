@@ -3,8 +3,8 @@ package cosinus_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/cosinus"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/cosinus"
 )
 
 func Test_ScalarProduct(t *testing.T) {

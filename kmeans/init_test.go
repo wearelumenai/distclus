@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/euclid"
-	"go.lumenai.fr/distclus/v0/kmeans"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/kmeans"
 
 	"golang.org/x/exp/rand"
 )

@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/mcmc"
 
 	"golang.org/x/exp/rand"
 )

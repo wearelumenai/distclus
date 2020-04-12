@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/mcmc"
 )
 
 func Test_IdentitySample(t *testing.T) {

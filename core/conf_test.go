@@ -3,8 +3,8 @@ package core_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/internal/test"
 )
 
 func TestKMeans_ConfErrorDataPerIter(t *testing.T) {

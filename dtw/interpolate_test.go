@@ -3,8 +3,8 @@ package dtw_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/dtw"
-	"go.lumenai.fr/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/dtw"
+	"github.com/wearelumenai/distclus/internal/test"
 )
 
 var se = [][]float64{

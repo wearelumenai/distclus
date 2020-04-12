@@ -3,7 +3,7 @@ package mcmc
 import (
 	"sync"
 
-	"go.lumenai.fr/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 // DistribBuilder represents functor that build a Distrib from data

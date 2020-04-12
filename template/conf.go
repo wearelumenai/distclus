@@ -1,6 +1,6 @@
 package template // to rename for specific algorithm
 
-import "go.lumenai.fr/distclus/v0/core"
+import "github.com/wearelumenai/distclus/core"
 
 // Conf represents the configuration of an algorithm.
 type Conf struct {

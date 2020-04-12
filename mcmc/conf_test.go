@@ -3,8 +3,8 @@ package mcmc_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/internal/test"
-	"go.lumenai.fr/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/mcmc"
 )
 
 func TestMCMC_ConfErrorMaxK(t *testing.T) {

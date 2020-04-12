@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/dtw"
+	"github.com/wearelumenai/distclus/dtw"
 )
 
 var path = [][]int{

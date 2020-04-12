@@ -1,8 +1,8 @@
 package template // to rename for specific algorithm
 
 import (
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/figures"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/figures"
 )
 
 // Impl represents the algorithm implementation

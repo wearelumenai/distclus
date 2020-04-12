@@ -4,9 +4,9 @@ import (
 	"math"
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/internal/test"
-	"go.lumenai.fr/distclus/v0/kmeans"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/kmeans"
 )
 
 func newAlgo(t *testing.T, conf core.Conf, size int) (algo *core.Algo) {

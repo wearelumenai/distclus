@@ -1,8 +1,8 @@
 package mcmc
 
 import (
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/kmeans"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/kmeans"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )

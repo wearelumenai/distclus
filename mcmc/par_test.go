@@ -5,10 +5,10 @@ import (
 	"runtime"
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/internal/test"
-	"go.lumenai.fr/distclus/v0/kmeans"
-	"go.lumenai.fr/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/kmeans"
+	"github.com/wearelumenai/distclus/mcmc"
 
 	"gonum.org/v1/gonum/mat"
 

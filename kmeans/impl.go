@@ -1,8 +1,8 @@
 package kmeans
 
 import (
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/figures"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/figures"
 )
 
 // Impl algorithm abstract implementation

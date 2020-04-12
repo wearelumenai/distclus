@@ -4,8 +4,8 @@ package cosinus
 import (
 	"math"
 
-	"go.lumenai.fr/distclus/v0/core"
-	"go.lumenai.fr/distclus/v0/euclid"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
 )
 
 // Space represents a space that uses cosinus distance

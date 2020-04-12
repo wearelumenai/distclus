@@ -4,7 +4,7 @@ import (
 	"math"
 	"time"
 
-	"go.lumenai.fr/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 
 	"golang.org/x/exp/rand"
 

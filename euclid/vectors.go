@@ -4,7 +4,7 @@ package euclid
 import (
 	"math"
 
-	"go.lumenai.fr/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 // Space for vectors ([]float64)

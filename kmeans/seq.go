@@ -1,7 +1,7 @@
 package kmeans
 
 import (
-	"go.lumenai.fr/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 // NewSeqImpl returns a sequential algorithm execution

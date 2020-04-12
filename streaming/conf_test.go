@@ -3,8 +3,8 @@ package streaming_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/internal/test"
-	"go.lumenai.fr/distclus/v0/streaming"
+	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/streaming"
 )
 
 func Test_SetDefaultConfig(t *testing.T) {

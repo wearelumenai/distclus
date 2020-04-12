@@ -3,8 +3,8 @@ package dtw_test
 import (
 	"testing"
 
-	"go.lumenai.fr/distclus/v0/dtw"
-	"go.lumenai.fr/distclus/v0/euclid"
+	"github.com/wearelumenai/distclus/dtw"
+	"github.com/wearelumenai/distclus/euclid"
 )
 
 var space = euclid.Space{}

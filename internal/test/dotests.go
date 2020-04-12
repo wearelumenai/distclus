@@ -1,13 +1,14 @@
 package test
 
 import (
-	"github.com/wearelumenai/distclus/v0/pkg/core"
-	"github.com/wearelumenai/distclus/v0/pkg/euclid"
-	"github.com/wearelumenai/distclus/v0/pkg/figures"
 	"math"
 	"reflect"
 	"testing"
 	"time"
+
+	"go.lumenai.fr/distclus/v0/core"
+	"go.lumenai.fr/distclus/v0/euclid"
+	"go.lumenai.fr/distclus/v0/figures"
 
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"

@@ -2,6 +2,6 @@ FROM golang:alpine
 
 WORKDIR /go/src/distclus
 
-COPY . /go/src/distclus/pkg/
+COPY . /go/src/distclus/
 
 RUN make

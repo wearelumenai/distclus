@@ -1,4 +1,4 @@
-module github.com/wearelumenai/distclus
+module github.com/wearelumenai/distclus/v0
 
 go 1.14
 

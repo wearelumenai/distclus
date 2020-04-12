@@ -1,6 +1,6 @@
 package mcmc
 
-import "github.com/wearelumenai/distclus/core"
+import "github.com/wearelumenai/distclus/v0/core"
 
 // Distrib defines distribution methods
 type Distrib interface {

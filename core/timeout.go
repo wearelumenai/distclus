@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/wearelumenai/distclus/figures"
+	"github.com/wearelumenai/distclus/v0/figures"
 )
 
 // Timeout interface for managing timeout algorithm

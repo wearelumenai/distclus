@@ -1,7 +1,7 @@
 // Package mcmc provides MCMC based implementation of online clustering (cf https://hal.inria.fr/hal-01264233).
 package mcmc
 
-import "github.com/wearelumenai/distclus/core"
+import "github.com/wearelumenai/distclus/v0/core"
 
 // NewAlgo creates a new kmeans algo
 func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.Initializer, distrib Distrib) *core.Algo {

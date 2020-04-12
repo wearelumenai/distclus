@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/wearelumenai/distclus/figures"
+	"github.com/wearelumenai/distclus/v0/figures"
 )
 
 // OnlineClust interface

@@ -4,9 +4,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/euclid"
-	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/v0/euclid"
+	"github.com/wearelumenai/distclus/v0/internal/test"
 )
 
 func TestVectorDist2And4(t *testing.T) {

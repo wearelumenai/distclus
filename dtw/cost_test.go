@@ -3,8 +3,8 @@ package dtw_test
 import (
 	"testing"
 
-	"github.com/wearelumenai/distclus/dtw"
-	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/v0/dtw"
+	"github.com/wearelumenai/distclus/v0/euclid"
 )
 
 var space = euclid.Space{}

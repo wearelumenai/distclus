@@ -3,7 +3,7 @@ package mcmc
 import (
 	"sync"
 
-	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/v0/core"
 )
 
 // DistribBuilder represents functor that build a Distrib from data

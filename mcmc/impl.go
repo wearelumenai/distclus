@@ -3,9 +3,9 @@ package mcmc
 import (
 	"math"
 
-	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/figures"
-	"github.com/wearelumenai/distclus/kmeans"
+	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/v0/figures"
+	"github.com/wearelumenai/distclus/v0/kmeans"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )

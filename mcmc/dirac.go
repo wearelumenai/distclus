@@ -1,7 +1,7 @@
 package mcmc
 
 import (
-	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/v0/core"
 )
 
 // Dirac represents a Distrib that always returns the conditional.

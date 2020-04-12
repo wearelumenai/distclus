@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/euclid"
-	"github.com/wearelumenai/distclus/figures"
+	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/v0/euclid"
+	"github.com/wearelumenai/distclus/v0/figures"
 
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"

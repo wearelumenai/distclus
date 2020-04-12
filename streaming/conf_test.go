@@ -3,8 +3,8 @@ package streaming_test
 import (
 	"testing"
 
-	"github.com/wearelumenai/distclus/internal/test"
-	"github.com/wearelumenai/distclus/streaming"
+	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/v0/streaming"
 )
 
 func Test_SetDefaultConfig(t *testing.T) {

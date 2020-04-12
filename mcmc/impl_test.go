@@ -4,10 +4,10 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/euclid"
-	"github.com/wearelumenai/distclus/kmeans"
-	"github.com/wearelumenai/distclus/mcmc"
+	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/v0/euclid"
+	"github.com/wearelumenai/distclus/v0/kmeans"
+	"github.com/wearelumenai/distclus/v0/mcmc"
 )
 
 var ints = []core.Elemt{

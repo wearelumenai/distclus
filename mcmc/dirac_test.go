@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/wearelumenai/distclus/mcmc"
+	"github.com/wearelumenai/distclus/v0/mcmc"
 )
 
 func Test_IdentitySample(t *testing.T) {

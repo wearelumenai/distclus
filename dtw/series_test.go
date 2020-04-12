@@ -3,7 +3,7 @@ package dtw_test
 import (
 	"testing"
 
-	"github.com/wearelumenai/distclus/dtw"
+	"github.com/wearelumenai/distclus/v0/dtw"
 )
 
 var conf = dtw.Conf{

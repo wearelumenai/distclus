@@ -3,8 +3,8 @@ package dtw_test
 import (
 	"testing"
 
-	"github.com/wearelumenai/distclus/dtw"
-	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/v0/dtw"
+	"github.com/wearelumenai/distclus/v0/internal/test"
 )
 
 var se = [][]float64{

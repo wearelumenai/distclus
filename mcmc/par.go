@@ -1,8 +1,8 @@
 package mcmc
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/kmeans"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/kmeans"
 )
 
 // NewParImpl returns a new parallelized algorithm implementation

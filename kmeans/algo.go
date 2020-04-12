@@ -1,7 +1,7 @@
 // Package kmeans provides k-means based implementation of online clustering
 package kmeans
 
-import "github.com/wearelumenai/distclus/v0/core"
+import "github.com/wearelumenai/distclus/core"
 
 // NewAlgo creates a new kmeans algo
 func NewAlgo(conf Conf, space core.Space, data []core.Elemt, initializer core.Initializer, args ...interface{}) *core.Algo {

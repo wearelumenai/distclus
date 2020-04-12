@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 
 	"golang.org/x/exp/rand"
 )

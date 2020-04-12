@@ -1,7 +1,7 @@
 package dtw
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 // Space for processing vectors of vectors ([][]float64)

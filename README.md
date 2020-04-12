@@ -20,7 +20,7 @@ In addition, static and dynamic concerns aim to address multi-platform cross-usa
 
 ```
 # install all artefacts, verbose and update if necessary
-go get -u -v github.com/wearelumenai/distclus/v0/...
+go get -u -v github.com/wearelumenai/distclus/...
 # or only streaming
 go get -u -v github.com/wearelumenai/streaming
 ```
@@ -30,15 +30,15 @@ go get -u -v github.com/wearelumenai/streaming
 ```go
 // import only mcmc algo and dtw space
 import (
-	"github.com/wearelumenai/distclus/v0/mcmc"
-	"github.com/wearelumenai/distclus/v0/dtw"
+	"github.com/wearelumenai/distclus/mcmc"
+	"github.com/wearelumenai/distclus/dtw"
 )
 
 ```
 
 ### Packaging
 
-1. Get a release here: https://github.com/wearelumenai/distclus/v0/releases
+1. Get a release here: https://github.com/wearelumenai/distclus/releases
 2. Uncompress it and tape `go get -v ./...` inside
 
 ## Test
@@ -107,7 +107,7 @@ two objects, one for the Metropolis Hastings and the other for the alteration di
 ```go
 package main
 
-import "github.com/wearelumenai/distclus/v0/mcmc"
+import "github.com/wearelumenai/distclus/mcmc"
 
 var conf = mcmc.Conf{
 	InitK: 1,
@@ -144,10 +144,10 @@ The algorithm is built using the ```mcmc.NewAlgo``` function. It takes the follo
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/euclid"
-	"github.com/wearelumenai/distclus/v0/kmeans"
-	"github.com/wearelumenai/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/kmeans"
+	"github.com/wearelumenai/distclus/mcmc"
 )
 
 func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.Space) {
@@ -170,7 +170,7 @@ The following function starts the algorithm in online mode then pushes the obser
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
@@ -193,7 +193,7 @@ for observations for which real output is known.
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 	"math"
 )
 
@@ -215,7 +215,7 @@ The ```core.Clust``` object method ```MapLabel``` is used to compute the real ou
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space core.Space) (result core.Clust, rmse float64, err error) {
@@ -244,7 +244,7 @@ The following function returns real centers with the given number of sample obse
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 	"golang.org/x/exp/rand"
 )
 
@@ -372,10 +372,10 @@ may be modified like this:
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/euclid"
-	"github.com/wearelumenai/distclus/v0/kmeans"
-	"github.com/wearelumenai/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/kmeans"
+	"github.com/wearelumenai/distclus/mcmc"
 )
 
 func Build(conf mcmc.Conf, tConf mcmc.MultivTConf, data []core.Elemt) (algo *core.Algo, space euclid.Space) {
@@ -425,7 +425,7 @@ The `RunAndFeed` function above may be modified like this:
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
@@ -467,11 +467,11 @@ The library provides 3 different data types :
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/euclid"
-	"github.com/wearelumenai/distclus/v0/dtw"
-	"github.com/wearelumenai/distclus/v0/kmeans"
-	"github.com/wearelumenai/distclus/v0/mcmc"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/dtw"
+	"github.com/wearelumenai/distclus/kmeans"
+	"github.com/wearelumenai/distclus/mcmc"
 )
 
 func Build(conf mcmc.Conf) (algo *core.Algo, space core.Space) {
@@ -506,10 +506,10 @@ a streaming algorithm for time series:
 package main
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/euclid"
-	"github.com/wearelumenai/distclus/v0/dtw"
-	"github.com/wearelumenai/distclus/v0/streaming"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/dtw"
+	"github.com/wearelumenai/distclus/streaming"
 )
 
 func Build(conf streaming.Conf) (algo *core.Algo, space core.Space) {
@@ -532,8 +532,8 @@ For example, if you know the number of data to process, do:
 package main
 
 import (
-  "github.com/wearelumenai/distclus/v0/core"
-  "github.com/wearelumenai/distclus/v0/streaming"
+  "github.com/wearelumenai/distclus/core"
+  "github.com/wearelumenai/distclus/streaming"
   "time"
 )
 

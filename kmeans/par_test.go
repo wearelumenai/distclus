@@ -3,10 +3,10 @@ package kmeans_test
 import (
 	"testing"
 
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/euclid"
-	"github.com/wearelumenai/distclus/v0/internal/test"
-	"github.com/wearelumenai/distclus/v0/kmeans"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/internal/test"
+	"github.com/wearelumenai/distclus/kmeans"
 )
 
 var space = euclid.Space{}

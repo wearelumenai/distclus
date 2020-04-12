@@ -4,7 +4,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/wearelumenai/distclus/v0/dtw"
+	"github.com/wearelumenai/distclus/dtw"
 )
 
 var path = [][]int{

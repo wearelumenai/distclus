@@ -3,8 +3,8 @@ package streaming
 import (
 	"errors"
 
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/figures"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/figures"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )

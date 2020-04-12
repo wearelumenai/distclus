@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/wearelumenai/distclus/v0/core"
+	"github.com/wearelumenai/distclus/core"
 )
 
 func Test_Par(t *testing.T) {

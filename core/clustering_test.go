@@ -4,9 +4,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/euclid"
-	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/euclid"
+	"github.com/wearelumenai/distclus/internal/test"
 )
 
 var testPoints = []core.Elemt{[]float64{2.}, []float64{4.}, []float64{1.}, []float64{8.}, []float64{-4.},

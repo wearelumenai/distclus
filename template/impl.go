@@ -1,8 +1,8 @@
 package template // to rename for specific algorithm
 
 import (
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/figures"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/figures"
 )
 
 // Impl represents the algorithm implementation

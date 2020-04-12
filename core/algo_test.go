@@ -5,9 +5,9 @@ import (
 	"math"
 	"testing"
 
-	"github.com/wearelumenai/distclus/v0/core"
-	"github.com/wearelumenai/distclus/v0/figures"
-	"github.com/wearelumenai/distclus/v0/internal/test"
+	"github.com/wearelumenai/distclus/core"
+	"github.com/wearelumenai/distclus/figures"
+	"github.com/wearelumenai/distclus/internal/test"
 )
 
 type mockConf struct {

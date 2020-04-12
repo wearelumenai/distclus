@@ -1,6 +1,6 @@
 package core
 
-import "github.com/wearelumenai/distclus/v0/figures"
+import "github.com/wearelumenai/distclus/figures"
 
 // Impl concrete algorithms
 type Impl interface {

@@ -73,8 +73,7 @@ func getOutput(centers core.Clust, observations []core.Elemt, space core.Space) 
 func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space core.Space) float64 {
 	var mse = 0.
 	for i := range observations {
-		var prediction, _, _, _ = algo.Predict(observations[i])
-		var dist = space.Dist(prediction, output[i])
+		var _, _, dist, _ = algo.Predict(observations[i])
 		mse += dist * dist / float64(len(observations))
 	}
 	return math.Sqrt(mse)

@@ -200,8 +200,7 @@ import (
 func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space core.Space) float64 {
 	var mse = 0.
 	for i := range observations {
-		var prediction, _, _ = algo.Predict(observations[i])
-		var dist = space.Dist(prediction, output[i])
+		var _, _, dist, _ = algo.Predict(observations[i])
 		mse += dist * dist / float64(len(observations))
 	}
 	return math.Sqrt(mse)
@@ -336,7 +335,7 @@ We have covered almost all methods so far:
  - `Init() (Clust, error)`: initialize the algorithm with implentation strategy (random, given, kmeans++, ...).
  - `Play(int, time.Duration) error`: execute the algorithm, with specific number of iterations and timeout duration if given.
  - `Centroids() (Clust, error)`: get array of clustering centroids.
- - `Predict(elemt Elemt) (Elemt, int, error)`: according to previous method, get centroid and its index in array of clustering centroids for input elemt.
+ - `Predict(elemt Elemt) (Elemt, int, float64, error)`: according to previous method, get centroid, its index and minimal distance with closest centroid in array of clustering centroids for input elemt.
  - `Push(elemt Elemt) error`: push an element.
  - `Pause() error`: pause execution. The method `Play` goes back to execution.
  - `Wait(int, time.Duration) error`: wait until algorithm terminates iterations, with specific number of iterations and timeout duration if given.

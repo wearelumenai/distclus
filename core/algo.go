@@ -519,7 +519,7 @@ func (algo *Algo) canIterate(iterations int) bool {
 
 	var iterDone = iterToRun == 0 || iterations < iterToRun
 	var dataPerIterDone = conf.DataPerIter == 0 || (int64(conf.DataPerIter) <= atomic.LoadInt64(&algo.newData))
-	return iterDone && dataPerIterDone
+	return iterDone && (algo.succeedOnce || dataPerIterDone)
 }
 
 func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures, iterations int, duration time.Duration) {

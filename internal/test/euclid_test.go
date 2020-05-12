@@ -41,7 +41,7 @@ func getVectorsConf() (mcmc.Conf, euclid.Space) {
 		InitK: 2,
 		Amp:   .01,
 		B:     200,
-		Conf: core.Conf{
+		CtrlConf: core.CtrlConf{
 			Iter: 50,
 		},
 	}
@@ -55,18 +55,20 @@ func getVectorsAlgo(space euclid.Space, mcmcConf mcmc.Conf) *core.Algo {
 	return mcmc.NewAlgo(mcmcConf, space, []core.Elemt{}, initializer, distrib)
 }
 
-func runVectorsAlgo(algo *core.Algo, series [][]float64) ([]core.Elemt, error) {
+func runVectorsAlgo(algo *core.Algo, series [][]float64) (elts []core.Elemt, err error) {
 	for s := range series {
-		if err := algo.Push(series[s]); err != nil {
-			return nil, err
+		if err = algo.Push(series[s]); err != nil {
+			return
 		}
 	}
 
-	if err := algo.Batch(0, 0); err != nil {
-		return nil, err
+	if err = algo.Batch(nil, 0); err != nil {
+		return
 	}
 
-	return algo.Centroids()
+	elts = algo.Centroids()
+
+	return
 }
 
 func makeVectors() [][]float64 {

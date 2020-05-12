@@ -21,9 +21,9 @@ type Impl struct {
 }
 
 // Copy impl
-func (impl *Impl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
-	var newConf = conf.(*Conf)
-	var algo = NewAlgo(*newConf, space, impl.clust)
+func (impl *Impl) Copy(model core.OCModel) (core.Impl, error) {
+	var newConf = model.Conf().(*Conf)
+	var algo = NewAlgo(*newConf, model.Space(), impl.clust)
 	return algo.Impl(), nil
 }
 
@@ -45,7 +45,7 @@ func NewImpl(conf Conf, elemts []core.Elemt) Impl {
 }
 
 // Init initializes the streaming algorithm.
-func (impl *Impl) Init(_ core.ImplConf, _ core.Space, _ core.Clust) (clust core.Clust, err error) {
+func (impl *Impl) Init(model core.OCModel) (clust core.Clust, err error) {
 	select {
 	case centroids := <-impl.c:
 		clust = core.Clust{centroids}
@@ -59,10 +59,10 @@ func (impl *Impl) Init(_ core.ImplConf, _ core.Space, _ core.Clust) (clust core.
 }
 
 // Iterate runs the streaming algorithm.
-func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
 	select {
 	case elemt := <-impl.c:
-		impl.Process(elemt, space)
+		impl.Process(elemt, model.Space())
 		clust = impl.clust
 	default:
 	}
@@ -75,7 +75,7 @@ func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
 }
 
 // Push pushes a new element
-func (impl *Impl) Push(elemt core.Elemt, running bool) (err error) {
+func (impl *Impl) Push(elemt core.Elemt, model core.OCModel) (err error) {
 	select {
 	case impl.c <- elemt:
 	default:

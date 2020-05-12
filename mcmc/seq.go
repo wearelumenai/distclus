@@ -28,13 +28,13 @@ func (strategy *SeqStrategy) Iterate(conf Conf, space core.Space, centroids core
 	var kmeansConf = kmeans.Conf{
 		K:    len(centroids),
 		RGen: conf.RGen,
-		Conf: core.Conf{
+		CtrlConf: core.CtrlConf{
 			Iter: iter,
 		},
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
-	algo.Batch(0, 0)
-	result, _ = algo.Centroids()
+	algo.Batch(nil, 0)
+	result = algo.Centroids()
 
 	return
 }

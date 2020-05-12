@@ -3,8 +3,6 @@ package core
 import (
 	"sync"
 	"time"
-
-	"github.com/wearelumenai/distclus/figures"
 )
 
 // Timeout interface for managing timeout algorithm
@@ -15,20 +13,13 @@ type Timeout interface {
 
 // timeout algorithm timeout structure
 type timeout struct {
-	duration         time.Duration
-	enabled          bool
-	ack              <-chan bool
-	interruption     func(ClustStatus, error) error
-	mutex            sync.RWMutex
-	maxIter          int
-	iterationsGetter func() int
-}
-
-func iterationsGetter(runtimeFiguresGetter func() (figures.RuntimeFigures, error)) func() int {
-	return func() int {
-		var rf, _ = runtimeFiguresGetter()
-		return int(rf[figures.Iterations])
-	}
+	duration     time.Duration
+	enabled      bool
+	ack          <-chan bool
+	interruption func(OCStatus) error
+	mutex        sync.RWMutex
+	finishing    Finishing
+	ocm          OCModel
 }
 
 func (timeout *timeout) Enabled() bool {
@@ -38,7 +29,7 @@ func (timeout *timeout) Enabled() bool {
 }
 
 // InterruptionTimeout process
-func InterruptionTimeout(duration time.Duration, interruption func(ClustStatus, error) error) (result Timeout) {
+func InterruptionTimeout(duration time.Duration, interruption func(OCStatus) error) (result Timeout) {
 	result = &timeout{
 		duration:     duration,
 		enabled:      true,
@@ -49,17 +40,12 @@ func InterruptionTimeout(duration time.Duration, interruption func(ClustStatus, 
 }
 
 // WaitTimeout process. Return true if timedout
-func WaitTimeout(iter int, duration time.Duration, runtimeFiguresGetter func() (figures.RuntimeFigures, error), ack <-chan bool) error {
-	var iterationsGetter = iterationsGetter(runtimeFiguresGetter)
-	var maxIter = iterationsGetter() + iter
-	if iter == 0 {
-		maxIter = 0
-	}
+func WaitTimeout(finishing Finishing, duration time.Duration, ocm OCModel, ack <-chan bool) error {
 	var t = timeout{
-		duration:         duration,
-		ack:              ack,
-		maxIter:          maxIter,
-		iterationsGetter: iterationsGetter,
+		duration:  duration,
+		ack:       ack,
+		ocm:       ocm,
+		finishing: finishing,
 	}
 	return t.wait()
 }
@@ -67,12 +53,12 @@ func WaitTimeout(iter int, duration time.Duration, runtimeFiguresGetter func() (
 func (timeout *timeout) interrupt() {
 	time.Sleep(timeout.duration)
 	if timeout.Enabled() {
-		timeout.interruption(Failed, ErrTimeout)
+		timeout.interruption(OCStatus{Status: Finished, Error: ErrTimeout})
 	}
 }
 
 func (timeout *timeout) isElapsedIter() bool {
-	return timeout.maxIter > 0 && timeout.maxIter <= timeout.iterationsGetter()
+	return IsFinished(timeout.finishing, timeout.ocm)
 }
 
 func (timeout *timeout) isAlive(lastTime time.Time) bool {

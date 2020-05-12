@@ -18,7 +18,9 @@ type Initializer func(k int, elemts []Elemt, space Space, src *rand.Rand) (centr
 // Assign returns the element nearest centroid, its label and the distance to the centroid
 func (c *Clust) Assign(elemt Elemt, space Space) (centroid Elemt, label int, dist float64) {
 	label, dist = c.nearest(elemt, space)
-	centroid = (*c)[label]
+	if label >= 0 {
+		centroid = (*c)[label]
+	}
 	return
 }
 
@@ -137,11 +139,11 @@ func (c *Clust) ParReduceLossForLabels(elemts []Elemt, labels []int, space Space
 
 // nearest Returns the label of element nearest centroid and the distance
 func (c *Clust) nearest(elemt Elemt, space Space) (label int, min float64) {
-	min = space.Dist(elemt, (*c)[0])
-	label = 0
+	min = -1
+	label = -1
 
-	for i := 1; i < len(*c); i++ {
-		if d := space.Dist(elemt, (*c)[i]); min > d {
+	for i := 0; i < len(*c); i++ {
+		if d := space.Dist(elemt, (*c)[i]); min < 0 || min > d {
 			min = d
 			label = i
 		}

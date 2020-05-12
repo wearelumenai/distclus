@@ -10,7 +10,7 @@ import (
 
 // Conf represents the cofiguration of a streaming algorithm.
 type Conf struct {
-	core.Conf
+	core.CtrlConf
 	BufferSize int
 	Mu         float64
 	Sigma      float64
@@ -19,8 +19,8 @@ type Conf struct {
 	RGen       *rand.Rand
 }
 
-// SetConfigDefaults applies default values to the given configuration.
-func (conf *Conf) SetConfigDefaults() {
+// SetDefaultValues applies default values to the given configuration.
+func (conf *Conf) SetDefaultValues() {
 	if conf.BufferSize == 0 {
 		conf.BufferSize = 100
 	}
@@ -43,8 +43,7 @@ func (conf *Conf) SetConfigDefaults() {
 
 // Verify checks if the given configuration is valid.
 func (conf *Conf) Verify() {
-	conf.SetConfigDefaults()
-	conf.Conf.Verify()
+	conf.SetDefaultValues()
 	if conf.OutAfter < 2 {
 		panic("OutAfter should be greater than 1")
 	}

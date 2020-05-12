@@ -12,7 +12,7 @@ import (
 
 // Conf of KMeans
 type Conf struct {
-	core.Conf
+	core.CtrlConf
 	Par       bool
 	K         int
 	FrameSize int
@@ -22,15 +22,14 @@ type Conf struct {
 
 // Verify configuratio
 func (conf *Conf) Verify() {
-	conf.Conf.Verify()
-	conf.SetConfigDefaults()
+	conf.SetDefaultValues()
 	if conf.K < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
 	}
 }
 
-// SetConfigDefaults initializes nil configuration values
-func (conf *Conf) SetConfigDefaults() {
+// SetDefaultValues initializes nil configuration values
+func (conf *Conf) SetDefaultValues() {
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
 		conf.RGen = rand.New(rand.NewSource(seed))

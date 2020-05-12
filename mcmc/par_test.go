@@ -46,7 +46,7 @@ func Test_ParPredictPP(t *testing.T) {
 		Norm:      2,
 		Par:       true,
 		FrameSize: 8,
-		Conf: core.Conf{
+		CtrlConf: core.CtrlConf{
 			Iter: 20,
 		},
 	}
@@ -70,7 +70,7 @@ func Test_ParRunAsync(t *testing.T) {
 		Amp:       0.1,
 		Par:       true,
 		FrameSize: 8,
-		Conf:      core.Conf{Iter: 1000},
+		CtrlConf:  core.CtrlConf{Iter: 1000},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -108,7 +108,7 @@ func TestParStrategy_Loss(t *testing.T) {
 	buffer := core.NewDataBuffer(test.Vectors, implConf.FrameSize)
 	strategy.Degree = runtime.NumCPU()
 
-	var clust, _ = algo.Centroids()
+	var clust = algo.Centroids()
 	var l1 = strategy.Loss(implConf, algo.Space(), clust, buffer.Data())
 	var l2 = clust.TotalLoss(test.Vectors, algo.Space(), implConf.Norm)
 
@@ -119,13 +119,13 @@ func TestParStrategy_Loss(t *testing.T) {
 
 func Test_Normal(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK: 3,
-		RGen:  rand.New(rand.NewSource(6305689164243)),
-		B:     1,
-		Amp:   .05,
-		Norm:  2,
-		Par:   true,
-		Conf:  core.Conf{Iter: 60},
+		InitK:    3,
+		RGen:     rand.New(rand.NewSource(6305689164243)),
+		B:        1,
+		Amp:      .05,
+		Norm:     2,
+		Par:      true,
+		CtrlConf: core.CtrlConf{Iter: 60},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 3,
@@ -136,8 +136,8 @@ func Test_Normal(t *testing.T) {
 	var centroids, data = test.GenerateData(10000)
 	var algo = mcmc.NewAlgo(implConf, space, data, initializer, distrib)
 
-	_ = algo.Batch(0, 0)
-	var result, _ = algo.Centroids()
+	_ = algo.Batch(nil, 0)
+	var result = algo.Centroids()
 
 	var _, cards = result.ParReduceLoss(data, space, implConf.Norm, runtime.NumCPU())
 
@@ -146,11 +146,11 @@ func Test_Normal(t *testing.T) {
 
 	test.AssertArrayAlmostEqual(t, dataMean, resultMean)
 
-	var result0, _, _, _ = algo.Predict(centroids[0])
+	var result0, _, _ = algo.Predict(centroids[0])
 	AssertDistance(t, centroids[0], result0)
-	var result1, _, _, _ = algo.Predict(centroids[1])
+	var result1, _, _ = algo.Predict(centroids[1])
 	AssertDistance(t, centroids[1], result1)
-	var result2, _, _, _ = algo.Predict(centroids[2])
+	var result2, _, _ = algo.Predict(centroids[2])
 	AssertDistance(t, centroids[2], result2)
 }
 

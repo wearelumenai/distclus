@@ -326,39 +326,33 @@ var labels = centers.ParMapLabel(observations, space, norm)
 ```
 This is useful when the clustering is done online because the centers are continually changing.
 
-### `core.OnlineClust` interface
+### `core.OnlineClust` interface (core/algo.go)
 
 The `core.OnlineClust` interface is implemented by the `core.Algo` struct.
 
-We have covered almost all methods so far:
+Is is composed of two interfaces:
 
- - `Init() (Clust, error)`: initialize the algorithm with implentation strategy (random, given, kmeans++, ...).
- - `Play(int, time.Duration) error`: execute the algorithm, with specific number of iterations and timeout duration if given.
- - `Centroids() (Clust, error)`: get array of clustering centroids.
- - `Predict(elemt Elemt) (Elemt, int, float64, error)`: according to previous method, get centroid, its index and minimal distance with closest centroid in array of clustering centroids for input elemt.
- - `Push(elemt Elemt) error`: push an element.
- - `Pause() error`: pause execution. The method `Play` goes back to execution.
- - `Wait(int, time.Duration) error`: wait until algorithm terminates iterations, with specific number of iterations and timeout duration if given.
- - `Stop() error`: stop execution. Play back is possible.
- - `Close() error`: stop execution. Play back is impossible.
- - `Copy() (OnlineClust, error)`: return a copy of this algorrithm with entire execution context.
- - `Reconfigure(ImplConf, Space) error`: reconfigure at runtime this algorithm with new impl and space.
- - `FailedError() error`: get failure error in case of failed execution.
- - `Batch(int, time.Duration) error` execute the algorithm in batch mode. Similar to the call sequence of `Run` and `Wait`. End with `Succeed` status, with specific number of iterations and timeout duration if given.
- - `Status() core.ClustStatus`: get algo status.
- - `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`).
+#### `core.OCModel` interface (core/model.go)
 
-Algorithms may return specific figures that describes their running state. These can be obtained by the
-`RuntimeFigures` method.
-```go
-var rt, err = algo.RuntimeFigures()
+- `Centroids() Clust`: get array of clustering centroids
+- `Conf() ImplConf`: get implementation configuration
+- `Impl() Impl`: get implementation
+- `Space() Space`: get space
+- `Status() core.OCStatus`: get algo status (Status and Error if failed)
+- `RuntimeFigures() figures.RuntimeFigures`: algorithm figures of type `map[string]float64`
 
-if err == nil {
-  for name, value := range rt {
-  	fmt.Printf("%v: %v\n", name, value)
-  }
-}
-```
+#### `core.OCCtrl` interface (core/ctrl.go)
+
+- `Init() error`: initialize the algorithm with implentation strategy (random, given, kmeans++, ...)
+- `Play(Finishing, time.Duration) error`: execute the algorithm, with specific `Finishing` and timeout duration if given
+- `Pause() error`: pause execution. Use methods `Play` or `Stop` to exit this state
+- `Wait(Finishing, time.Duration) error`: wait until algorithm terminates finish its execution, with specific `Finishing` and timeout duration if given
+- `Stop() error`: stop execution and status become `Finished`. Play back is possible
+- `Push(elemt Elemt) error`: push an element
+- `Predict(elemt Elemt) (Elemt, int, float64)`: according to previous method, get centroid, its index and minimal distance with closest centroid in array of clustering centroids for input elemt
+- `Batch(core.Finishing, time.Duration) error` execute the algorithm in batch mode. Similar to the call sequence of `Play` and `Wait`, with specific `Finishing` and timeout duration if given
+- `Reconfigure(ImplConf, Space) error`: reconfigure at runtime this algorithm with new impl and space
+- `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
 
 ### ```mcmc.LateDistrib``` struct
 
@@ -405,18 +399,17 @@ otherwise an error is returned by the `Play` method.
 In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `Conf` are both used to temporize continuous execution by respectively execute `Iter` iterations after a last `DataPerIter` pushed data and ensure maximum number of iterations per seconds.
 
 Remainding methods allow you to dynamically interact with the algorithm:
-- `Init() (Clust, error)`: initialize the algorithm if not yet created, and set status to ready.
-- `Play(int, time.Duration) error`: start the algorithm if not running (status `Created`, `Ready`, `Succeed` or `Failed`) or goes back to execution if `Idle`, with specific number of iterations and timeout duration if given.
-- `Pause() error`: pause the algorithm. Wait until the algo is `Idle`.
-- `Wait(int, time.Duration) error`: wait until the algorithm terminates, with specific number of iterations and timeout duration if given.
-- `Stop() error`: stop the algorithm execution (`Stopped` status). `Play` is possible.
-- `Close() error`: close the algorithm execution (`Closed` status). Impossible to play back the algorithm.
-- `FailedError() error`: get failed error if the algorithm failed to execute.
-- `Copy() (OnlineClust, error)`: return a copy of this algorithm with entire execution context.
+- `Init() error`: initialize the algorithm if not yet created, and set status to ready
+- `Play(Finishing, time.Duration) error`: start the algorithm if not running (status `Created`, `Ready`, `Finished`) or goes back to execution if `Idle`, with specific number of iterations and timeout duration if given
+- `Pause() error`: pause the algorithm. Wait until the algo is `Idle`
+- `Wait(Finishing, time.Duration) error`: wait until the algorithm terminates, with specific `Finishing` and timeout duration if given
+- `Stop() error`: stop the algorithm execution (`Finished` status). `Play` is possible
+- `Failed() error`: get failed error if the algorithm failed to execute
+- `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
 - `Reconfigure(ImplConf, Space) error`: reconfigure a runtime the algorithm with new implementation and space.
-- `Status() ClustStatus`: get algo status.
-- `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`).
-- `StatusNotifier(ClustStatus, error)`: callback function when algo status change or an error is raised. Setted in `Conf.StatusNotifier`.
+- `Status() OCStatus`: get algo status.
+- `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`) and `Failed()` is nil.
+- `Conf().StatusNotifier(OnlineClust, OCStatus)`: callback function when algo status change or an error is raised
 
 The `RunAndFeed` function above may be modified like this:
 
@@ -432,11 +425,11 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
         err = algo.Push(observations[i])
     }
     if err != nil {
-        err = algo.Play(0, 0)
+        err = algo.Play(nil, 0)
         for i := conf.initK; i < len(observations) && err == nil; i++ {
             err = algo.Push(observations[i])
         }
-        algo.Wait(0, 0)  // let the algorithm converge
+        algo.Wait(nil, 0)  // let the algorithm converge
     }
     return
 }

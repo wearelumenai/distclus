@@ -23,12 +23,12 @@ func Test_Distrib(t *testing.T) {
 	test.DoTestInitGiven(t, algo)
 }
 
-func newAlgo(t *testing.T, conf core.Conf, size int) (algo *core.Algo) {
+func newAlgo(t *testing.T, conf core.CtrlConf, size int) (algo *core.Algo) {
 	var tConf = mcmc.MultivTConf{
 		Dim: 3,
 	}
 	var distrib = mcmc.NewMultivT(tConf)
-	var implConf = mcmc.Conf{InitK: 3, Conf: conf}
+	var implConf = mcmc.Conf{InitK: 3, CtrlConf: conf}
 	var initializer = kmeans.GivenInitializer
 	var clust = make(core.Clust, size)
 	for i := range clust {
@@ -38,43 +38,43 @@ func newAlgo(t *testing.T, conf core.Conf, size int) (algo *core.Algo) {
 }
 
 func Test_Scenario_Batch(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
 
 	test.DoTestScenarioBatch(t, algo)
 }
 
 func Test_scenario_infinite(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{}, 10)
+	var algo = newAlgo(t, core.CtrlConf{}, 10)
 
 	test.DoTestScenarioInfinite(t, algo)
 }
 
 func Test_scenario_finite(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 1000}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1000}, 10)
 
 	test.DoTestScenarioFinite(t, algo)
 }
 
 func Test_Scenario_Play(t *testing.T) {
-	var algo = newAlgo(t, core.Conf{Iter: 20}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 20}, 10)
 
 	test.DoTestScenarioPlay(t, algo)
 }
 
 func Test_Timeout(t *testing.T) {
-	algo := newAlgo(t, core.Conf{Timeout: 1, Iter: math.MaxInt64}, 10)
+	algo := newAlgo(t, core.CtrlConf{Timeout: 1, Iter: math.MaxInt64}, 10)
 
 	test.DoTestTimeout(t, algo)
 }
 
 func Test_Freq(t *testing.T) {
-	algo := newAlgo(t, core.Conf{IterFreq: 1}, 10)
+	algo := newAlgo(t, core.CtrlConf{IterFreq: 1}, 10)
 
 	test.DoTestFreq(t, algo)
 }
 
 func Test_IterToRun(t *testing.T) {
-	algo := newAlgo(t, core.Conf{}, 10)
+	algo := newAlgo(t, core.CtrlConf{}, 10)
 
 	test.DoTestIterToRun(t, algo)
 }

@@ -80,7 +80,7 @@ func Test_RunSyncKMeansPP(t *testing.T) {
 		B:      100, Amp: 0.1,
 		Norm:      2,
 		FrameSize: 8,
-		Conf:      core.Conf{Iter: 1},
+		CtrlConf:  core.CtrlConf{Iter: 1},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -99,9 +99,9 @@ func Test_RunAsync(t *testing.T) {
 		// FrameSize: 8,
 		RGen: rand.New(rand.NewSource(6305689164243)),
 		B:    100, Amp: 0.1,
-		Norm:   2,
-		ProbaK: []float64{1, 8, 1},
-		Conf:   core.Conf{Iter: 100},
+		Norm:     2,
+		ProbaK:   []float64{1, 8, 1},
+		CtrlConf: core.CtrlConf{Iter: 100},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -122,7 +122,7 @@ func Test_Workflow(t *testing.T) {
 		B:     100, Amp: 1,
 		Norm:      2,
 		FrameSize: 8,
-		Conf:      core.Conf{Iter: 20},
+		CtrlConf:  core.CtrlConf{Iter: 20},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -143,7 +143,7 @@ func Test_MaxK(t *testing.T) {
 		Norm:      2,
 		MaxK:      6,
 		FrameSize: 8,
-		Conf:      core.Conf{Iter: 10},
+		CtrlConf:  core.CtrlConf{Iter: 10},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -155,7 +155,7 @@ func Test_MaxK(t *testing.T) {
 
 	test.PushAndRunSync(algo)
 
-	var clust, _ = algo.Centroids()
+	var clust = algo.Centroids()
 	if l := len(clust); l > 6 {
 		t.Error("Exepected ", implConf.MaxK, "got", l)
 	}
@@ -168,7 +168,7 @@ func Test_AcceptRatio(t *testing.T) {
 		B:     100, Amp: 1,
 		Norm:      2,
 		FrameSize: 8,
-		Conf:      core.Conf{Iter: 20},
+		CtrlConf:  core.CtrlConf{Iter: 20},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 5,
@@ -179,7 +179,7 @@ func Test_AcceptRatio(t *testing.T) {
 	var algo = mcmc.NewAlgo(implConf, space, []core.Elemt{}, initializer, distrib)
 
 	test.PushAndRunSync(algo)
-	var rf, _ = algo.RuntimeFigures()
+	var rf = algo.RuntimeFigures()
 	var r = rf[figures.Acceptations] / rf[figures.Iterations]
 	if r < 0 || r > 1 {
 		t.Error("Expected ratio in [0 1], got", r)

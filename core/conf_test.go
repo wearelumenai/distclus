@@ -9,30 +9,30 @@ import (
 
 func TestKMeans_ConfErrorDataPerIter(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = core.Conf{DataPerIter: -10}
+	var conf = core.CtrlConf{DataPerIter: -10}
 	conf.Verify()
 }
 
 func TestKMeans_ConfErrorIterPerData(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = core.Conf{IterPerData: -10}
+	var conf = core.CtrlConf{IterPerData: -10}
 	conf.Verify()
 }
 
 func TestKMeans_ConfErrorIterFreq(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = core.Conf{IterFreq: -10}
+	var conf = core.CtrlConf{IterFreq: -10}
 	conf.Verify()
 }
 
 func TestKMeans_ConfErrorTimeout(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = core.Conf{Timeout: -10}
+	var conf = core.CtrlConf{Timeout: -10}
 	conf.Verify()
 }
 
 func TestKMeans_ConfErrorIter(t *testing.T) {
 	defer test.AssertPanic(t)
-	var conf = core.Conf{Iter: -10}
+	var conf = core.CtrlConf{Iter: -10}
 	conf.Verify()
 }

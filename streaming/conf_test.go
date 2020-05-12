@@ -9,7 +9,7 @@ import (
 
 func Test_SetDefaultConfig(t *testing.T) {
 	var conf = streaming.Conf{}
-	conf.SetConfigDefaults()
+	conf.SetDefaultValues()
 	if conf.BufferSize != 100 {
 		t.Error("expected 100")
 	}

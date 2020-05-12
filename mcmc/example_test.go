@@ -13,10 +13,10 @@ import (
 )
 
 var conf = mcmc.Conf{
-	InitK: 1,
-	Amp:   .5,
-	B:     1,
-	Conf:  core.Conf{Iter: 20},
+	InitK:    1,
+	Amp:      .5,
+	B:        1,
+	CtrlConf: core.CtrlConf{Iter: 20},
 }
 
 var tConf = mcmc.MultivTConf{
@@ -50,14 +50,14 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
 	for i := 0; i < len(observations) && err == nil; i++ {
 		err = algo.Push(observations[i])
 	}
-	err = algo.Batch(0, 0)
+	err = algo.Batch(nil, 0)
 	return
 }
 
 func Eval(algo *core.Algo, centers core.Clust, observations []core.Elemt, space core.Space) (result core.Clust, rmse float64, err error) {
 	var output = getOutput(centers, observations, space)
 	rmse = RMSE(algo, observations, output, space)
-	result, err = algo.Centroids()
+	result = algo.Centroids()
 	return
 }
 
@@ -73,7 +73,7 @@ func getOutput(centers core.Clust, observations []core.Elemt, space core.Space) 
 func RMSE(algo *core.Algo, observations []core.Elemt, output []core.Elemt, space core.Space) float64 {
 	var mse = 0.
 	for i := range observations {
-		var _, _, dist, _ = algo.Predict(observations[i])
+		var _, _, dist = algo.Predict(observations[i])
 		mse += dist * dist / float64(len(observations))
 	}
 	return math.Sqrt(mse)

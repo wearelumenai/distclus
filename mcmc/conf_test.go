@@ -24,7 +24,7 @@ func TestMCMC_ConfErrorK(t *testing.T) {
 
 func Test_Defaults(t *testing.T) {
 	var conf = mcmc.Conf{}
-	conf.SetConfigDefaults()
+	conf.SetDefaultValues()
 
 	test.AssertFalse(t, conf.RGen == nil)
 	test.AssertFalse(t, conf.ProbaK == nil)

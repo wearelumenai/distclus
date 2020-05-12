@@ -43,7 +43,7 @@ func getSeriesConf() (mcmc.Conf, dtw.Space) {
 		Amp:   .001,
 		B:     200,
 		Par:   true,
-		Conf: core.Conf{
+		CtrlConf: core.CtrlConf{
 			Iter: 50,
 		},
 	}
@@ -60,18 +60,19 @@ func getSeriesAlgo(space dtw.Space, mcmcConf mcmc.Conf) *core.Algo {
 	return mcmc.NewAlgo(mcmcConf, space, []core.Elemt{}, initializer, distrib)
 }
 
-func runSeriesAlgo(algo *core.Algo, series [][][]float64) ([]core.Elemt, error) {
+func runSeriesAlgo(algo *core.Algo, series [][][]float64) (elts []core.Elemt, err error) {
 	for s := range series {
-		if err := algo.Push(series[s]); err != nil {
-			return nil, err
+		if err = algo.Push(series[s]); err != nil {
+			return
 		}
 	}
 
-	if err := algo.Batch(0, 0); err != nil {
-		return nil, err
+	if err = algo.Batch(nil, 0); err != nil {
+		return
 	}
 
-	return algo.Centroids()
+	elts = algo.Centroids()
+	return
 }
 
 func makeSeries() [][][]float64 {

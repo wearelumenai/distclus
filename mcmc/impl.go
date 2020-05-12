@@ -28,9 +28,9 @@ type Impl struct {
 }
 
 // Copy impl
-func (impl *Impl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
-	var newConf = conf.(*Conf)
-	var algo = NewAlgo(*newConf, space, impl.buffer.Data(), impl.initializer, impl.distrib)
+func (impl *Impl) Copy(model core.OCModel) (core.Impl, error) {
+	var newConf = model.Conf().(*Conf)
+	var algo = NewAlgo(*newConf, model.Space(), impl.buffer.Data(), impl.initializer, impl.distrib)
 	return algo.Impl(), nil
 }
 
@@ -41,8 +41,9 @@ type Strategy interface {
 }
 
 // Init initializes the algorithm
-func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (centroids core.Clust, err error) {
-	var mcmcConf = conf.(*Conf)
+func (impl *Impl) Init(model core.OCModel) (centroids core.Clust, err error) {
+	var mcmcConf = model.Conf().(*Conf)
+	var space = model.Space()
 	_ = impl.buffer.Apply()
 	centroids, err = impl.initializer(mcmcConf.InitK, impl.buffer.Data(), space, mcmcConf.RGen)
 	if err == nil {
@@ -61,12 +62,12 @@ func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (cent
 }
 
 // Iterate executes the algorithm
-func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
-	var mcmcConf = conf.(*Conf)
+func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+	var mcmcConf = model.Conf().(*Conf)
 
 	var data = impl.buffer.Data()
 	var currentTime = impl.getCurrentTime(data)
-	impl.current, clust = impl.doIter(*mcmcConf, space, impl.current, centroids, data, currentTime)
+	impl.current, clust = impl.doIter(*mcmcConf, model.Space(), impl.current, model.Centroids(), data, currentTime)
 	impl.time = currentTime
 	return clust, impl.runtimeFigures(), impl.buffer.Apply()
 }
@@ -76,8 +77,8 @@ func (impl *Impl) getCurrentTime(data []core.Elemt) int {
 }
 
 // Push input element in the buffer
-func (impl *Impl) Push(elemt core.Elemt, running bool) error {
-	return impl.buffer.Push(elemt, running)
+func (impl *Impl) Push(elemt core.Elemt, model core.OCModel) error {
+	return impl.buffer.Push(elemt, model.Status().Alive())
 }
 
 type proposal struct {

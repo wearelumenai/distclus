@@ -15,22 +15,22 @@ func NewImpl(conf Conf, elemts []core.Elemt) Impl {
 }
 
 // Init initializes the algorithm
-func (impl *Impl) Init(core.ImplConf, core.Space, core.Clust) (clust core.Clust, err error) {
+func (impl *Impl) Init(core.OCModel) (clust core.Clust, err error) {
 	return
 }
 
 // Iterate runs one iteration of the algorithm
 // If clust is nil, algorithm execution does not increment iterations
-func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+func (impl *Impl) Iterate(core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
 	return
 }
 
 // Push pushes a new element
-func (impl *Impl) Push(elemt core.Elemt, running bool) (err error) {
+func (impl *Impl) Push(core.Elemt, core.OCModel) (err error) {
 	return
 }
 
 // Copy the impl
-func (impl *Impl) Copy(core.ImplConf, core.Space) (core.Impl, error) {
+func (impl *Impl) Copy(core.OCModel) (core.Impl, error) {
 	return impl, nil
 }

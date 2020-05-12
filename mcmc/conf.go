@@ -12,7 +12,7 @@ import (
 
 // Conf is the mcmc configuration object
 type Conf struct {
-	core.Conf
+	core.CtrlConf
 	Par            bool
 	InitK          int // number of initial number of clusters
 	RGen           *rand.Rand
@@ -25,8 +25,8 @@ type Conf struct {
 	NumCPU         int // maximal number of CPU to use
 }
 
-// SetConfigDefaults initializes nil parameter values
-func (conf *Conf) SetConfigDefaults() {
+// SetDefaultValues initializes nil parameter values
+func (conf *Conf) SetDefaultValues() {
 	if conf.RGen == nil {
 		var seed = uint64(time.Now().UTC().Unix())
 		conf.RGen = rand.New(rand.NewSource(seed))
@@ -50,8 +50,7 @@ func (conf *Conf) SetConfigDefaults() {
 
 // Verify configuration parameters
 func (conf *Conf) Verify() {
-	conf.Conf.Verify()
-	conf.SetConfigDefaults()
+	conf.SetDefaultValues()
 	if conf.InitK < 1 {
 		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
 	}

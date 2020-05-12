@@ -18,27 +18,27 @@ type Strategy interface {
 }
 
 // Init Algorithm
-func (impl *Impl) Init(conf core.ImplConf, space core.Space, _ core.Clust) (clust core.Clust, err error) {
-	var kmeansConf = conf.(*Conf)
+func (impl *Impl) Init(model core.OCModel) (clust core.Clust, err error) {
+	var kmeansConf = model.Conf().(*Conf)
 	_ = impl.buffer.Apply()
-	return impl.initializer(kmeansConf.K, impl.buffer.Data(), space, kmeansConf.RGen)
+	return impl.initializer(kmeansConf.K, impl.buffer.Data(), model.Space(), kmeansConf.RGen)
 }
 
 // Iterate the algorithm until signal received on closing channel or iteration number is reached
-func (impl *Impl) Iterate(conf core.ImplConf, space core.Space, centroids core.Clust) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
-	return impl.strategy.Iterate(space, centroids, impl.buffer.Data()),
+func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+	return impl.strategy.Iterate(model.Space(), model.Centroids(), impl.buffer.Data()),
 		nil,
 		impl.buffer.Apply()
 }
 
 // Push input element in the buffer
-func (impl *Impl) Push(elemt core.Elemt, running bool) error {
-	return impl.buffer.Push(elemt, running)
+func (impl *Impl) Push(elemt core.Elemt, model core.OCModel) error {
+	return impl.buffer.Push(elemt, model.Status().Alive())
 }
 
 // Copy impl
-func (impl *Impl) Copy(conf core.ImplConf, space core.Space) (core.Impl, error) {
-	var newConf = conf.(*Conf)
-	var algo = NewAlgo(*newConf, space, impl.buffer.Data(), impl.initializer)
+func (impl *Impl) Copy(model core.OCModel) (core.Impl, error) {
+	var newConf = model.Conf().(*Conf)
+	var algo = NewAlgo(*newConf, model.Space(), impl.buffer.Data(), impl.initializer)
 	return algo.Impl(), nil
 }

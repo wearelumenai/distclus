@@ -12,6 +12,24 @@ import (
 	"golang.org/x/exp/rand"
 )
 
+func NewSimpleModel(conf *streaming.Conf, centroids core.Clust, playing bool) core.OCModel {
+	var status core.OCStatus
+	if playing {
+		status.Status = core.Running
+	}
+	return core.NewSimpleOCModel(conf, euclid.Space{}, status, nil, centroids, nil)
+}
+
+func NewInitModel(conf *streaming.Conf) core.OCModel {
+	return NewSimpleModel(conf, nil, false)
+}
+func NewPushModel(playing bool) core.OCModel {
+	return NewSimpleModel(nil, nil, playing)
+}
+func NewIterateModel(conf *streaming.Conf, centroids core.Clust) core.OCModel {
+	return NewSimpleModel(conf, centroids, true)
+}
+
 func TestImpl_UpdateMaxDistance(t *testing.T) {
 	var impl = streaming.Impl{}
 	impl.UpdateMaxDistance(1.2)
@@ -109,7 +127,7 @@ func TestImpl_Interface(t *testing.T) {
 
 func TestImpl_InitError(t *testing.T) {
 	var impl = streaming.Impl{}
-	var _, err = impl.Init(&streaming.Conf{}, euclid.Space{}, nil)
+	var _, err = impl.Init(NewInitModel(&streaming.Conf{}))
 	if err == nil {
 		t.Error("an error was expected (initialization is not possible)")
 	}
@@ -119,11 +137,11 @@ func TestImpl_InitSuccess(t *testing.T) {
 	var conf = streaming.Conf{BufferSize: 5}
 	var impl = streaming.NewImpl(conf, []core.Elemt{})
 	var cluster0 = []float64{1.}
-	var err0 = impl.Push(cluster0, false)
+	var err0 = impl.Push(cluster0, NewPushModel(false))
 	if err0 != nil {
 		t.Error("unexpected error", err0)
 	}
-	var clust, err = impl.Init(&conf, euclid.Space{}, nil)
+	var clust, err = impl.Init(NewInitModel(&conf))
 	if err != nil {
 		t.Error("unexpected error", err)
 	}
@@ -138,12 +156,12 @@ func TestImpl_PushError(t *testing.T) {
 
 	var cluster0 = []float64{1.}
 
-	conf.SetConfigDefaults()
+	conf.SetDefaultValues()
 	for i := 0; i < conf.BufferSize; i++ {
-		var _ = impl.Push(cluster0, false)
+		var _ = impl.Push(cluster0, NewPushModel(false))
 	}
 
-	var err0 = impl.Push(cluster0, false)
+	var err0 = impl.Push(cluster0, NewPushModel(false))
 	if err0 == nil {
 		t.Error("an error was expected (channel is full)")
 	}
@@ -175,7 +193,7 @@ func TestImpl_Run(t *testing.T) {
 	var distr = mix()
 	var clusters = core.Clust{distr()}
 	var impl = streaming.NewImpl(conf, clusters)
-	clusters, err := impl.Init(&conf, euclid.Space{}, nil)
+	clusters, err := impl.Init(NewInitModel(&conf))
 	if err != nil {
 		t.Error("No error expected.", err)
 	}
@@ -183,7 +201,7 @@ func TestImpl_Run(t *testing.T) {
 		var centroids core.Clust
 		var runtimeFigures figures.RuntimeFigures
 		for {
-			centroids, runtimeFigures, err = impl.Iterate(&conf, euclid.Space{}, clusters)
+			centroids, runtimeFigures, err = impl.Iterate(NewIterateModel(&conf, clusters))
 			if centroids != nil {
 				if runtimeFigures == nil {
 					t.Error("RuntimeFigures expected.")
@@ -196,7 +214,7 @@ func TestImpl_Run(t *testing.T) {
 		}
 	}()
 	for i := 0; i < 1000; i++ {
-		_ = impl.Push(distr(), true)
+		_ = impl.Push(distr(), NewPushModel(true))
 	}
 	if c := len(clusters); c < 3 {
 		t.Error("3 or more clusters expected got", c)

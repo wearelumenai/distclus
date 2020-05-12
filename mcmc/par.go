@@ -20,21 +20,21 @@ type ParStrategy struct {
 }
 
 // Iterate is the iterative execution
-func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) core.Clust {
+func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core.Clust, data []core.Elemt, iter int) (result core.Clust) {
 	var kmeansConf = kmeans.Conf{
 		Par: true,
 		K:   len(centroids),
-		Conf: core.Conf{
+		CtrlConf: core.CtrlConf{
 			Iter: iter,
 		},
 	}
 	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
 
-	algo.Batch(0, 0)
+	algo.Batch(nil, 0)
 
-	var result, _ = algo.Centroids()
+	result = algo.Centroids()
 
-	return result
+	return
 }
 
 // Loss calculates loss for the given proposal and data in parallel

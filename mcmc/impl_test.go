@@ -25,11 +25,11 @@ var ints = []core.Elemt{
 
 func Test_DistinctValuesMaxK(t *testing.T) {
 	var implConf = mcmc.Conf{
-		InitK: 2,
-		Amp:   10,
-		B:     .00001,
-		MaxK:  50,
-		Conf:  core.Conf{Iter: 2000},
+		InitK:    2,
+		Amp:      10,
+		B:        .00001,
+		MaxK:     50,
+		CtrlConf: core.CtrlConf{Iter: 2000},
 	}
 	var tConf = mcmc.MultivTConf{
 		Dim: 1,
@@ -42,16 +42,16 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 		algo.Push(v)
 	}
 
-	algo.Batch(0, 0)
+	algo.Batch(nil, 0)
 
-	var centroids, _ = algo.Centroids()
+	var centroids = algo.Centroids()
 
 	if len(centroids) != 4 {
 		t.Error("Expected 4 centroids", len(centroids))
 	}
 
 	for _, e := range ints {
-		var pred, _, _, _ = algo.Predict(e)
+		var pred, _, _ = algo.Predict(e)
 		if !reflect.DeepEqual(pred, e) {
 			t.Error("Center and element should be equal")
 		}

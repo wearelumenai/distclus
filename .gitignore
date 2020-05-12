@@ -4,3 +4,4 @@ coverage.out
 mem.out
 trace.out
 cpu.out
+.vscode

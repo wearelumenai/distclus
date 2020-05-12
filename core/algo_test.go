@@ -59,7 +59,7 @@ func (impl *mockImpl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigu
 }
 
 func (impl *mockImpl) Push(elemt core.Elemt, model core.OCModel) (err error) {
-	if model.Status().Status >= core.Running {
+	if model.Status().Value >= core.Running {
 		impl.runningcount++
 	} else {
 		impl.stoppedcount++
@@ -148,11 +148,11 @@ func TestStop(t *testing.T) {
 	algo := newAlgo(t, core.CtrlConf{Iter: 1}, 2)
 	err := algo.Stop()
 
-	if err != core.ErrNotStarted {
+	if err != core.ErrNotRunning {
 		t.Error("no error expected", err)
 	}
 
-	if algo.Status().Status != core.Created {
+	if algo.Status().Value != core.Created {
 		t.Error("created expected", algo.Status())
 	}
 
@@ -161,7 +161,7 @@ func TestStop(t *testing.T) {
 	if err != nil {
 		t.Error("No error expected", err)
 	}
-	if algo.Status().Status != core.Ready {
+	if algo.Status().Value != core.Ready {
 		t.Error("Ready expected", algo.Status())
 	}
 
@@ -170,7 +170,7 @@ func TestStop(t *testing.T) {
 	if err != core.ErrNotRunning {
 		t.Error("Not running expected", err)
 	}
-	if algo.Status().Status != core.Ready {
+	if algo.Status().Value != core.Ready {
 		t.Error("Ready expected", algo.Status())
 	}
 
@@ -179,46 +179,45 @@ func TestStop(t *testing.T) {
 	if err != core.ErrNotRunning {
 		t.Error("Not running expected", err)
 	}
-	if algo.Status().Status != core.Ready {
+	if algo.Status().Value != core.Ready {
 		t.Error("Finished expected", algo.Status())
 	}
 
 	err = algo.Play(nil, 0)
 
-	if err != core.ErrFinished {
-		t.Error("closed error expected", err)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
-	if algo.Status().Status != core.Finished {
-		t.Error("Finished expected", algo.Status())
+	if algo.Status().Value != core.Finished {
+		t.Error("finished expected", algo.Status().Value)
+	}
+
+	err = algo.Stop()
+
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
+	}
+	if algo.Status().Value != core.Finished {
+		t.Error("finished expected", algo.Status().Value)
 	}
 
 	err = algo.Pause()
 
-	if err != core.ErrFinished {
-		t.Error("closed error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
 	}
-	if algo.Status().Status != core.Finished {
+	if algo.Status().Value != core.Finished {
 		t.Error("Finished expected", algo.Status())
 	}
 
 	err = algo.Stop()
 
-	if err != core.ErrFinished {
-		t.Error("closed error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
 	}
-	if algo.Status().Status != core.Finished {
+	if algo.Status().Value != core.Finished {
 		t.Error("Finished expected", algo.Status())
 	}
-
-	err = algo.Reconfigure(nil, nil)
-
-	if err != core.ErrFinished {
-		t.Error("closed error expected", err)
-	}
-	if algo.Status().Status != core.Finished {
-		t.Error("Finished expected", algo.Status())
-	}
-
 }
 
 func TestIterError(t *testing.T) {
@@ -263,7 +262,7 @@ func TestPause(t *testing.T) {
 		t.Error("error while pausing", err)
 	}
 
-	if algo.Status().Status != core.Idle {
+	if algo.Status().Value != core.Idle {
 		t.Error("Idle status expected. found", algo.Status())
 	}
 
@@ -273,7 +272,7 @@ func TestPause(t *testing.T) {
 		t.Error("error while playing", err)
 	}
 
-	if algo.Status().Status != core.Running && algo.Status().Status != core.Finished {
+	if algo.Status().Value != core.Running && algo.Status().Value != core.Finished {
 		t.Error("wrong status. Running expected", algo.Status())
 	}
 
@@ -431,7 +430,7 @@ func Test_StatusNotifier(t *testing.T) {
 		if !ok {
 			t.Error("status expected")
 		} else {
-			if ss.Status != s {
+			if ss.Value != s {
 				t.Errorf("%d expected. %d", s, ss)
 			}
 		}

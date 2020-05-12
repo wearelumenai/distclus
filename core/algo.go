@@ -29,9 +29,7 @@ type Algo struct {
 	status          OCStatus
 	statusChannel   chan OCStatus
 	ackChannel      chan bool
-	mutex           sync.RWMutex
 	runtimeFigures  figures.RuntimeFigures
-	statusNotifier  StatusNotifier
 	newData         int
 	pushedData      int
 	totalIterations int
@@ -41,9 +39,8 @@ type Algo struct {
 	succeedOnce     bool
 	timeout         Timeout
 
-	finishing Finishing
-	ctrl      sync.RWMutex // algo controller mutex
-	model     sync.RWMutex // algo model mutex
+	ctrl  sync.RWMutex // algo controller mutex
+	model sync.RWMutex // algo model mutex
 }
 
 // NewAlgo creates a new algorithm instance
@@ -53,14 +50,12 @@ func NewAlgo(conf Conf, impl Impl, space Space) (algo *Algo) {
 	ctrlConf.Verify()
 
 	algo = &Algo{
-		conf:           conf,
-		impl:           impl,
-		space:          space,
-		status:         OCStatus{Status: Created},
-		statusChannel:  make(chan OCStatus),
-		ackChannel:     make(chan bool),
-		statusNotifier: ctrlConf.StatusNotifier,
-		finishing:      ctrlConf.Finishing,
+		conf:          conf,
+		impl:          impl,
+		space:         space,
+		status:        OCStatus{Value: Created},
+		statusChannel: make(chan OCStatus),
+		ackChannel:    make(chan bool),
 	}
 
 	return
@@ -70,11 +65,18 @@ func NewAlgo(conf Conf, impl Impl, space Space) (algo *Algo) {
 func (algo *Algo) setStatus(status OCStatus) {
 	algo.model.Lock()
 	algo.status = status
-	var statusNotifier = algo.statusNotifier
+	var statusNotifier = algo.conf.Ctrl().StatusNotifier
 	algo.model.Unlock()
 	if statusNotifier != nil {
-		statusNotifier(algo, status)
+		go statusNotifier(algo, status)
 	}
+}
+
+// change of status
+func (algo *Algo) setConcurrentStatus(status OCStatus) {
+	algo.ctrl.Lock()
+	algo.setStatus(status)
+	algo.ctrl.Unlock()
 }
 
 // receiveStatus status from main routine

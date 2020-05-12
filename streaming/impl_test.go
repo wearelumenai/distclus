@@ -15,9 +15,9 @@ import (
 func NewSimpleModel(conf *streaming.Conf, centroids core.Clust, playing bool) core.OCModel {
 	var status core.OCStatus
 	if playing {
-		status.Status = core.Running
+		status.Value = core.Running
 	}
-	return core.NewSimpleOCModel(conf, euclid.Space{}, status, nil, centroids, nil)
+	return core.NewSimpleOCModel(conf, euclid.Space{}, status, nil, centroids)
 }
 
 func NewInitModel(conf *streaming.Conf) core.OCModel {

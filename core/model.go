@@ -85,13 +85,13 @@ func (model SimpleOCModel) Impl() Impl {
 	return model.impl
 }
 
-func NewSimpleOCModel(conf Conf, space Space, status OCStatus, runtimeFigures figures.RuntimeFigures, centroids Clust, impl Impl) OCModel {
+func NewSimpleOCModel(conf Conf, space Space, status OCStatus, runtimeFigures figures.RuntimeFigures, centroids Clust) OCModel {
 	return SimpleOCModel{
 		conf:           conf,
 		space:          space,
 		status:         status,
 		runtimeFigures: runtimeFigures,
 		centroids:      centroids,
-		impl:           impl,
+		impl:           nil,
 	}
 }

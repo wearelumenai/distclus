@@ -29,11 +29,11 @@ type StatusNotifier = func(OnlineClust, OCStatus)
 
 // OCStatus describes Online Clustering status with ClustStatus and error
 type OCStatus struct {
-	Status ClustStatus
-	Error  error
+	Value ClustStatus
+	Error error
 }
 
 // Alive check if status is running without error
 func (status OCStatus) Alive() bool {
-	return status.Status >= Running && status.Error == nil
+	return status.Value >= Running && status.Error == nil
 }

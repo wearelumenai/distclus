@@ -97,7 +97,7 @@ Where :
 - `Timeout`: maximal algorithm execution duration in seconds. Unlimited by default.
 - `NumCPU`: number of CPU to use for algorithm execution. Default is maximal number of CPU.
 - `DataPerIter`: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
-- `StatusNotifier`: callback called in the same go routine than algo execution, each time the algorithm change of status or fires an error.
+- `StatusNotifier`: asynchronous callback called each time the algorithm change of status or fires an error.
 
 ### MCMC Configuration
 
@@ -404,11 +404,10 @@ Remainding methods allow you to dynamically interact with the algorithm:
 - `Pause() error`: pause the algorithm. Wait until the algo is `Idle`
 - `Wait(Finishing, time.Duration) error`: wait until the algorithm terminates, with specific `Finishing` and timeout duration if given
 - `Stop() error`: stop the algorithm execution (`Finished` status). `Play` is possible
-- `Failed() error`: get failed error if the algorithm failed to execute
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
 - `Reconfigure(ImplConf, Space) error`: reconfigure a runtime the algorithm with new implementation and space.
-- `Status() OCStatus`: get algo status.
-- `Alive() bool`: true iif algo is in running status (`Running`, `Idle` and `Waiting`) and `Failed()` is nil.
+- `Status() OCStatus`: get algo status (Value: ClustStatus, Error: failed error).
+- `Alive() bool`: true if algo is alive (`Running`, `Idle` and `Finished` without error).
 - `Conf().StatusNotifier(OnlineClust, OCStatus)`: callback function when algo status change or an error is raised
 
 The `RunAndFeed` function above may be modified like this:

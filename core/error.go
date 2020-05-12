@@ -2,9 +2,6 @@ package core
 
 import "errors"
 
-// ErrNotStarted fired if centroids or runtimefigures asked without running the algorithm
-var ErrNotStarted = errors.New("clustering not started")
-
 // ErrNotRunning raised while algorithm status equals Created, Ready or Failed
 var ErrNotRunning = errors.New("Algorithm is not running")
 

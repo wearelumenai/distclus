@@ -53,7 +53,7 @@ func WaitTimeout(finishing Finishing, duration time.Duration, ocm OCModel, ack <
 func (timeout *timeout) interrupt() {
 	time.Sleep(timeout.duration)
 	if timeout.Enabled() {
-		timeout.interruption(OCStatus{Status: Finished, Error: ErrTimeout})
+		timeout.interruption(OCStatus{Value: Finished, Error: ErrTimeout})
 	}
 }
 

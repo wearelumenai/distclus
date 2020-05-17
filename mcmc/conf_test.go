@@ -8,18 +8,22 @@ import (
 )
 
 func TestMCMC_ConfErrorMaxK(t *testing.T) {
-	defer test.AssertPanic(t)
 	var conf = mcmcConf
 	conf.InitK = 30
 	conf.MaxK = 10
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
 func TestMCMC_ConfErrorK(t *testing.T) {
-	defer test.AssertPanic(t)
 	var conf = mcmcConf
 	conf.InitK = 0
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
 func Test_Defaults(t *testing.T) {

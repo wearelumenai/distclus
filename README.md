@@ -55,9 +55,42 @@ any element type can be used provided a distance and a barycenter can be compute
 A data type that can be clustered must implement the ```core.Elemt``` interface.
 Distance and barycenter are calculated using a suitable object that implements ```core.Space```.
 
-An algorithm is represented by an ```core.Algo``` object.
+An algorithm is represented by an ```core.OnlineClust``` interface object, composed of two interfaces: the controller `core.OCCtrl` and the model `core.OCModel`.
 Actually several algorithm are provided by the library and more can be implemented by providing a specific
-implementation to the ```core.Algo``` object.
+implementation to the ```core.OnlineClust``` object.
+
+```go
+package core
+
+type OnlineClust interface {
+	OCCtrl
+	OCModel
+}
+
+// OCModel online clustering model
+type OCModel interface {
+	Centroids() Clust               // clustering result
+	Conf() Conf                     // algo conf
+	Impl() Impl                     // algo impl
+	Space() Space                   // data space
+	Status() OCStatus               // algo status
+	RuntimeFigures() RuntimeFigures // clustering figures
+}
+
+// OCCtrl online clustring controller
+type OCCtrl interface {
+	Init() error // initialize algo centroids with impl strategy
+	Play() error // play (with x iterations if given, otherwise depends on conf.Iter/conf.IterPerData, and maximal duration in ns if given, otherwise conf.Timeout) the algorithm
+	Pause() error // pause the algorithm (idle)
+	Wait(Finishing, time.Duration) error // wait for finishing condition and maximal duration. By default, finishing is ready/idle/finished status, and duration is infinite
+	Stop() error // stop the algorithm
+	Push(Elemt) error // add element
+	Predict(elemt Elemt) (Elemt, int, float64) // input elemt centroid/label with distance to closest centroid
+	Batch() error // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
+	Copy(Conf, Space) (OnlineClust, error) // make a copy of this algo with new configuration and space
+}
+```
+
 An implementation is an objects that respects the ```core.Impl``` interface.
 
 Three implementations are provided :
@@ -71,22 +104,50 @@ Constructors need at least :
 
 The result of a clustering is of type ```core.Clust``` which is an array of ```core.Elemt``` with dedicated methods.
 
+### OC Workflow
+
+An `OnlineClust` object lives in three main states through 6 `core.ClustStatus` :
+
+- `Initialization`: implementation initialization step. This step is implicit if the user call the method `Play` after created the algorithm
+- `Alive`: the algorithm do implementation iterations depending on `CtrlConf.Iter` or pushed data with `CtrlConf.IterPerData` and `CtrlConf.DataPerIter` values (specification is in the next section)
+- `Finished`: leave alive status after `Stop` command, or when an error occured from `Initializing` status
+
+![workflow](workflow.png)
+
 ## Configuration
 
 Algorithms are configured with configuration objects.
 
-All algorithm configurations extend the `core.Conf` :
+All algorithm configurations implement the `core.Conf` which are prepated with the function `PrepareConf` before initializing the algorithm and change configuration:
 
 ```go
 package core
 
-type Conf struct {
+type Conf interface {
+	Verify() error // verify configuration values
+	Ctrl() *CtrlConf // controller configuration
+	SetDefaultValues() // Set default values
+}
+
+type CtrlConf struct {
 	Iter           int
 	IterFreq       float64
     Timeout        float64
     NumCPU         int
     DataPerIter   int
 	StatusNotifier StatusNotifier
+	Finishing Finishing
+}
+
+// PrepareConf before using it in algo
+func PrepareConf(conf Conf) (err error) {
+	conf.SetDefaultValues()
+	conf.Ctrl().SetDefaultValues()
+	err = conf.Verify()
+	if err == nil {
+		err = conf.Ctrl().Verify()
+	}
+	return
 }
 ```
 
@@ -98,6 +159,7 @@ Where :
 - `NumCPU`: number of CPU to use for algorithm execution. Default is maximal number of CPU.
 - `DataPerIter`: minimum number of pushed data before starting a new iteration if given. Online clustering specific.
 - `StatusNotifier`: asynchronous callback called each time the algorithm change of status or fires an error.
+- `Finishing`: `core.Finishing` interface providing the finishing condition method `IsFinished(OCModel) bool` which indicates to the algorithm to stop iterations. You can use
 
 ### MCMC Configuration
 
@@ -113,7 +175,7 @@ var conf = mcmc.Conf{
 	InitK: 1,
 	Amp:   .5,
 	B:     1,
-    Conf:  core.Conf{
+    Conf:  core.CtrlConf{
       Iter: 1000,
     }
 }
@@ -353,6 +415,16 @@ Is is composed of two interfaces:
 - `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Play` and `Wait`, with specific `Finishing` and timeout duration if given
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
 
+#### Online clustering workflow
+
+An `OnlineClust` object lives in three main states through 6 `core.ClustStatus` :
+
+- Initialization: implementation initialization step. This step is implicit if the user call the method `Play` after created the algorithm
+- Alive: the algorithm do implementation iterations depending on `CtrlConf.Iter` or pushed data with `CtrlConf.IterPerData` and `CtrlConf.DataPerIter` values (specification is in the next section)
+- Finished: leave alive status after `Stop` command, or when an error occured from `Initializing` status
+
+![workflow](workflow.png)
+
 ### ```mcmc.LateDistrib``` struct
 
 The ```mcmc.MutlivT``` implements a multivariate T distribution. The dimension of the data must be known and set
@@ -404,7 +476,7 @@ Remainding methods allow you to dynamically interact with the algorithm:
 - `Wait(Finishing, time.Duration) error`: wait until the algorithm terminates, with specific `Finishing` and timeout duration if >= 0
 - `Stop() error`: stop the algorithm execution (`Finished` status). `Play` is possible
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
-- `Status() OCStatus`: get algo status (Value: ClustStatus, Error: failed error). `Status.Alive()` return true if status is alive (aka Ready, Running or Idle)
+- `Status() OCStatus`: get algo status (Value: `core.ClustStatus`, Error: failed error). `Status.Alive()` return true if status is alive (aka Ready, Running or Idle)
 - `Conf().StatusNotifier(OnlineClust, OCStatus)`: callback function when algo status change or an error is raised
 
 The `RunAndFeed` function above may be modified like this:
@@ -555,12 +627,17 @@ func main() {
 
 ## Add your own algorithm
 
-You can start to create your own algorithm by copying the template package and inspirate from other packages.
+You can start to create your own algorithm by copying the template package and inspirate from other packages
 
 ### file description
 
-- template/conf: Algorithm configuration properties definition.
+- `template/conf.go`: Algorithm configuration properties definition
 
-- template/impl: Algorithm implementation definition.
+- `template/impl.go`: Algorithm implementation definition
 
-- template/algo: Bind algorithm configuration, implementation and user space into a core.Algo structure.
+- `template/algo.go`: Bind algorithm configuration, implementation and user space into a core.Algo structure
+
+## Perspectives
+
+- algorithm plugin system
+- dynamic reconfiguration (change space, conf and impl at runtime)

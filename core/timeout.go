@@ -1,7 +1,6 @@
 package core
 
 import (
-	"log"
 	"sync"
 	"time"
 )
@@ -72,7 +71,6 @@ func (t *timeout) wait() (err error) {
 	var elapsedTime = time.Now().Add(t.duration)
 
 	for {
-		log.Println(t.ocm.RuntimeFigures())
 		if t.isFinished() {
 			break
 		} else if t.isTimeout(elapsedTime) {

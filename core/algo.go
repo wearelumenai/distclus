@@ -9,10 +9,6 @@ import (
 // OnlineClust interface
 // When a prediction is made, the element can be pushed to the model.
 // A prediction consists in a centroid and a label.
-// The following constraints must be met (otherwise an error is returned) :
-// an element can't be pushed if the algorithm is stopped,
-// a prediction can't be done before the algorithm is run,
-// no centroid can be returned before the algorithm is run.
 type OnlineClust interface {
 	OCCtrl
 	OCModel

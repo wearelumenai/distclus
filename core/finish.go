@@ -2,27 +2,27 @@ package core
 
 // Finishing defines
 type Finishing interface {
-	IsFinished(occ OCModel) bool
+	IsFinished(OCModel) bool
 }
 
-// And applies and rule over finishings
-type And struct {
+// AndFinishing applies and rule over finishings
+type AndFinishing struct {
 	Finishings []Finishing
 }
 
-// Or applies or rule over finishings
-type Or struct {
+// OrFinishing applies or rule over finishings
+type OrFinishing struct {
 	Finishings []Finishing
 }
 
-// NewAnd returns And
-func NewAnd(finishings ...Finishing) Finishing {
-	return And{Finishings: finishings}
+// NewAndFinishing returns And
+func NewAndFinishing(finishings ...Finishing) Finishing {
+	return AndFinishing{Finishings: finishings}
 }
 
-// NewOr returns Or
-func NewOr(finishings ...Finishing) Finishing {
-	return Or{Finishings: finishings}
+// NewOrFinishing returns Or
+func NewOrFinishing(finishings ...Finishing) Finishing {
+	return OrFinishing{Finishings: finishings}
 }
 
 // IsFinished input finishing on input OCModel
@@ -31,7 +31,7 @@ func IsFinished(finishing Finishing, model OCModel) bool {
 }
 
 // IsFinished is the And Convergence implementation
-func (and And) IsFinished(ocm OCModel) (cond bool) {
+func (and AndFinishing) IsFinished(ocm OCModel) (cond bool) {
 	for _, finishing := range and.Finishings {
 		cond = IsFinished(finishing, ocm)
 		if !cond {
@@ -42,7 +42,7 @@ func (and And) IsFinished(ocm OCModel) (cond bool) {
 }
 
 // IsFinished is the Or Convergence implementation
-func (or Or) IsFinished(ocm OCModel) (cond bool) {
+func (or OrFinishing) IsFinished(ocm OCModel) (cond bool) {
 	for _, finishing := range or.Finishings {
 		cond = IsFinished(finishing, ocm)
 		if cond {

@@ -8,16 +8,14 @@ import (
 // OCCtrl online clustring controller
 type OCCtrl interface {
 	Init() error                               // initialize algo centroids with impl strategy
-	Play() error                               // play (with x iterations if given, otherwise depends on conf.Iter/conf.IterPerData, and maximal duration in ns if given, otherwise conf.Timeout) the algorithm
+	Play() error                               // play the algorithm
 	Pause() error                              // pause the algorithm (idle)
 	Wait(Finishing, time.Duration) error       // wait for finishing condition and maximal duration. By default, finishing is ready/idle/finished status, and duration is infinite
 	Stop() error                               // stop the algorithm
 	Push(Elemt) error                          // add element
 	Predict(elemt Elemt) (Elemt, int, float64) // input elemt centroid/label with distance to closest centroid
-	Batch() error                              // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
+	Batch() error                              // batch mode (stop, play, wait then stop)
 	Copy(Conf, Space) (OnlineClust, error)     // make a copy of this algo with new configuration and space
-	// SetConf(conf Conf) error                   // change configuration
-	// SetSpace(space Space) error                // change space
 }
 
 // Push a new observation in the algorithm
@@ -263,7 +261,7 @@ func (algo *Algo) run() {
 
 	var finishing Finishing = NewIterFinishing(conf.Iter, conf.IterPerData)
 	if conf.Finishing != nil {
-		finishing = NewOr(finishing, conf.Finishing)
+		finishing = NewOrFinishing(finishing, conf.Finishing)
 	}
 
 	defer algo.recover(start)

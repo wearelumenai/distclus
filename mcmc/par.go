@@ -28,11 +28,14 @@ func (strategy *ParStrategy) Iterate(conf Conf, space core.Space, centroids core
 			Iter: iter,
 		},
 	}
-	var algo = kmeans.NewAlgo(kmeansConf, space, data, centroids.Initializer)
-
-	algo.Batch()
-
-	result = algo.Centroids()
+	core.PrepareConf(&kmeansConf)
+	var model = core.NewSimpleOCModel(&kmeansConf, space, core.NewOCStatus(core.Created), core.RuntimeFigures{}, result)
+	var impl = kmeans.NewParImpl(kmeansConf, centroids.Initializer, data)
+	result, _ = impl.Init(model)
+	for i := 0; i < iter; i++ {
+		model = core.NewSimpleOCModel(&kmeansConf, space, core.NewOCStatus(core.Created), core.RuntimeFigures{}, result)
+		result, _, _ = impl.Iterate(model)
+	}
 
 	return
 }

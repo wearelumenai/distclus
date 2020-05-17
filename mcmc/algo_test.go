@@ -38,7 +38,7 @@ func newAlgo(t *testing.T, conf core.CtrlConf, size int) (algo *core.Algo) {
 }
 
 func Test_Scenario_Batch(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 10}, 10)
 
 	test.DoTestScenarioBatch(t, algo)
 }
@@ -50,7 +50,7 @@ func Test_scenario_infinite(t *testing.T) {
 }
 
 func Test_scenario_finite(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 10}, 10)
 
 	test.DoTestScenarioFinite(t, algo)
 }

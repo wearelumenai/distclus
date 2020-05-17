@@ -4,35 +4,44 @@ import (
 	"testing"
 
 	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/internal/test"
 )
 
-func TestKMeans_ConfErrorDataPerIter(t *testing.T) {
-	defer test.AssertPanic(t)
+func TestK_ConfErrorDataPerIter(t *testing.T) {
 	var conf = core.CtrlConf{DataPerIter: -10}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
-func TestKMeans_ConfErrorIterPerData(t *testing.T) {
-	defer test.AssertPanic(t)
+func Test_ConfErrorIterPerData(t *testing.T) {
 	var conf = core.CtrlConf{IterPerData: -10}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
-func TestKMeans_ConfErrorIterFreq(t *testing.T) {
-	defer test.AssertPanic(t)
+func Test_ConfErrorIterFreq(t *testing.T) {
 	var conf = core.CtrlConf{IterFreq: -10}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
-func TestKMeans_ConfErrorTimeout(t *testing.T) {
-	defer test.AssertPanic(t)
+func Test_ConfErrorTimeout(t *testing.T) {
 	var conf = core.CtrlConf{Timeout: -10}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
-func TestKMeans_ConfErrorIter(t *testing.T) {
-	defer test.AssertPanic(t)
+func Test_ConfErrorIter(t *testing.T) {
 	var conf = core.CtrlConf{Iter: -10}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }

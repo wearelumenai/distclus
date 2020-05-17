@@ -6,7 +6,6 @@ import (
 
 	"github.com/wearelumenai/distclus/core"
 	"github.com/wearelumenai/distclus/euclid"
-	"github.com/wearelumenai/distclus/figures"
 	"github.com/wearelumenai/distclus/streaming"
 
 	"golang.org/x/exp/rand"
@@ -199,7 +198,7 @@ func TestImpl_Run(t *testing.T) {
 	}
 	go func() {
 		var centroids core.Clust
-		var runtimeFigures figures.RuntimeFigures
+		var runtimeFigures core.RuntimeFigures
 		for {
 			centroids, runtimeFigures, err = impl.Iterate(NewIterateModel(&conf, clusters))
 			if centroids != nil {

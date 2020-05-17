@@ -49,12 +49,13 @@ func (conf *Conf) SetDefaultValues() {
 }
 
 // Verify configuration parameters
-func (conf *Conf) Verify() {
+func (conf *Conf) Verify() (err error) {
 	conf.SetDefaultValues()
 	if conf.InitK < 1 {
-		panic(fmt.Sprintf("Illegal value for K: %v", conf.InitK))
+		err = fmt.Errorf("Illegal value for K: %v", conf.InitK)
 	}
-	if conf.InitK > conf.MaxK && conf.MaxK != 0 {
-		panic(fmt.Sprintf("Illegal value for Max K / Init K: %v / %v", conf.MaxK, conf.InitK))
+	if err == nil && conf.InitK > conf.MaxK && conf.MaxK != 0 {
+		err = fmt.Errorf("Illegal value for Max K / Init K: %v / %v", conf.MaxK, conf.InitK)
 	}
+	return
 }

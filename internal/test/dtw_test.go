@@ -67,7 +67,7 @@ func runSeriesAlgo(algo *core.Algo, series [][][]float64) (elts []core.Elemt, er
 		}
 	}
 
-	if err = algo.Batch(nil, 0); err != nil {
+	if err = algo.Batch(); err != nil {
 		return
 	}
 

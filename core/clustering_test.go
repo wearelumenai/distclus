@@ -176,11 +176,27 @@ func TestClust_Initializer(t *testing.T) {
 }
 
 func TestClust_Empty(t *testing.T) {
-	func() {
+	// defer test.AssertPanic(t)
+	var clust = core.Clust{}
+	var labels, dists = clust.MapLabel(testPoints, euclid.Space{})
+	if len(labels) != len(dists) {
+		t.Error("same size expected")
+	}
+	for _, label := range labels {
+		if label != -1 {
+			t.Error("-1 index expected", label)
+		}
+	}
+	for _, dist := range dists {
+		if dist != -1 {
+			t.Error("-1 index expected", dist)
+		}
+	}
+	/* func() {
 		defer test.AssertPanic(t)
 		var clust = core.Clust{}
 		clust.MapLabel(testPoints, euclid.Space{})
-	}()
+	}() */
 }
 
 func TestClust_ReduceDBA2(t *testing.T) {

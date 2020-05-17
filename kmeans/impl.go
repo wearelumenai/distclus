@@ -2,7 +2,6 @@ package kmeans
 
 import (
 	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/figures"
 )
 
 // Impl algorithm abstract implementation
@@ -25,7 +24,7 @@ func (impl *Impl) Init(model core.OCModel) (clust core.Clust, err error) {
 }
 
 // Iterate the algorithm until signal received on closing channel or iteration number is reached
-func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures core.RuntimeFigures, err error) {
 	return impl.strategy.Iterate(model.Space(), model.Centroids(), impl.buffer.Data()),
 		nil,
 		impl.buffer.Apply()

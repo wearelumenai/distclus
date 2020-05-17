@@ -4,85 +4,50 @@ import (
 	"fmt"
 	"math"
 	"time"
-
-	"github.com/wearelumenai/distclus/figures"
 )
 
 // OCCtrl online clustring controller
 type OCCtrl interface {
 	Init() error                               // initialize algo centroids with impl strategy
-	Play(Finishing, time.Duration) error       // play (with x iterations if given, otherwise depends on conf.Iter/conf.IterPerData, and maximal duration in ns if given, otherwise conf.Timeout) the algorithm
+	Play() error                               // play (with x iterations if given, otherwise depends on conf.Iter/conf.IterPerData, and maximal duration in ns if given, otherwise conf.Timeout) the algorithm
 	Pause() error                              // pause the algorithm (idle)
-	Wait(Finishing, time.Duration) error       // wait (max x iterations if given and maximal duration in ns if given) for algorithm sleeping, ready or failed
+	Wait(Finishing, time.Duration) error       // wait for finishing condition and maximal duration. By default, finishing is ready/idle/finished status, and duration is infinite
 	Stop() error                               // stop the algorithm
 	Push(Elemt) error                          // add element
 	Predict(elemt Elemt) (Elemt, int, float64) // input elemt centroid/label with distance to closest centroid
-	Batch(Finishing, time.Duration) error      // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
-	Reconfigure(Conf, Space) error             // reconfigure the online clust
+	Batch() error                              // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
 	Copy(Conf, Space) (OnlineClust, error)     // make a copy of this algo with new configuration and space
-	Alive() bool                               // true if algorithm is alive
-	IsFinished(Finishing) bool
-}
-
-// Alive true if algorithm (status) is alive
-func (algo *Algo) Alive() bool {
-	return algo.Status().Alive()
+	SetConf(conf Conf) error                   // change configuration
+	SetSpace(space Space) error                // change space
 }
 
 // Push a new observation in the algorithm
 func (algo *Algo) Push(elemt Elemt) (err error) {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
-
 	err = algo.impl.Push(elemt, algo)
 	if err == nil {
+		algo.modelMutex.Lock()
 		algo.newData++
 		algo.pushedData++
 		algo.lastDataTime = time.Now().Unix()
+		algo.modelMutex.Unlock()
 		// try to play if waiting
+		algo.modelMutex.RLock()
+		defer algo.modelMutex.RUnlock()
 		var conf = algo.conf.Ctrl()
-		if algo.isStatus(Finished) && conf.DataPerIter > 0 && conf.DataPerIter <= algo.newData {
-			algo.Play(nil, 0)
-		}
-	}
-
-	return
-}
-
-func (algo *Algo) isStatus(statuses ...ClustStatus) (is bool) {
-	algo.model.RLock()
-	defer algo.model.RUnlock()
-	var algoStatus = algo.status
-	for _, status := range statuses {
-		if status == algoStatus.Value {
-			is = true
-			break
+		if algo.Status().Value == Ready && conf.DataPerIter > 0 && conf.DataPerIter <= algo.newData {
+			algo.Play()
 		}
 	}
 	return
 }
 
 // Batch executes the algorithm in batch mode
-func (algo *Algo) Batch(finishing Finishing, timeout time.Duration) (err error) {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
-	var conf = algo.conf.Ctrl()
-	if conf.Iter == 0 && finishing == nil && conf.Finishing == nil {
-		err = ErrNeverConverge
-	} else {
-		if !algo.Alive() {
-			algo.succeedOnce = false
-			err = algo.play(finishing, timeout)
-			if err == nil {
-				err = algo.Wait(finishing, 0)
-				if err == nil {
-					if algo.timeout != nil {
-						algo.timeout.Disable()
-					}
-				}
-			}
-		} else {
-			err = ErrRunning
+func (algo *Algo) Batch() (err error) {
+	err = algo.Play()
+	if err == nil {
+		err = algo.Wait(nil, 0)
+		if err == nil {
+			algo.Stop()
 		}
 	}
 	return
@@ -90,21 +55,32 @@ func (algo *Algo) Batch(finishing Finishing, timeout time.Duration) (err error) 
 
 // Init initialize centroids and set status to Ready
 func (algo *Algo) Init() error {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
+	algo.ctrlMutex.Lock()
+	defer algo.ctrlMutex.Unlock()
+	algo.statusMutex.Lock()
+	defer algo.statusMutex.Unlock()
 	return algo.init()
 }
 
 func (algo *Algo) init() (err error) {
-	if algo.status.Value == Created || algo.status.Error != nil {
-		algo.setStatus(OCStatus{Value: Initializing})
-		algo.model.Lock()
-		algo.centroids, err = algo.impl.Init(algo)
-		algo.model.Unlock()
+	if algo.status.Value == Created || algo.status.Value == Finished {
+		algo.setStatus(NewOCStatus(Initializing), false)
+		algo.modelMutex.Lock()
+		algo.newData = 0
+		algo.totalIterations = 0
+		algo.pushedData = 0
+		algo.lastDataTime = 0
+		algo.runtimeFigures = RuntimeFigures{}
+		algo.modelMutex.Unlock()
+		var centroids Clust
+		centroids, err = algo.impl.Init(algo)
+		algo.modelMutex.Lock()
+		algo.centroids = centroids
+		algo.modelMutex.Unlock()
 		if err == nil {
-			algo.setStatus(OCStatus{Value: Ready, Error: err})
+			algo.setStatus(NewOCStatus(Ready), false)
 		} else {
-			algo.setStatus(OCStatus{Value: Finished, Error: err})
+			algo.setStatus(NewOCStatusError(err), false)
 		}
 	} else {
 		err = ErrAlreadyCreated
@@ -113,16 +89,18 @@ func (algo *Algo) init() (err error) {
 }
 
 // Play the algorithm in online mode
-func (algo *Algo) Play(finishing Finishing, timeout time.Duration) (err error) {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
-	return algo.play(finishing, timeout)
+func (algo *Algo) Play() (err error) {
+	algo.ctrlMutex.Lock()
+	defer algo.ctrlMutex.Unlock()
+	return algo.play()
 }
 
-func (algo *Algo) play(finishing Finishing, timeout time.Duration) (err error) {
+func (algo *Algo) play() (err error) {
+	algo.statusMutex.Lock()
 	switch algo.status.Value {
 	case Idle:
-		algo.sendStatus(OCStatus{Value: Running})
+		algo.statusMutex.Unlock()
+		algo.sendStatus(NewOCStatus(Running))
 	case Finished:
 		fallthrough
 	case Created:
@@ -130,23 +108,21 @@ func (algo *Algo) play(finishing Finishing, timeout time.Duration) (err error) {
 		if err != nil && err != ErrAlreadyCreated {
 			return
 		}
+		err = nil
 		fallthrough
 	case Ready:
-		go algo.run(finishing)
-		algo.sendStatus(OCStatus{Value: Running})
+		go algo.run()
+		algo.statusMutex.Unlock()
+		algo.sendStatus(NewOCStatus(Running))
 		if algo.timeout != nil {
 			algo.timeout.Disable()
 		}
-		var interruptionTimeout time.Duration
-		if timeout > 0 {
-			interruptionTimeout = timeout
-		} else if algo.Conf().Ctrl().Timeout > 0 { // && !algo.succeedOnce {
-			interruptionTimeout = algo.Conf().Ctrl().Timeout
-		}
+		var interruptionTimeout = algo.Conf().Ctrl().Timeout
 		if interruptionTimeout > 0 {
 			algo.timeout = InterruptionTimeout(interruptionTimeout, algo.interrupt)
 		}
 	case Running:
+		algo.statusMutex.Unlock()
 		err = ErrRunning
 	}
 	return
@@ -154,60 +130,66 @@ func (algo *Algo) play(finishing Finishing, timeout time.Duration) (err error) {
 
 // Pause the algorithm and set status to idle
 func (algo *Algo) Pause() (err error) {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
-	if algo.Status().Value != Running || !algo.sendStatus(OCStatus{Value: Idle}) {
+	algo.ctrlMutex.Lock()
+	defer algo.ctrlMutex.Unlock()
+	algo.statusMutex.Lock()
+	if algo.status.Value == Running {
+		algo.statusMutex.Unlock()
+		if !algo.sendStatus(NewOCStatus(Idle)) {
+			err = ErrNotRunning
+		}
+	} else {
 		err = ErrNotRunning
+		algo.statusMutex.Unlock()
 	}
-
 	return
 }
 
-func (algo *Algo) canNeverConverge() bool {
-	var conf = algo.conf.Ctrl()
-	return algo.timeout == nil && algo.iterToRun == 0 && ((conf.Iter == 0 && !algo.succeedOnce) ||
-		(algo.succeedOnce && conf.IterPerData == 0)) && conf.DataPerIter == 0 && conf.Finishing == nil
+// CanNeverFinish true if finishing is nil, timeout is negative, conf.Timeout, conf.Iter and conf.IterPerData equal 0
+func (algo *Algo) CanNeverFinish(finishing Finishing, timeout time.Duration) bool {
+	var conf = algo.Conf().Ctrl()
+	return finishing == nil && timeout <= 0 && conf.Finishing == nil && conf.Timeout <= 0 && conf.Iter == 0 && conf.IterPerData == 0
 }
 
-// Wait for online ending status
+// Wait for online finishing predicate
 func (algo *Algo) Wait(finishing Finishing, timeout time.Duration) (err error) {
-	var status = algo.Status()
-	err = status.Error
-	if err == nil {
-		if status.Value == Running {
-			if algo.canNeverConverge() {
-				return ErrNeverConverge
-			}
-			err = WaitTimeout(finishing, timeout, algo, algo.ackChannel)
+	if algo.Status().Value == Running {
+		if algo.CanNeverFinish(finishing, timeout) {
+			err = ErrNeverFinish
 		} else {
-			err = ErrNotRunning
+			err = WaitTimeout(finishing, timeout, algo)
 		}
+	} else {
+		err = ErrNotRunning
 	}
 	return
 }
 
 // interrupt the algorithm
-func (algo *Algo) interrupt(status OCStatus) (err error) {
+func (algo *Algo) interrupt(interruption error) (err error) {
+	algo.statusMutex.Lock()
 	switch algo.status.Value {
-	case Initializing:
-		fallthrough
+	case Ready:
+		algo.setStatus(NewOCStatusError(interruption), false)
+		algo.statusMutex.Unlock()
 	case Idle:
 		fallthrough
 	case Running:
-		algo.sendStatus(status)
-		<-algo.ackChannel
+		algo.statusMutex.Unlock()
+		algo.sendStatus(NewOCStatusError(interruption))
 		err = algo.status.Error
 	default:
-		err = ErrNotRunning
+		algo.statusMutex.Unlock()
+		err = ErrNotAlive
 	}
 	return
 }
 
 // Stop the algorithm
 func (algo *Algo) Stop() (err error) {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
-	return algo.interrupt(OCStatus{Value: Finished})
+	algo.ctrlMutex.Lock()
+	defer algo.ctrlMutex.Unlock()
+	return algo.interrupt(nil)
 }
 
 // Predict the cluster for a new observation
@@ -217,36 +199,34 @@ func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, dist float64) {
 	return
 }
 
-/*
-func (algo *Algo) initIterToRun(iter int) {
-	algo.model.Lock()
-	defer algo.model.Unlock()
-	if iter > 0 {
-		algo.iterToRun = iter
-	} else if algo.succeedOnce {
-		algo.iterToRun = algo.conf.Ctrl().IterPerData
-	} else {
-		algo.iterToRun = algo.conf.Ctrl().Iter
-	}
-}*/
-
 func (algo *Algo) recover(newData int, start time.Time) {
+	algo.statusMutex.Lock()
+	defer algo.statusMutex.Unlock()
 	var recovery = recover()
 	if recovery != nil {
 		var err = fmt.Errorf("%v", recovery)
-		algo.setConcurrentStatus(OCStatus{Value: Finished, Error: err})
+		algo.setStatus(NewOCStatusError(err), false)
 	}
-	algo.model.Lock()
-	algo.succeedOnce = algo.status.Error == nil
+	// wait a few between client time processing between releasing satusMutex and sendStatus
+	time.Sleep(100 * time.Millisecond)
+	// update algo runtime figures
+	algo.modelMutex.Lock()
 	algo.newData = int(math.Max(0, float64(algo.newData-newData)))
-	algo.duration += time.Now().Sub(start)
-	algo.iterToRun = 0
-	algo.model.Unlock()
-
-	select { // free user send status
-	case <-algo.statusChannel:
+	var duration = time.Now().Sub(start)
+	algo.duration += duration
+	algo.runtimeFigures[LastDuration] = float64(duration)
+	algo.runtimeFigures[Duration] = float64(algo.duration)
+	algo.modelMutex.Unlock()
+	// clean up channels
+	select {
+	// get client status if client quiered to stop or timeout interruption
+	case status := <-algo.statusChannel:
+		if recovery == nil {
+			algo.setStatus(status, false)
+		}
 	default:
 	}
+	// free client ack channel
 	select { // close ack channel
 	case <-algo.ackChannel:
 	default:
@@ -255,13 +235,13 @@ func (algo *Algo) recover(newData int, start time.Time) {
 }
 
 // Initialize the algorithm, if success run it synchronously otherwise return an error
-func (algo *Algo) run(finishing Finishing) {
+func (algo *Algo) run() {
 	algo.ackChannel = make(chan bool)
 
 	var err error
 	var conf = algo.conf.Ctrl()
-	var centroids Clust
-	var runtimeFigures figures.RuntimeFigures
+	var centroids = algo.centroids
+	var runtimeFigures RuntimeFigures
 	var iterFreq time.Duration
 	if conf.IterFreq > 0 {
 		iterFreq = time.Duration(float64(time.Second) / conf.IterFreq)
@@ -277,14 +257,19 @@ func (algo *Algo) run(finishing Finishing) {
 	var start = time.Now()
 	var duration time.Duration
 
+	var finishing = (Finishing)(IterFinishing{Iter: conf.Iter, IterPerData: conf.IterPerData})
+	if conf.Finishing != nil {
+		finishing = NewOr(finishing, conf.Finishing)
+	}
+
 	defer algo.recover(newData, start)
 
 	algo.receiveStatus()
 
-	for algo.status.Value == Running && !algo.IsFinished(finishing) {
+	for err == nil && algo.status.Value == Running && !IsFinished(finishing, algo) {
 		select { // check for algo status update
 		case status := <-algo.statusChannel:
-			algo.setStatus(status)
+			algo.setStatus(status, true)
 			if status.Value == Idle {
 				algo.ackChannel <- true
 				algo.receiveStatus()
@@ -294,12 +279,13 @@ func (algo *Algo) run(finishing Finishing) {
 			newData = algo.newData
 			centroids, runtimeFigures, err = algo.impl.Iterate(
 				NewSimpleOCModel(
-					algo.conf, algo.space, algo.status, algo.runtimeFigures, centroids,
+					algo.conf, algo.space, algo.status, algo.runtimeFigures, algo.centroids,
 				),
 			)
 			duration = time.Now().Sub(start)
 			if err == nil {
 				if centroids != nil { // an iteration has been executed
+					algo.modelMutex.Lock()
 					algo.totalIterations++
 					iterations++
 					algo.saveIterContext(
@@ -307,6 +293,7 @@ func (algo *Algo) run(finishing Finishing) {
 						iterations,
 						duration,
 					)
+					algo.modelMutex.Unlock()
 				}
 				// temporize iteration
 				if iterFreq > 0 { // with iteration freqency
@@ -314,47 +301,71 @@ func (algo *Algo) run(finishing Finishing) {
 					time.Sleep(diff)
 					lastIterationTime = time.Now()
 				}
-			} else { // impl has finished
-				algo.setConcurrentStatus(OCStatus{Value: Finished, Error: err})
 			}
 		}
 	}
-}
-
-// IsFinished true iif input is finished with algo ctxt
-func (algo *Algo) IsFinished(finishing Finishing) bool {
-	return NewAnd(algo.conf.Ctrl().Finishing, finishing).IsFinished(algo)
-}
-
-func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures figures.RuntimeFigures, iterations int, duration time.Duration) {
-	if runtimeFigures == nil {
-		runtimeFigures = figures.RuntimeFigures{}
+	if err == nil {
+		if algo.status.Value == Running {
+			algo.setStatus(NewOCStatus(Ready), true)
+		}
+	} else {
+		algo.setStatus(NewOCStatusError(err), true)
 	}
-	runtimeFigures[figures.Iterations] = float64(algo.totalIterations)
-	runtimeFigures[figures.LastIterations] = float64(iterations)
-	runtimeFigures[figures.PushedData] = float64(algo.pushedData)
-	runtimeFigures[figures.LastDuration] = float64(duration)
-	runtimeFigures[figures.Duration] = float64(algo.duration + duration)
-	runtimeFigures[figures.LastDataTime] = float64(algo.lastDataTime)
-	algo.model.Lock()
+}
+
+func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures RuntimeFigures, iterations int, duration time.Duration) {
+	if runtimeFigures == nil {
+		runtimeFigures = RuntimeFigures{}
+	}
+	runtimeFigures[Iterations] = float64(algo.totalIterations)
+	runtimeFigures[LastIterations] = float64(iterations)
+	runtimeFigures[PushedData] = float64(algo.pushedData)
+	runtimeFigures[LastDuration] = float64(duration)
+	runtimeFigures[Duration] = float64(algo.duration + duration)
+	runtimeFigures[LastDataTime] = float64(algo.lastDataTime)
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures
-	algo.model.Unlock()
 }
 
-// Reconfigure algo configuration and space
-func (algo *Algo) Reconfigure(conf Conf, space Space) (err error) {
-	algo.ctrl.Lock()
-	defer algo.ctrl.Unlock()
-	impl, err := algo.impl.Copy(algo)
-	if err == nil {
-		algo.model.Lock()
-		algo.impl = impl
-		algo.conf = conf
-		algo.space = space
-		algo.model.Unlock()
+// SetConf algo configuration and space
+func (algo *Algo) SetConf(conf Conf) (err error) {
+	algo.ctrlMutex.Lock()
+	defer algo.ctrlMutex.Unlock()
+	if algo.status.Value == Running {
+		err = ErrRunning
 	} else {
-		algo.setStatus(OCStatus{Value: Finished, Error: err})
+		err = PrepareConf(conf)
+		if err == nil {
+			impl, err := algo.impl.Copy(algo)
+			if err == nil {
+				algo.modelMutex.Lock()
+				algo.impl = impl
+				algo.conf = conf
+				algo.modelMutex.Unlock()
+			} else {
+				algo.setStatus(NewOCStatusError(err), true)
+			}
+		}
+	}
+	return
+}
+
+// SetSpace algo configuration and space
+func (algo *Algo) SetSpace(space Space) (err error) {
+	algo.ctrlMutex.Lock()
+	defer algo.ctrlMutex.Unlock()
+	if algo.status.Value == Running {
+		err = ErrRunning
+	} else {
+		impl, err := algo.impl.Copy(algo)
+		if err == nil {
+			algo.modelMutex.Lock()
+			algo.impl = impl
+			algo.space = space
+			algo.modelMutex.Unlock()
+		} else {
+			algo.setStatus(NewOCStatusError(err), true)
+		}
 	}
 	return
 }

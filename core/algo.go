@@ -4,8 +4,6 @@ package core
 import (
 	"sync"
 	"time"
-
-	"github.com/wearelumenai/distclus/figures"
 )
 
 // OnlineClust interface
@@ -29,60 +27,61 @@ type Algo struct {
 	status          OCStatus
 	statusChannel   chan OCStatus
 	ackChannel      chan bool
-	runtimeFigures  figures.RuntimeFigures
+	runtimeFigures  RuntimeFigures
 	newData         int
 	pushedData      int
 	totalIterations int
-	iterToRun       int // specific number of iterations to do
 	duration        time.Duration
 	lastDataTime    int64
-	succeedOnce     bool
 	timeout         Timeout
 
-	ctrl  sync.RWMutex // algo controller mutex
-	model sync.RWMutex // algo model mutex
+	ctrlMutex   sync.RWMutex // algo controller mutex
+	modelMutex  sync.RWMutex // algo model mutex
+	statusMutex sync.RWMutex // algo model mutex
 }
 
 // NewAlgo creates a new algorithm instance
 func NewAlgo(conf Conf, impl Impl, space Space) (algo *Algo) {
-	var ctrlConf = conf.Ctrl()
-	ctrlConf.SetDefaultValues()
-	ctrlConf.Verify()
+	var err = PrepareConf(conf)
+
+	if err != nil {
+		panic(err)
+	}
 
 	algo = &Algo{
-		conf:          conf,
-		impl:          impl,
-		space:         space,
-		status:        OCStatus{Value: Created},
-		statusChannel: make(chan OCStatus),
-		ackChannel:    make(chan bool),
+		conf:           conf,
+		impl:           impl,
+		space:          space,
+		status:         OCStatus{Value: Created},
+		statusChannel:  make(chan OCStatus),
+		ackChannel:     make(chan bool),
+		runtimeFigures: RuntimeFigures{},
 	}
 
 	return
 }
 
 // change of status
-func (algo *Algo) setStatus(status OCStatus) {
-	algo.model.Lock()
-	algo.status = status
+func (algo *Algo) setStatus(status OCStatus, safe bool) {
+	if safe {
+		algo.statusMutex.Lock()
+		algo.status = status
+		algo.statusMutex.Unlock()
+	} else {
+		algo.status = status
+	}
+	algo.modelMutex.RLock()
 	var statusNotifier = algo.conf.Ctrl().StatusNotifier
-	algo.model.Unlock()
+	algo.modelMutex.RUnlock()
 	if statusNotifier != nil {
 		go statusNotifier(algo, status)
 	}
 }
 
-// change of status
-func (algo *Algo) setConcurrentStatus(status OCStatus) {
-	algo.ctrl.Lock()
-	algo.setStatus(status)
-	algo.ctrl.Unlock()
-}
-
 // receiveStatus status from main routine
 func (algo *Algo) receiveStatus() {
 	var status = <-algo.statusChannel
-	algo.setStatus(status)
+	algo.setStatus(status, true)
 	algo.ackChannel <- true
 }
 

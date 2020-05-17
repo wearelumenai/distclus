@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/figures"
 	"github.com/wearelumenai/distclus/kmeans"
 
 	"gonum.org/v1/gonum/stat/distuv"
@@ -62,7 +61,7 @@ func (impl *Impl) Init(model core.OCModel) (centroids core.Clust, err error) {
 }
 
 // Iterate executes the algorithm
-func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures core.RuntimeFigures, err error) {
 	var mcmcConf = model.Conf().(*Conf)
 
 	var data = impl.buffer.Data()
@@ -174,12 +173,12 @@ func (impl *Impl) proba(conf Conf, space core.Space, x, mu core.Clust, time int)
 }
 
 // runtimeFigures returns specific kmeans properties
-func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
-	return figures.RuntimeFigures{
-		figures.Acceptations: float64(impl.acc),
-		figures.Lambda:       impl.lambda,
-		figures.Rho:          impl.rho,
-		figures.RGibbs:       impl.rGibbs,
-		figures.Time:         float64(impl.time),
+func (impl *Impl) runtimeFigures() core.RuntimeFigures {
+	return core.RuntimeFigures{
+		Acceptations: float64(impl.acc),
+		Lambda:       impl.lambda,
+		Rho:          impl.rho,
+		RGibbs:       impl.rGibbs,
+		Time:         float64(impl.time),
 	}
 }

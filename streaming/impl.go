@@ -4,7 +4,6 @@ import (
 	"errors"
 
 	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/figures"
 
 	"gonum.org/v1/gonum/stat/distuv"
 )
@@ -22,8 +21,8 @@ type Impl struct {
 
 // Copy impl
 func (impl *Impl) Copy(model core.OCModel) (core.Impl, error) {
-	var newConf = model.Conf().(*Conf)
-	var algo = NewAlgo(*newConf, model.Space(), impl.clust)
+	var conf = model.Conf().(*Conf)
+	var algo = NewAlgo(*conf, model.Space(), impl.clust)
 	return algo.Impl(), nil
 }
 
@@ -59,7 +58,7 @@ func (impl *Impl) Init(model core.OCModel) (clust core.Clust, err error) {
 }
 
 // Iterate runs the streaming algorithm.
-func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures core.RuntimeFigures, err error) {
 	select {
 	case elemt := <-impl.c:
 		impl.Process(elemt, model.Space())
@@ -70,8 +69,8 @@ func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures 
 	return
 }
 
-func (impl *Impl) runtimeFigures() figures.RuntimeFigures {
-	return figures.RuntimeFigures{figures.MaxDistance: impl.maxDistance}
+func (impl *Impl) runtimeFigures() core.RuntimeFigures {
+	return core.RuntimeFigures{core.MaxDistance: impl.maxDistance}
 }
 
 // Push pushes a new element

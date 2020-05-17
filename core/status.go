@@ -35,5 +35,23 @@ type OCStatus struct {
 
 // Alive check if status is running without error
 func (status OCStatus) Alive() bool {
-	return status.Value >= Running && status.Error == nil
+	return status.Value == Ready || status.Playing()
+}
+
+// Playing check if status is running or idle
+func (status OCStatus) Playing() bool {
+	return status.Value == Running || status.Value == Idle
+}
+
+// NewOCStatus returns ocstatus with specific cluststatus
+func NewOCStatus(status ClustStatus) OCStatus {
+	return OCStatus{Value: status}
+}
+
+// NewOCStatusError returns new errored ocstatus
+func NewOCStatusError(err error) OCStatus {
+	return OCStatus{
+		Value: Finished,
+		Error: err,
+	}
 }

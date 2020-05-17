@@ -161,7 +161,7 @@ func Build(conf mcmc.Conf, tConf mcmc.MultivTConf) (algo *core.Algo, space core.
 ## Run and feed
 
 The algorithm can be run in two modes :
- - `batch` : all data must be pushed before starting the algorithm.
+ - `batch` : all data might be pushed before starting the algorithm.
  - `online` : further data can be pushed after the algorithm is started, and dynamic functionalities are given for interacting continuously with the clustering
 
 The following function starts the algorithm in online mode then pushes the observations
@@ -339,19 +339,20 @@ Is is composed of two interfaces:
 - `Impl() Impl`: get implementation
 - `Space() Space`: get space
 - `Status() core.OCStatus`: get algo status (Status and Error if failed)
-- `RuntimeFigures() figures.RuntimeFigures`: algorithm figures of type `map[string]float64`
+- `RuntimeFigures() RuntimeFigures`: algorithm figures of type `map[string]float64`
 
 #### `core.OCCtrl` interface (core/ctrl.go)
 
 - `Init() error`: initialize the algorithm with implentation strategy (random, given, kmeans++, ...)
-- `Play(Finishing, time.Duration) error`: execute the algorithm, with specific `Finishing` and timeout duration if given
+- `Play() error`: execute the algorithm, with specific `Finishing` and timeout duration if given
 - `Pause() error`: pause execution. Use methods `Play` or `Stop` to exit this state
-- `Wait(Finishing, time.Duration) error`: wait until algorithm terminates finish its execution, with specific `Finishing` and timeout duration if given
+- `Wait(Finishing, time.Duration) error`: wait until algorithm terminates finish its execution, with specific `Finishing` and timeout duration if >= 0
 - `Stop() error`: stop execution and status become `Finished`. Play back is possible
 - `Push(elemt Elemt) error`: push an element
 - `Predict(elemt Elemt) (Elemt, int, float64)`: according to previous method, get centroid, its index and minimal distance with closest centroid in array of clustering centroids for input elemt
-- `Batch(core.Finishing, time.Duration) error` execute the algorithm in batch mode. Similar to the call sequence of `Play` and `Wait`, with specific `Finishing` and timeout duration if given
-- `Reconfigure(ImplConf, Space) error`: reconfigure at runtime this algorithm with new impl and space
+- `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Play` and `Wait`, with specific `Finishing` and timeout duration if given
+- `SetConf(Conf) error`: change of configuration. Can not be done during initialization or running status
+- `SetSpace(Space) error`: change of space. Can not be done during initialization or running status
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
 
 ### ```mcmc.LateDistrib``` struct
@@ -400,14 +401,14 @@ In such mode, the parameters `Iter`, `DataPerIter` and `IterFreq` of the `Conf` 
 
 Remainding methods allow you to dynamically interact with the algorithm:
 - `Init() error`: initialize the algorithm if not yet created, and set status to ready
-- `Play(Finishing, time.Duration) error`: start the algorithm if not running (status `Created`, `Ready`, `Finished`) or goes back to execution if `Idle`, with specific number of iterations and timeout duration if given
+- `Play() error`: start the algorithm if not running (status `Created`, `Ready`, `Finished`) or goes back to execution if `Idle`, with specific number of iterations and timeout duration if given
 - `Pause() error`: pause the algorithm. Wait until the algo is `Idle`
-- `Wait(Finishing, time.Duration) error`: wait until the algorithm terminates, with specific `Finishing` and timeout duration if given
+- `Wait(Finishing, time.Duration) error`: wait until the algorithm terminates, with specific `Finishing` and timeout duration if >= 0
 - `Stop() error`: stop the algorithm execution (`Finished` status). `Play` is possible
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
-- `Reconfigure(ImplConf, Space) error`: reconfigure a runtime the algorithm with new implementation and space.
-- `Status() OCStatus`: get algo status (Value: ClustStatus, Error: failed error).
-- `Alive() bool`: true if algo is alive (`Running`, `Idle` and `Finished` without error).
+- `SetConf(Conf) error`: change of configuration.
+- `SetSpace(Space) error`: change of space.
+- `Status() OCStatus`: get algo status (Value: ClustStatus, Error: failed error). `Status.Alive()` return true if status is alive (aka Ready, Running or Idle)
 - `Conf().StatusNotifier(OnlineClust, OCStatus)`: callback function when algo status change or an error is raised
 
 The `RunAndFeed` function above may be modified like this:
@@ -424,7 +425,7 @@ func RunAndFeed(algo *core.Algo, observations []core.Elemt) (err error) {
         err = algo.Push(observations[i])
     }
     if err != nil {
-        err = algo.Play(nil, 0)
+        err = algo.Play()
         for i := conf.initK; i < len(observations) && err == nil; i++ {
             err = algo.Push(observations[i])
         }
@@ -534,21 +535,21 @@ func main() {
   var data = [20]float64{0,1,2,...}
   var algo = streaming.NewAlgo(..., data)
   var iter = len(data)
-  if data.Status() == "Created" { // if algo is created, one data is processed at initialization time
+  if data.Status().Value == core.Created { // if algo is created, one data is processed at initialization time
     iter = iter - 1
   }
-  algo.Batch(iter, 0)
+  algo.Batch()
   // or with play/wait
-  algo.Play(iter, 0)
-  algo.Wait(0, 0)
+  algo.Play()
+  algo.Wait(nil, 0)
   // if iteration is greater than number of data in buffersize, the algorithm will wait for new pushed data before relasing the batch/wait lock. For ensuring no deadlock, you can add a specific timeout such as:
   var timeout = 60 * time.Second
-  err = algo.Batch(iter, timeout)
+  err = algo.Batch()
   if err == core.ErrTimeout {
     // timeout has been fired
   }
   // or with play/wait
-  algo.Play(iter, 0)
+  algo.Play()
   err = algo.Wait(0, timeout)
   if err == core.ErrTimeout {
     // timeout has been fired

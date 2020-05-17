@@ -15,21 +15,20 @@ type Timeout interface {
 type timeout struct {
 	duration     time.Duration
 	enabled      bool
-	ack          <-chan bool
-	interruption func(OCStatus) error
+	interruption func(error) error
 	mutex        sync.RWMutex
 	finishing    Finishing
 	ocm          OCModel
 }
 
-func (timeout *timeout) Enabled() bool {
-	timeout.mutex.RLock()
-	defer timeout.mutex.RUnlock()
-	return timeout.enabled
+func (t *timeout) Enabled() bool {
+	t.mutex.RLock()
+	defer t.mutex.RUnlock()
+	return t.enabled
 }
 
 // InterruptionTimeout process
-func InterruptionTimeout(duration time.Duration, interruption func(OCStatus) error) (result Timeout) {
+func InterruptionTimeout(duration time.Duration, interruption func(error) error) (result Timeout) {
 	result = &timeout{
 		duration:     duration,
 		enabled:      true,
@@ -40,52 +39,56 @@ func InterruptionTimeout(duration time.Duration, interruption func(OCStatus) err
 }
 
 // WaitTimeout process. Return true if timedout
-func WaitTimeout(finishing Finishing, duration time.Duration, ocm OCModel, ack <-chan bool) error {
+func WaitTimeout(finishing Finishing, duration time.Duration, ocm OCModel) error {
+	if finishing == nil {
+		finishing = NewStatusFinishing(true, Ready, Idle, Finished)
+	}
 	var t = timeout{
 		duration:  duration,
-		ack:       ack,
 		ocm:       ocm,
 		finishing: finishing,
 	}
 	return t.wait()
 }
 
-func (timeout *timeout) interrupt() {
-	time.Sleep(timeout.duration)
-	if timeout.Enabled() {
-		timeout.interruption(OCStatus{Value: Finished, Error: ErrTimeout})
+func (t *timeout) interrupt() {
+	time.Sleep(t.duration)
+	if t.Enabled() {
+		t.interruption(ErrTimeout)
 	}
 }
 
-func (timeout *timeout) isElapsedIter() bool {
-	return IsFinished(timeout.finishing, timeout.ocm)
+func (t *timeout) isFinished() bool {
+	return IsFinished(t.finishing, t.ocm)
 }
 
-func (timeout *timeout) isAlive(lastTime time.Time) bool {
-	return timeout.duration == 0 || time.Now().Before(lastTime)
+func (t *timeout) isTimeout(lastTime time.Time) bool {
+	return t.duration > 0 && time.Now().After(lastTime)
 }
 
-func (timeout *timeout) wait() (err error) {
-	err = ErrTimeout
-	var step = 1 * time.Millisecond
-	var elapsedTime = time.Now().Add(timeout.duration)
-	for err == ErrTimeout && timeout.isAlive(elapsedTime) {
-		select {
-		case <-timeout.ack:
-			err = nil
+func (t *timeout) wait() (err error) {
+	var step = 100 * time.Millisecond
+	var elapsedTime = time.Now().Add(t.duration)
+
+	for {
+		if t.isFinished() {
 			break
-		default:
-			if timeout.isElapsedIter() {
-				err = ErrElapsedIter
-			}
+		} else if t.isTimeout(elapsedTime) {
+			err = ErrTimeout
+			break
+		} else {
+			time.Sleep(step)
 		}
-		time.Sleep(step)
+	}
+
+	if err == nil {
+		err = t.ocm.Status().Error
 	}
 	return
 }
 
-func (timeout *timeout) Disable() {
-	timeout.mutex.Lock()
-	timeout.enabled = false
-	timeout.mutex.Unlock()
+func (t *timeout) Disable() {
+	t.mutex.Lock()
+	defer t.mutex.Unlock()
+	t.enabled = false
 }

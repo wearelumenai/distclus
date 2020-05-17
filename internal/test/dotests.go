@@ -8,7 +8,6 @@ import (
 
 	"github.com/wearelumenai/distclus/core"
 	"github.com/wearelumenai/distclus/euclid"
-	"github.com/wearelumenai/distclus/figures"
 
 	"golang.org/x/exp/rand"
 	"gonum.org/v1/gonum/mat"
@@ -90,7 +89,7 @@ func DoTestRunAsync(t *testing.T, algo core.OnlineClust) {
 	var c, _, _ = algo.Predict(obs)
 	_ = algo.Push(obs)
 
-	algo.Batch(nil, 0)
+	algo.Batch()
 
 	var cn, _, _ = algo.Predict(obs)
 	AssertNotEqual(t, c, cn)
@@ -104,15 +103,15 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	// RunAsyncAndPush(algo)
 
 	var figures0 = algo.RuntimeFigures()
-	var iter0, ok0 = figures0[figures.Iterations]
+	var iter0, ok0 = figures0[core.Iterations]
 
 	AssertTrue(t, ok0)
 	AssertTrue(t, iter0 > 0)
 
-	algo.Batch(nil, 0)
+	algo.Batch()
 
 	var figures1 = algo.RuntimeFigures()
-	var iter1, ok1 = figures1[figures.Iterations]
+	var iter1, ok1 = figures1[core.Iterations]
 
 	AssertTrue(t, ok1)
 	AssertTrue(t, iter0 < iter1)
@@ -123,10 +122,10 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	_ = algo.Push(Vectors[3])
 	_ = algo.Push(Vectors[5])
 
-	algo.Batch(nil, 0)
+	algo.Batch()
 
 	var figures2 = algo.RuntimeFigures()
-	var iter2, ok2 = figures2[figures.Iterations]
+	var iter2, ok2 = figures2[core.Iterations]
 
 	AssertTrue(t, ok2)
 	AssertTrue(t, iter1 < iter2)
@@ -157,7 +156,7 @@ func DoTestRunAsyncCentroids(t *testing.T, km core.OnlineClust) {
 func DoTestWorkflow(t *testing.T, algo core.OnlineClust) {
 	DoTestBeforeRun(algo, t)
 
-	_ = algo.Play(nil, 0)
+	_ = algo.Play()
 	DoTestAfterRun(algo, t)
 
 	_ = algo.Stop()
@@ -181,7 +180,7 @@ func DoTestAfterClose(algo core.OnlineClust, t *testing.T) {
 		t.Error("c expected")
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 	AssertNoError(t, err)
 }
 
@@ -246,7 +245,7 @@ func PushAndRunAsync(algorithm core.OnlineClust) {
 	for _, elemt := range Vectors {
 		_ = algorithm.Push(elemt)
 	}
-	_ = algorithm.Play(nil, 0)
+	_ = algorithm.Play()
 }
 
 // RunAsyncAndPush test
@@ -254,7 +253,7 @@ func RunAsyncAndPush(algo core.OnlineClust) {
 	for _, elemt := range Vectors {
 		_ = algo.Push(elemt)
 	}
-	_ = algo.Play(nil, 0)
+	_ = algo.Play()
 }
 
 // PushAndRunSync test
@@ -262,7 +261,7 @@ func PushAndRunSync(algo core.OnlineClust) core.Clust {
 	for _, elemt := range Vectors {
 		_ = algo.Push(elemt)
 	}
-	_ = algo.Batch(nil, 0)
+	_ = algo.Batch()
 	var clust = algo.Centroids()
 	return clust
 }
@@ -446,11 +445,11 @@ func DoTestScenarioBatch(t *testing.T, algo *core.Algo) {
 	}
 
 	var rf = algo.RuntimeFigures()
-	if rf[figures.Iterations] > 0 {
+	if rf[core.Iterations] > 0 {
 		t.Error("no iterations expected")
 	}
 
-	err = algo.Batch(nil, 0)
+	err = algo.Batch()
 
 	if err != nil {
 		t.Error("Error while stopping", err)
@@ -461,7 +460,7 @@ func DoTestScenarioBatch(t *testing.T, algo *core.Algo) {
 	}
 
 	rf = algo.RuntimeFigures()
-	var iter = rf[figures.Iterations]
+	var iter = rf[core.Iterations]
 	if iter == 0 {
 		t.Error("iterations expected")
 	}
@@ -473,12 +472,12 @@ func DoTestScenarioBatch(t *testing.T, algo *core.Algo) {
 	}
 
 	rf = algo.RuntimeFigures()
-	if rf[figures.Iterations] != iter {
+	if rf[core.Iterations] != iter {
 		t.Error("no iterations expected")
 	}
 
-	if err != nil {
-		t.Error("no error while stopping", err)
+	if err != core.ErrNotAlive {
+		t.Error("not alive expected", err)
 	}
 }
 
@@ -491,10 +490,10 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 	var err = algo.Wait(nil, 0)
 
 	if err != core.ErrNotRunning {
-		t.Error("not started expected", err)
+		t.Error("not running expected", err)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -514,35 +513,35 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 
 	err = algo.Pause()
 
-	if err != nil {
-		t.Error("No error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("Not running expected", err)
 	}
 
 	err = algo.Wait(nil, 0)
 
-	if err != core.ErrIdle {
-		t.Error("idle error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if algo.Status().Value >= core.Running {
-		t.Error("Running expected", algo.Status().Value)
+	if algo.Status().Value != core.Running {
+		t.Error("Alive expected", algo.Status().Value)
 	}
 
 	err = algo.Wait(nil, 0)
 
-	if err != core.ErrNeverConverge {
+	if err != core.ErrNeverFinish {
 		t.Error("never end expected", err)
 	}
 	if algo.Status().Value != core.Running {
 		t.Error("Sleeping expected", algo.Status().Value)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != core.ErrRunning {
 		t.Error("running expected")
@@ -557,7 +556,7 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 		t.Error("Finished expected", algo.Status().Value)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 	if err != nil {
 		t.Error("No error expected")
 	}
@@ -595,7 +594,7 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 		t.Error("created expected", algo.Status().Value)
 	}
 
-	err := algo.Play(nil, 0)
+	err := algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -615,22 +614,22 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 
 	err = algo.Pause()
 
-	if err != nil {
-		t.Error("No error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("Not running expected", err)
 	}
 
 	err = algo.Wait(nil, 0)
 
-	if err != core.ErrIdle {
-		t.Error("idle error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if algo.Status().Value == core.Running {
+	if algo.Status().Value != core.Running {
 		t.Error("Running expected", algo.Status().Value)
 	}
 
@@ -639,17 +638,17 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 	if err != nil {
 		t.Error("never sleeping expected", err)
 	}
-	if algo.Status().Value != core.Finished {
-		t.Error("Finished expected", algo.Status().Value)
+	if algo.Status().Value != core.Ready {
+		t.Error("Ready expected", algo.Status().Value)
 	}
 
 	err = algo.Wait(nil, 0)
 
-	if err != nil {
-		t.Error("no error expected", err)
+	if err != core.ErrNotRunning {
+		t.Error("not running expected", err)
 	}
-	if algo.Status().Value != core.Finished {
-		t.Error("Finished expected", algo.Status().Value)
+	if algo.Status().Value != core.Ready {
+		t.Error("Ready expected", algo.Status().Value)
 	}
 
 	err = algo.Push([]float64{0, 1, 2})
@@ -658,7 +657,7 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 		t.Error("no error expected", err)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -672,8 +671,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 	if err != nil {
 		t.Error("no error expected", err)
 	}
-	if algo.Status().Value != core.Finished {
-		t.Error("Finished expected", algo.Status().Value)
+	if algo.Status().Value != core.Ready {
+		t.Error("Ready expected", algo.Status().Value)
 	}
 
 	err = algo.Stop()
@@ -693,7 +692,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	}
 
 	var figures0 = algo.RuntimeFigures()
-	var iter0, ok0 = figures0[figures.Iterations]
+	var iter0, ok0 = figures0[core.Iterations]
 
 	if ok0 {
 		t.Error("no value expected", iter0)
@@ -712,11 +711,11 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	}
 
 	var rf = algo.RuntimeFigures()
-	if rf[figures.Iterations] > 0 {
+	if rf[core.Iterations] > 0 {
 		t.Error("no iterations expected")
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -729,13 +728,13 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	algo.Wait(nil, 0)
 
 	var figures1 = algo.RuntimeFigures()
-	var iter1 = figures1[figures.Iterations]
+	var iter1 = figures1[core.Iterations]
 
 	if int(iter1) != algo.Conf().Ctrl().Iter {
 		t.Errorf("%d iterations expected. %d", algo.Conf().Ctrl().Iter, int(iter1))
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("No error expected", err)
@@ -748,7 +747,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	algo.Wait(nil, 0)
 
 	var figures2 = algo.RuntimeFigures()
-	var iter2 = figures2[figures.Iterations]
+	var iter2 = figures2[core.Iterations]
 
 	var totalIter = (algo.Conf().Ctrl().Iter + algo.Conf().Ctrl().IterPerData)
 	if int(iter2) != totalIter {
@@ -766,7 +765,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 	}
 
 	var figures3 = algo.RuntimeFigures()
-	var iter3 = figures3[figures.Iterations]
+	var iter3 = figures3[core.Iterations]
 
 	if iter3 != iter2 {
 		t.Errorf("%d iterations expected. %d", int(iter2), int(iter3))
@@ -778,7 +777,7 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 	algo.Conf().Ctrl().Timeout = 1
 	algo.Conf().Ctrl().Iter = 10000
 
-	err := algo.Play(nil, 0)
+	err := algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -789,7 +788,7 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 		t.Error("timeout expected", err)
 	}
 
-	err = algo.Batch(nil, 0)
+	err = algo.Batch()
 
 	if err != core.ErrTimeout {
 		t.Error("timeout expected", err, algo.Status().Value)
@@ -797,17 +796,13 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 
 	algo.Conf().Ctrl().Timeout = 0
 
-	err = algo.Play(nil, 1)
+	algo.Stop()
 
-	if err != nil {
-		t.Error("no error expected", err)
-	}
-	err = algo.Wait(nil, 0)
-	if err != core.ErrTimeout {
-		t.Error("timeout expected", err)
-	}
+	// var conf = algo.Conf()
+	// conf.Ctrl().Iter = 100
+	// algo.SetConf(conf)
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 	if err != nil {
 		t.Error("no error expected", err)
 	}
@@ -817,35 +812,38 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 	}
 	algo.Stop()
 
-	err = algo.Batch(nil, 1)
-	if err != core.ErrTimeout {
-		t.Error("timeout expected", err)
+	err = algo.Batch()
+
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 }
 
 // DoTestFreq test frequency
 func DoTestFreq(t *testing.T, algo core.OnlineClust) { // must IterFreq = 1
-	algo.Play(nil, 0)
+	algo.Play()
 	time.Sleep(1)
 	algo.Pause()
 
 	var runtimeFigures = algo.RuntimeFigures()
 
-	if runtimeFigures[figures.Iterations] > 1 {
-		t.Error("1 iteration expected", runtimeFigures[figures.Iterations])
+	if runtimeFigures[core.Iterations] > 1 {
+		t.Error("1 iteration expected", runtimeFigures[core.Iterations])
 	}
 }
 
 // DoTestIterToRun test if iterToRun argument works
 func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
-	var conf = algo.Conf().Ctrl()
-	if conf.Iter != 0 || conf.IterPerData != 0 {
-		t.Error("iter and iter per data must be equal to 0", conf.Iter, conf.IterPerData)
+	var confCtrl = algo.Conf().Ctrl()
+	if confCtrl.Iter != 0 || confCtrl.IterPerData != 0 {
+		t.Error("iter and iter per data must be equal to 0", confCtrl.Iter, confCtrl.IterPerData)
 	}
 
-	var maxIter = 10
+	var conf = algo.Conf()
+	conf.Ctrl().Iter = 10
+	// algo.SetConf(conf)
 
-	var err = algo.Play(core.IterationsFinishing{MaxIter: maxIter}, 0)
+	var err = algo.Play()
 
 	if err != nil {
 		t.Error("no error expected", err)
@@ -858,49 +856,54 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	}
 
 	var runtimeFigures = algo.RuntimeFigures()
-	if int(runtimeFigures[figures.LastIterations]) != maxIter {
-		t.Errorf("%v iterations expected, %v", maxIter, runtimeFigures[figures.LastIterations])
+	if int(runtimeFigures[core.LastIterations]) != conf.Ctrl().Iter {
+		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.LastIterations])
 	}
 
-	maxIter = 100000
+	conf.Ctrl().Iter = 100000
 
-	err = algo.Play(core.IterationsFinishing{MaxIter: maxIter}, 0)
+	algo.Stop()
+
+	err = algo.Play()
 	if err != nil {
 		t.Error("no error expected", err)
 	}
 
-	err = algo.Wait(core.IterationsFinishing{MaxIter: 1}, 0)
+	err = algo.Wait(core.IterFinishing{Iter: 1}, 0)
 
-	if err != core.ErrElapsedIter {
-		t.Error("elaspsed iter expected", err)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 	algo.Wait(nil, 0)
 
 	runtimeFigures = algo.RuntimeFigures()
-	if int(runtimeFigures[figures.LastIterations]) != maxIter {
-		t.Errorf("%v iterations expected, %v", maxIter, runtimeFigures[figures.LastIterations])
+	if int(runtimeFigures[core.LastIterations]) != conf.Ctrl().Iter {
+		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.LastIterations])
 	}
 
-	maxIter = 100
+	algo.Stop()
 
-	err = algo.Batch(core.IterationsFinishing{MaxIter: maxIter}, 0)
+	conf.Ctrl().Iter = 100
+
+	err = algo.Batch()
 
 	if err != nil {
 		t.Error("no err expected", err)
 	}
 
 	runtimeFigures = algo.RuntimeFigures()
-	if int(runtimeFigures[figures.LastIterations]) != maxIter {
-		t.Errorf("%v iterations expected, %v", maxIter, runtimeFigures[figures.LastIterations])
+	if int(runtimeFigures[core.LastIterations]) != conf.Ctrl().Iter {
+		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.LastIterations])
 	}
 }
 
-// DoTestReconfigure test reconfiguration
-func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
+// DoTestSetConf test reconfiguration
+func DoTestSetConf(t *testing.T, algo *core.Algo) {
 
-	algo.Conf().Ctrl().Iter = 1000
+	var conf = algo.Conf()
+	conf.Ctrl().Iter = 1000
 
-	var err = algo.Reconfigure(algo.Conf(), algo.Space())
+	var err = algo.SetConf(conf)
 
 	if err != core.ErrNotRunning {
 		t.Error("not started expected", err)
@@ -912,19 +915,19 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("No error expected", err)
 	}
 
-	err = algo.Reconfigure(algo.Conf(), algo.Space())
+	err = algo.SetConf(algo.Conf())
 
 	if err != core.ErrNotRunning {
 		t.Error("not started expected", err)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("No error expected", err)
 	}
 
-	err = algo.Reconfigure(algo.Conf(), algo.Space())
+	err = algo.SetConf(algo.Conf())
 
 	if err != nil {
 		t.Error("reconfiguration expected", err)
@@ -944,7 +947,7 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("idle expected", algo.Status().Value)
 	}
 
-	err = algo.Reconfigure(algo.Conf(), algo.Space())
+	err = algo.SetConf(algo.Conf())
 
 	if err != nil {
 		t.Error("reconfiguration expected", err)
@@ -954,7 +957,7 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("running expected", algo.Status().Value)
 	}
 
-	err = algo.Play(nil, 0)
+	err = algo.Play()
 
 	if err != nil {
 		t.Error("running expected", err)
@@ -970,7 +973,7 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("Finished expected", algo.Status().Value)
 	}
 
-	err = algo.Reconfigure(algo.Conf(), algo.Space())
+	err = algo.SetConf(algo.Conf())
 
 	if err != nil {
 		t.Error("reconfiguration expected", err)
@@ -990,7 +993,111 @@ func DoTestReconfigure(t *testing.T, algo *core.Algo) { // must Iter = 1000
 		t.Error("not running expected", algo.Status().Value)
 	}
 
-	err = algo.Reconfigure(algo.Conf(), algo.Space())
+	err = algo.SetConf(algo.Conf())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status().Value != core.Finished {
+		t.Error("stopped expected", algo.Status().Value)
+	}
+}
+
+// DoTestSetSpace test reconfiguration
+func DoTestSetSpace(t *testing.T, algo *core.Algo) {
+
+	var err = algo.SetSpace(algo.Space())
+
+	if err != core.ErrNotRunning {
+		t.Error("not started expected", err)
+	}
+
+	err = algo.Init()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+
+	err = algo.SetSpace(algo.Space())
+
+	if err != core.ErrNotRunning {
+		t.Error("not started expected", err)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("No error expected", err)
+	}
+
+	err = algo.SetSpace(algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status().Value != core.Running {
+		t.Error("running expected", algo.Status().Value)
+	}
+
+	err = algo.Pause()
+
+	if err != nil {
+		t.Error("not started expected", err)
+	}
+
+	if algo.Status().Value != core.Idle {
+		t.Error("idle expected", algo.Status().Value)
+	}
+
+	err = algo.SetSpace(algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status().Value != core.Idle {
+		t.Error("running expected", algo.Status().Value)
+	}
+
+	err = algo.Play()
+
+	if err != nil {
+		t.Error("running expected", err)
+	}
+
+	err = algo.Wait(nil, 0)
+
+	if err != nil {
+		t.Error("ended expected", err)
+	}
+
+	if algo.Status().Value != core.Finished {
+		t.Error("Finished expected", algo.Status().Value)
+	}
+
+	err = algo.SetSpace(algo.Space())
+
+	if err != nil {
+		t.Error("reconfiguration expected", err)
+	}
+
+	if algo.Status().Value != core.Finished {
+		t.Error("Finished expected", algo.Status().Value)
+	}
+
+	err = algo.Stop()
+
+	if err != nil {
+		t.Error("not error expected", err)
+	}
+
+	if algo.Status().Value < core.Running {
+		t.Error("not running expected", algo.Status().Value)
+	}
+
+	err = algo.SetSpace(algo.Space())
 
 	if err != nil {
 		t.Error("reconfiguration expected", err)

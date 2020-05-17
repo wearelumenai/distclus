@@ -5,7 +5,6 @@ import (
 
 	"github.com/wearelumenai/distclus/core"
 	"github.com/wearelumenai/distclus/euclid"
-	"github.com/wearelumenai/distclus/figures"
 	"github.com/wearelumenai/distclus/internal/test"
 	"github.com/wearelumenai/distclus/kmeans"
 	"github.com/wearelumenai/distclus/mcmc"
@@ -180,7 +179,7 @@ func Test_AcceptRatio(t *testing.T) {
 
 	test.PushAndRunSync(algo)
 	var rf = algo.RuntimeFigures()
-	var r = rf[figures.Acceptations] / rf[figures.Iterations]
+	var r = rf[mcmc.Acceptations] / rf[core.Iterations]
 	if r < 0 || r > 1 {
 		t.Error("Expected ratio in [0 1], got", r)
 	}

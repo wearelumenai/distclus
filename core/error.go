@@ -26,20 +26,20 @@ var ErrIdle = errors.New("Algorithm is idle")
 // ErrReconfiguring raised if algo is reconfiguring
 var ErrReconfiguring = errors.New("Algorithm is reconfiguring")
 
-// ErrInfiniteIterations occure when static execution is asked with infinite iterations
-var ErrInfiniteIterations = errors.New("Infinite iterations in static mode")
-
 // ErrTimeout is returned when an error occurs
 var ErrTimeout = errors.New("algorithm timed out")
 
 // ErrElapsedIter raised when amont of iterations is done
 var ErrElapsedIter = errors.New("amount of iterations done")
 
-// ErrNeverConverge raised when wait method is called while the algorithm will never end
-var ErrNeverConverge = errors.New("algorithm can not converge. Specify core.Conf.Iter, core.Conf.IterPerData, core.Conf.DataPerIter or core.Conf.Convergence for allowing your algorithm to sleep")
+// ErrNeverFinish raised when wait method is called while the algorithm will never finish
+var ErrNeverFinish = errors.New("algorithm can not finish. Specify core.Conf.Iter, core.Conf.IterPerData, core.Conf.DataPerIter or core.Conf.Finishing for allowing your algorithm to sleep")
 
 // ErrFinished raised when algorithm is finished
 var ErrFinished = errors.New("algorithm is finished")
 
 // ErrNotIterate raised when play is called while algo can not iterate
 var ErrNotIterate = errors.New("algorithm can not iterate. Check iterations and dataPerIter conditions")
+
+// ErrNotAlive raised when algo is not alive
+var ErrNotAlive = errors.New("algorithm is not alive")

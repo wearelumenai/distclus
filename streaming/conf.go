@@ -5,6 +5,7 @@ import (
 
 	"github.com/wearelumenai/distclus/core"
 
+	"golang.org/x/exp/errors/fmt"
 	"golang.org/x/exp/rand"
 )
 
@@ -42,9 +43,10 @@ func (conf *Conf) SetDefaultValues() {
 }
 
 // Verify checks if the given configuration is valid.
-func (conf *Conf) Verify() {
+func (conf *Conf) Verify() (err error) {
 	conf.SetDefaultValues()
 	if conf.OutAfter < 2 {
-		panic("OutAfter should be greater than 1")
+		err = fmt.Errorf("OutAfter should be greater than 1: %v", conf.OutAfter)
 	}
+	return
 }

@@ -21,11 +21,12 @@ type Conf struct {
 }
 
 // Verify configuratio
-func (conf *Conf) Verify() {
+func (conf *Conf) Verify() (err error) {
 	conf.SetDefaultValues()
 	if conf.K < 1 {
-		panic(fmt.Sprintf("Illegal value for K: %v", conf.K))
+		err = fmt.Errorf("Illegal value for K: %v", conf.K)
 	}
+	return
 }
 
 // SetDefaultValues initializes nil configuration values

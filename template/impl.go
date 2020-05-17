@@ -2,7 +2,6 @@ package template // to rename for specific algorithm
 
 import (
 	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/figures"
 )
 
 // Impl represents the algorithm implementation
@@ -21,7 +20,7 @@ func (impl *Impl) Init(core.OCModel) (clust core.Clust, err error) {
 
 // Iterate runs one iteration of the algorithm
 // If clust is nil, algorithm execution does not increment iterations
-func (impl *Impl) Iterate(core.OCModel) (clust core.Clust, runtimeFigures figures.RuntimeFigures, err error) {
+func (impl *Impl) Iterate(core.OCModel) (clust core.Clust, runtimeFigures core.RuntimeFigures, err error) {
 	return
 }
 

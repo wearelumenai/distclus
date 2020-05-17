@@ -1,6 +1,7 @@
 package test
 
 import (
+	"log"
 	"math"
 	"reflect"
 	"testing"
@@ -205,7 +206,9 @@ func DoTestBeforeRun(algo core.OnlineClust, t *testing.T) {
 	AssertNoError(t, err)
 
 	var clust = algo.Centroids()
-	AssertEmpty(t, clust)
+	if len(clust) > 0 {
+		t.Error("empty expected")
+	}
 
 	var elt, _, _ = algo.Predict(Vectors[3])
 	AssertEmpty(t, elt)
@@ -333,6 +336,7 @@ func AssertAlmostEqual(t *testing.T, expected float64, actual float64) {
 
 // AssertEmpty test
 func AssertEmpty(t *testing.T, elt core.Elemt) {
+	log.Println(elt, elt)
 	if elt != nil {
 		t.Error("Expected empty")
 	}

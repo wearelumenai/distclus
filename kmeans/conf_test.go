@@ -4,14 +4,15 @@ import (
 	"testing"
 
 	"github.com/wearelumenai/distclus/core"
-	"github.com/wearelumenai/distclus/internal/test"
 	"github.com/wearelumenai/distclus/kmeans"
 )
 
 func TestKMeans_ConfErrorK(t *testing.T) {
-	defer test.AssertPanic(t)
 	var conf = kmeans.Conf{K: -12, CtrlConf: core.CtrlConf{Iter: 10}}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }
 
 func TestKMeans_ConfErrorNumCPU(t *testing.T) {

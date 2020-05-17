@@ -46,8 +46,8 @@ func Test_DistinctValuesMaxK(t *testing.T) {
 
 	var centroids = algo.Centroids()
 
-	if len(centroids) != 4 {
-		t.Error("Expected 4 centroids", len(centroids))
+	if len(centroids) != 4 && len(centroids) != 5 {
+		t.Error("Expected 4 or 5 centroids", len(centroids))
 	}
 
 	for _, e := range ints {

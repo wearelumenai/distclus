@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"math"
 	"time"
 )
 
@@ -17,8 +16,8 @@ type OCCtrl interface {
 	Predict(elemt Elemt) (Elemt, int, float64) // input elemt centroid/label with distance to closest centroid
 	Batch() error                              // execute (x iterations if given, otherwise depends on conf.Iter/conf.IterPerData) in batch mode (do play, wait, then stop)
 	Copy(Conf, Space) (OnlineClust, error)     // make a copy of this algo with new configuration and space
-	SetConf(conf Conf) error                   // change configuration
-	SetSpace(space Space) error                // change space
+	// SetConf(conf Conf) error                   // change configuration
+	// SetSpace(space Space) error                // change space
 }
 
 // Push a new observation in the algorithm
@@ -26,15 +25,20 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 	err = algo.impl.Push(elemt, algo)
 	if err == nil {
 		algo.modelMutex.Lock()
-		algo.newData++
 		algo.pushedData++
 		algo.lastDataTime = time.Now().Unix()
+		var conf = algo.conf.Ctrl()
+		if algo.Status().Value == Ready && conf.DataPerIter > 0 && conf.DataPerIter <= algo.newData {
+			algo.newData = 0
+		} else {
+			algo.newData++
+		}
+		algo.updateRuntimeFigures()
 		algo.modelMutex.Unlock()
 		// try to play if waiting
 		algo.modelMutex.RLock()
 		defer algo.modelMutex.RUnlock()
-		var conf = algo.conf.Ctrl()
-		if algo.Status().Value == Ready && conf.DataPerIter > 0 && conf.DataPerIter <= algo.newData {
+		if algo.newData == 0 {
 			algo.Play()
 		}
 	}
@@ -43,6 +47,7 @@ func (algo *Algo) Push(elemt Elemt) (err error) {
 
 // Batch executes the algorithm in batch mode
 func (algo *Algo) Batch() (err error) {
+	algo.Stop()
 	err = algo.Play()
 	if err == nil {
 		err = algo.Wait(nil, 0)
@@ -63,15 +68,19 @@ func (algo *Algo) Init() error {
 }
 
 func (algo *Algo) init() (err error) {
-	if algo.status.Value == Created || algo.status.Value == Finished {
-		algo.setStatus(NewOCStatus(Initializing), false)
+	switch algo.status.Value {
+	case Finished:
 		algo.modelMutex.Lock()
-		algo.newData = 0
-		algo.totalIterations = 0
 		algo.pushedData = 0
+		algo.duration = 0
 		algo.lastDataTime = 0
+		algo.iterations = 0
 		algo.runtimeFigures = RuntimeFigures{}
+		algo.updateRuntimeFigures()
 		algo.modelMutex.Unlock()
+		fallthrough
+	case Created:
+		algo.setStatus(NewOCStatus(Initializing), false)
 		var centroids Clust
 		centroids, err = algo.impl.Init(algo)
 		algo.modelMutex.Lock()
@@ -82,7 +91,7 @@ func (algo *Algo) init() (err error) {
 		} else {
 			algo.setStatus(NewOCStatusError(err), false)
 		}
-	} else {
+	default:
 		err = ErrAlreadyCreated
 	}
 	return
@@ -199,7 +208,7 @@ func (algo *Algo) Predict(elemt Elemt) (pred Elemt, label int, dist float64) {
 	return
 }
 
-func (algo *Algo) recover(newData int, start time.Time) {
+func (algo *Algo) recover(start time.Time) {
 	algo.statusMutex.Lock()
 	defer algo.statusMutex.Unlock()
 	var recovery = recover()
@@ -211,10 +220,9 @@ func (algo *Algo) recover(newData int, start time.Time) {
 	time.Sleep(100 * time.Millisecond)
 	// update algo runtime figures
 	algo.modelMutex.Lock()
-	algo.newData = int(math.Max(0, float64(algo.newData-newData)))
+	// algo.newData = int(math.Max(0, float64(algo.newData-newData)))
 	var duration = time.Now().Sub(start)
 	algo.duration += duration
-	algo.runtimeFigures[LastDuration] = float64(duration)
 	algo.runtimeFigures[Duration] = float64(algo.duration)
 	algo.modelMutex.Unlock()
 	// clean up channels
@@ -248,21 +256,17 @@ func (algo *Algo) run() {
 	}
 	var lastIterationTime = time.Now()
 
-	var iterations = 0
-
-	var newData int
-
-	algo.newData = 0
+	// var newData int
 
 	var start = time.Now()
 	var duration time.Duration
 
-	var finishing = (Finishing)(IterFinishing{Iter: conf.Iter, IterPerData: conf.IterPerData})
+	var finishing Finishing = NewIterFinishing(conf.Iter, conf.IterPerData)
 	if conf.Finishing != nil {
 		finishing = NewOr(finishing, conf.Finishing)
 	}
 
-	defer algo.recover(newData, start)
+	defer algo.recover(start)
 
 	algo.receiveStatus()
 
@@ -276,7 +280,7 @@ func (algo *Algo) run() {
 			}
 		default:
 			// run implementation
-			newData = algo.newData
+			// newData = algo.newData
 			centroids, runtimeFigures, err = algo.impl.Iterate(
 				NewSimpleOCModel(
 					algo.conf, algo.space, algo.status, algo.runtimeFigures, algo.centroids,
@@ -286,12 +290,9 @@ func (algo *Algo) run() {
 			if err == nil {
 				if centroids != nil { // an iteration has been executed
 					algo.modelMutex.Lock()
-					algo.totalIterations++
-					iterations++
+					algo.iterations++
 					algo.saveIterContext(
-						centroids, runtimeFigures,
-						iterations,
-						duration,
+						centroids, runtimeFigures, duration,
 					)
 					algo.modelMutex.Unlock()
 				}
@@ -313,20 +314,23 @@ func (algo *Algo) run() {
 	}
 }
 
-func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures RuntimeFigures, iterations int, duration time.Duration) {
+func (algo *Algo) updateRuntimeFigures() {
+	algo.runtimeFigures[Iterations] = float64(algo.iterations)
+	algo.runtimeFigures[PushedData] = float64(algo.pushedData)
+	algo.runtimeFigures[LastDataTime] = float64(algo.lastDataTime)
+}
+
+func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures RuntimeFigures, duration time.Duration) {
 	if runtimeFigures == nil {
 		runtimeFigures = RuntimeFigures{}
 	}
-	runtimeFigures[Iterations] = float64(algo.totalIterations)
-	runtimeFigures[LastIterations] = float64(iterations)
-	runtimeFigures[PushedData] = float64(algo.pushedData)
-	runtimeFigures[LastDuration] = float64(duration)
-	runtimeFigures[Duration] = float64(algo.duration + duration)
-	runtimeFigures[LastDataTime] = float64(algo.lastDataTime)
+	runtimeFigures[Duration] += float64(duration)
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures
+	algo.updateRuntimeFigures()
 }
 
+/*
 // SetConf algo configuration and space
 func (algo *Algo) SetConf(conf Conf) (err error) {
 	algo.ctrlMutex.Lock()
@@ -368,7 +372,7 @@ func (algo *Algo) SetSpace(space Space) (err error) {
 		}
 	}
 	return
-}
+}*/
 
 // Copy make a copy of this algo with new conf and space
 func (algo *Algo) Copy(conf Conf, space Space) (oc OnlineClust, err error) {

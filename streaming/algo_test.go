@@ -57,7 +57,7 @@ func Test_Iter(t *testing.T) {
 
 	var conf = algo.Conf()
 	conf.Ctrl().Iter = size - 1
-	algo.SetConf(conf)
+	// algo.SetConf(conf)
 	// algo.Batch(size-1, 0) // first data is processed at initialization
 	algo.Batch()
 
@@ -65,7 +65,7 @@ func Test_Iter(t *testing.T) {
 	var iterations = rf[core.Iterations]
 
 	if iterations != float64(size-1) {
-		t.Errorf("Wrong iterations number %f. %d Expected.", iterations, size-1)
+		t.Errorf("Wrong iterations number %v. %v Expected.", iterations, size-1)
 	}
 }
 
@@ -162,8 +162,8 @@ func Test_AlgoPush(t *testing.T) {
 	}
 	_ = algo.Stop()
 	var rfigures = algo.RuntimeFigures()
-	if rfigures[core.MaxDistance] < 10 {
-		t.Error("max distance should be grater than 1", rfigures[core.MaxDistance])
+	if rfigures[streaming.MaxDistance] < 10 {
+		t.Error("max distance should be grater than 1", rfigures[streaming.MaxDistance])
 	}
 }
 
@@ -177,9 +177,9 @@ func newAlgo(t *testing.T, conf core.CtrlConf, size int) (algo *core.Algo) {
 }
 
 func Test_Scenario_Batch(t *testing.T) {
-	// var algo = newAlgo(t, core.Conf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
 
-	// test.DoTestScenarioBatch(t, algo)
+	test.DoTestScenarioBatch(t, algo)
 }
 
 func Test_scenario_infinite(t *testing.T) {
@@ -189,15 +189,15 @@ func Test_scenario_infinite(t *testing.T) {
 }
 
 func Test_scenario_finite(t *testing.T) {
-	// var algo = newAlgo(t, core.Conf{}, 1000)
+	var algo = newAlgo(t, core.CtrlConf{}, 1000)
 
-	// test.DoTestScenarioFinite(t, algo)
+	test.DoTestScenarioFinite(t, algo)
 }
 
 func Test_Scenario_Play(t *testing.T) {
-	// var algo = newAlgo(t, core.Conf{Iter: 20}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 20}, 10)
 
-	// test.DoTestScenarioPlay(t, algo)
+	test.DoTestScenarioPlay(t, algo)
 }
 
 func Test_Timeout(t *testing.T) {
@@ -213,7 +213,7 @@ func Test_Freq(t *testing.T) {
 }
 
 func Test_IterToRun(t *testing.T) {
-	// algo := newAlgo(t, core.Conf{}, 10)
+	algo := newAlgo(t, core.CtrlConf{}, 10)
 
-	// test.DoTestIterToRun(t, algo)
+	test.DoTestIterToRun(t, algo)
 }

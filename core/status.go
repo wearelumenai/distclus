@@ -35,11 +35,11 @@ type OCStatus struct {
 
 // Alive check if status is running without error
 func (status OCStatus) Alive() bool {
-	return status.Value == Ready || status.Playing()
+	return status.Value == Ready || status.Running()
 }
 
-// Playing check if status is running or idle
-func (status OCStatus) Playing() bool {
+// Running check if status is running or idle
+func (status OCStatus) Running() bool {
 	return status.Value == Running || status.Value == Idle
 }
 

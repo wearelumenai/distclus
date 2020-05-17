@@ -59,7 +59,7 @@ func (impl *mockImpl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigu
 }
 
 func (impl *mockImpl) Push(elemt core.Elemt, model core.OCModel) (err error) {
-	if model.Status().Playing() {
+	if model.Status().Running() {
 		impl.runningcount++
 	} else {
 		impl.stoppedcount++
@@ -411,7 +411,7 @@ func Test_Timeout(t *testing.T) {
 }
 
 func Test_Freq(t *testing.T) {
-	algo := newAlgo(t, core.CtrlConf{IterFreq: 1}, 10)
+	algo := newAlgo(t, core.CtrlConf{IterFreq: 10}, 10)
 
 	test.DoTestFreq(t, &algo)
 }

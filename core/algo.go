@@ -20,20 +20,20 @@ type OnlineClust interface {
 
 // Algo in charge of algorithm execution with both implementation and user configuration
 type Algo struct {
-	conf            Conf
-	impl            Impl
-	space           Space
-	centroids       Clust
-	status          OCStatus
-	statusChannel   chan OCStatus
-	ackChannel      chan bool
-	runtimeFigures  RuntimeFigures
-	newData         int
-	pushedData      int
-	totalIterations int
-	duration        time.Duration
-	lastDataTime    int64
-	timeout         Timeout
+	conf           Conf
+	impl           Impl
+	space          Space
+	centroids      Clust
+	status         OCStatus
+	statusChannel  chan OCStatus
+	ackChannel     chan bool
+	runtimeFigures RuntimeFigures
+	newData        int
+	pushedData     int
+	iterations     int
+	duration       time.Duration
+	lastDataTime   int64
+	timeout        Timeout
 
 	ctrlMutex   sync.RWMutex // algo controller mutex
 	modelMutex  sync.RWMutex // algo model mutex

@@ -6,3 +6,7 @@ trace.out
 cpu.out
 .vscode
 *.gos
+**/*.pyc
+**/venv
+**/.DS_Store
+**/.png

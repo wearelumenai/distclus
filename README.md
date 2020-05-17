@@ -351,8 +351,6 @@ Is is composed of two interfaces:
 - `Push(elemt Elemt) error`: push an element
 - `Predict(elemt Elemt) (Elemt, int, float64)`: according to previous method, get centroid, its index and minimal distance with closest centroid in array of clustering centroids for input elemt
 - `Batch() error` execute the algorithm in batch mode. Similar to the call sequence of `Play` and `Wait`, with specific `Finishing` and timeout duration if given
-- `SetConf(Conf) error`: change of configuration. Can not be done during initialization or running status
-- `SetSpace(Space) error`: change of space. Can not be done during initialization or running status
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
 
 ### ```mcmc.LateDistrib``` struct
@@ -406,8 +404,6 @@ Remainding methods allow you to dynamically interact with the algorithm:
 - `Wait(Finishing, time.Duration) error`: wait until the algorithm terminates, with specific `Finishing` and timeout duration if >= 0
 - `Stop() error`: stop the algorithm execution (`Finished` status). `Play` is possible
 - `Copy(ImplConf, Space) (OnlineClust, error)`: return a copy of this algorithm with entire execution context
-- `SetConf(Conf) error`: change of configuration.
-- `SetSpace(Space) error`: change of space.
 - `Status() OCStatus`: get algo status (Value: ClustStatus, Error: failed error). `Status.Alive()` return true if status is alive (aka Ready, Running or Idle)
 - `Conf().StatusNotifier(OnlineClust, OCStatus)`: callback function when algo status change or an error is raised
 

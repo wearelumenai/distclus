@@ -1,7 +1,6 @@
 package test
 
 import (
-	"log"
 	"math"
 	"reflect"
 	"testing"
@@ -115,7 +114,7 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	var iter1, ok1 = figures1[core.Iterations]
 
 	AssertTrue(t, ok1)
-	AssertTrue(t, iter0 < iter1)
+	AssertTrue(t, iter0 == iter1)
 
 	var centroids1 = algo.Centroids()
 
@@ -129,13 +128,11 @@ func DoTestRunAsyncPush(t *testing.T, algo core.OnlineClust) {
 	var iter2, ok2 = figures2[core.Iterations]
 
 	AssertTrue(t, ok2)
-	AssertTrue(t, iter1 < iter2)
+	AssertTrue(t, iter1 == iter2)
 
 	var centroids2 = algo.Centroids()
 
 	AssertNotEqual(t, centroids1, centroids2)
-
-	_ = algo.Stop()
 }
 
 // DoTestRunAsyncCentroids test
@@ -336,7 +333,6 @@ func AssertAlmostEqual(t *testing.T, expected float64, actual float64) {
 
 // AssertEmpty test
 func AssertEmpty(t *testing.T, elt core.Elemt) {
-	log.Println(elt, elt)
 	if elt != nil {
 		t.Error("Expected empty")
 	}
@@ -744,7 +740,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 		t.Error("No error expected", err)
 	}
 
-	if algo.Status().Value < core.Running {
+	if algo.Status().Value != core.Running {
 		t.Error("status should be Running", algo.Status().Value)
 	}
 
@@ -779,7 +775,7 @@ func DoTestScenarioPlay(t *testing.T, algo *core.Algo) { // must Iter = 20
 // DoTestTimeout test timeout
 func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and Iter max
 	algo.Conf().Ctrl().Timeout = 1
-	algo.Conf().Ctrl().Iter = 10000
+	algo.Conf().Ctrl().Iter = 100
 
 	err := algo.Play()
 
@@ -826,13 +822,13 @@ func DoTestTimeout(t *testing.T, algo core.OnlineClust) { // Timeout 0.0001 and 
 // DoTestFreq test frequency
 func DoTestFreq(t *testing.T, algo core.OnlineClust) { // must IterFreq = 1
 	algo.Play()
-	time.Sleep(1)
+	time.Sleep(1 * time.Second)
 	algo.Pause()
 
 	var runtimeFigures = algo.RuntimeFigures()
 
-	if runtimeFigures[core.Iterations] > 1 {
-		t.Error("1 iteration expected", runtimeFigures[core.Iterations])
+	if runtimeFigures[core.Iterations] > algo.Conf().Ctrl().IterFreq {
+		t.Errorf("%v iteration expected. %v", algo.Conf().Ctrl().IterFreq, runtimeFigures[core.Iterations])
 	}
 }
 
@@ -860,8 +856,8 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	}
 
 	var runtimeFigures = algo.RuntimeFigures()
-	if int(runtimeFigures[core.LastIterations]) != conf.Ctrl().Iter {
-		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.LastIterations])
+	if int(runtimeFigures[core.Iterations]) != conf.Ctrl().Iter {
+		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.Iterations])
 	}
 
 	conf.Ctrl().Iter = 100000
@@ -881,8 +877,8 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	algo.Wait(nil, 0)
 
 	runtimeFigures = algo.RuntimeFigures()
-	if int(runtimeFigures[core.LastIterations]) != conf.Ctrl().Iter {
-		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.LastIterations])
+	if int(runtimeFigures[core.Iterations]) != conf.Ctrl().Iter {
+		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.Iterations])
 	}
 
 	algo.Stop()
@@ -896,18 +892,18 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	}
 
 	runtimeFigures = algo.RuntimeFigures()
-	if int(runtimeFigures[core.LastIterations]) != conf.Ctrl().Iter {
-		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.LastIterations])
+	if int(runtimeFigures[core.Iterations]) != conf.Ctrl().Iter {
+		t.Errorf("%v iterations expected, %v", conf.Ctrl().Iter, runtimeFigures[core.Iterations])
 	}
 }
 
 // DoTestSetConf test reconfiguration
-func DoTestSetConf(t *testing.T, algo *core.Algo) {
+/* func DoTestSetConf(t *testing.T, algo *core.Algo) {
 
 	var conf = algo.Conf()
 	conf.Ctrl().Iter = 1000
 
-	var err = algo.SetConf(conf)
+	// var err = algo.SetConf(conf)
 
 	if err != core.ErrNotRunning {
 		t.Error("not started expected", err)
@@ -1006,10 +1002,10 @@ func DoTestSetConf(t *testing.T, algo *core.Algo) {
 	if algo.Status().Value != core.Finished {
 		t.Error("stopped expected", algo.Status().Value)
 	}
-}
+} */
 
 // DoTestSetSpace test reconfiguration
-func DoTestSetSpace(t *testing.T, algo *core.Algo) {
+/* func DoTestSetSpace(t *testing.T, algo *core.Algo) {
 
 	var err = algo.SetSpace(algo.Space())
 
@@ -1110,4 +1106,4 @@ func DoTestSetSpace(t *testing.T, algo *core.Algo) {
 	if algo.Status().Value != core.Finished {
 		t.Error("stopped expected", algo.Status().Value)
 	}
-}
+} */

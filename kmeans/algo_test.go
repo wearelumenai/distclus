@@ -50,7 +50,7 @@ func Test_Timeout(t *testing.T) {
 }
 
 func Test_Freq(t *testing.T) {
-	algo := newAlgo(t, core.CtrlConf{IterFreq: 1}, 10)
+	algo := newAlgo(t, core.CtrlConf{IterFreq: 10}, 10)
 
 	test.DoTestFreq(t, algo)
 }

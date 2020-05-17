@@ -70,7 +70,7 @@ func (impl *Impl) Iterate(model core.OCModel) (clust core.Clust, runtimeFigures 
 }
 
 func (impl *Impl) runtimeFigures() core.RuntimeFigures {
-	return core.RuntimeFigures{core.MaxDistance: impl.maxDistance}
+	return core.RuntimeFigures{MaxDistance: impl.maxDistance}
 }
 
 // Push pushes a new element

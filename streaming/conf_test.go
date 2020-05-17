@@ -3,7 +3,6 @@ package streaming_test
 import (
 	"testing"
 
-	"github.com/wearelumenai/distclus/internal/test"
 	"github.com/wearelumenai/distclus/streaming"
 )
 
@@ -31,7 +30,9 @@ func Test_SetDefaultConfig(t *testing.T) {
 }
 
 func Test_VerifyConfig(t *testing.T) {
-	defer test.AssertPanic(t)
 	var conf = streaming.Conf{OutAfter: 1}
-	conf.Verify()
+	var err = conf.Verify()
+	if err == nil {
+		t.Error("error expected")
+	}
 }

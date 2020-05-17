@@ -50,7 +50,7 @@ func Test_scenario_infinite(t *testing.T) {
 }
 
 func Test_scenario_finite(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 1000}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
 
 	test.DoTestScenarioFinite(t, algo)
 }
@@ -68,7 +68,7 @@ func Test_Timeout(t *testing.T) {
 }
 
 func Test_Freq(t *testing.T) {
-	algo := newAlgo(t, core.CtrlConf{IterFreq: 1}, 10)
+	algo := newAlgo(t, core.CtrlConf{IterFreq: 10}, 10)
 
 	test.DoTestFreq(t, algo)
 }

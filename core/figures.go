@@ -4,11 +4,11 @@ package core
 type RuntimeFigures map[string]float64
 
 const (
-	// Iterations is the total number of iterations
+	// Iterations is the number of iterations
 	Iterations = "iterations"
 	// PushedData is the number of pushed data
 	PushedData = "pushedData"
-	// Duration is total algo duration
+	// Duration is algo duration
 	Duration = "duration"
 	// LastDataTime is the last pushed data time
 	LastDataTime = "lastDataTime"

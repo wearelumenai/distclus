@@ -2,6 +2,7 @@ package core_test
 
 import (
 	"errors"
+	"log"
 	"math"
 	"testing"
 	"time"
@@ -417,52 +418,40 @@ func Test_Freq(t *testing.T) {
 }
 
 func Test_StatusNotifier(t *testing.T) {
-	var statusChan = make(chan core.OCStatus, 10)
-	var errorChan = make(chan error, 10)
+	var statuses [6]core.OCStatus
+
+	var i = 0
 
 	var statusNotifier = func(_ core.OnlineClust, status core.OCStatus) {
-		statusChan <- status
-		errorChan <- status.Error
+		statuses[i] = status
+		i++
 	}
 
-	algo := newAlgo(t, core.CtrlConf{Iter: 1, StatusNotifier: statusNotifier}, 2)
+	algo := newAlgo(t, core.CtrlConf{Iter: 1000, StatusNotifier: statusNotifier}, 3)
 
-	algo.Batch()
+	algo.Init()
 
-	var status = []core.ClustStatus{
-		core.Initializing, core.Ready, core.Running, core.Finished,
+	algo.Play()
+
+	algo.Pause()
+
+	algo.Play()
+
+	algo.Stop()
+
+	var steps = []core.ClustStatus{
+		core.Initializing, core.Ready, core.Running, core.Idle, core.Running, core.Finished,
 	}
-	var errors = []error{nil, nil, nil, errIter}
-	for _, s := range status {
-		var ss, ok = <-statusChan
-		if !ok {
-			t.Error("status expected")
-		} else {
-			if ss.Value != s {
-				t.Errorf("%v expected. %v", s, ss)
-			}
+	if len(steps) != len(statuses) {
+		log.Println("same size expected")
+	}
+
+	for i, step := range steps {
+		var status = statuses[i]
+		if status.Value != step {
+			t.Errorf("%v expected. %v", step, status.Value)
 		}
 	}
-
-	if len(statusChan) != 0 {
-		t.Error("no more status expected", len(statusChan))
-	}
-
-	for _, e := range errors {
-		var ee, ok = <-errorChan
-		if !ok {
-			t.Error("error expected")
-		} else {
-			if ee != e {
-				t.Errorf("%v expected. %v", e, ee)
-			}
-		}
-	}
-
-	if len(errorChan) != 0 {
-		t.Error("no more error expected", len(errorChan))
-	}
-
 }
 
 /*

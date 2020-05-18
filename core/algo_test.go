@@ -224,7 +224,7 @@ func TestStop(t *testing.T) {
 }
 
 func TestIterError(t *testing.T) {
-	algo := newAlgo(t, core.CtrlConf{Iter: 1}, 2)
+	algo := newAlgo(t, core.CtrlConf{Iter: 100}, 2)
 	err := algo.Play()
 
 	if err != nil {

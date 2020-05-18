@@ -214,7 +214,7 @@ func (algo *Algo) recover(start time.Time) {
 		var err = fmt.Errorf("%v", recovery)
 		algo.setStatus(NewOCStatusError(err), false)
 	}
-	// wait a few between client time processing between releasing satusMutex and sendStatus
+	// wait a few between client time processing between releasing statusMutex and sendStatus
 	time.Sleep(100 * time.Millisecond)
 	// update algo runtime figures
 	algo.modelMutex.Lock()
@@ -322,7 +322,7 @@ func (algo *Algo) saveIterContext(centroids Clust, runtimeFigures RuntimeFigures
 	if runtimeFigures == nil {
 		runtimeFigures = RuntimeFigures{}
 	}
-	runtimeFigures[Duration] += float64(duration)
+	runtimeFigures[Duration] = float64(algo.duration + duration)
 	algo.centroids = centroids
 	algo.runtimeFigures = runtimeFigures
 	algo.updateRuntimeFigures()

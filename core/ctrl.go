@@ -58,8 +58,6 @@ func (algo *Algo) Batch() (err error) {
 
 // Init initialize centroids and set status to Ready
 func (algo *Algo) Init() error {
-	algo.ctrlMutex.Lock()
-	defer algo.ctrlMutex.Unlock()
 	algo.statusMutex.Lock()
 	defer algo.statusMutex.Unlock()
 	return algo.init()
@@ -97,12 +95,6 @@ func (algo *Algo) init() (err error) {
 
 // Play the algorithm in online mode
 func (algo *Algo) Play() (err error) {
-	algo.ctrlMutex.Lock()
-	defer algo.ctrlMutex.Unlock()
-	return algo.play()
-}
-
-func (algo *Algo) play() (err error) {
 	algo.statusMutex.Lock()
 	switch algo.status.Value {
 	case Idle:
@@ -137,8 +129,6 @@ func (algo *Algo) play() (err error) {
 
 // Pause the algorithm and set status to idle
 func (algo *Algo) Pause() (err error) {
-	algo.ctrlMutex.Lock()
-	defer algo.ctrlMutex.Unlock()
 	algo.statusMutex.Lock()
 	if algo.status.Value == Running {
 		algo.statusMutex.Unlock()
@@ -194,8 +184,6 @@ func (algo *Algo) interrupt(interruption error) (err error) {
 
 // Stop the algorithm
 func (algo *Algo) Stop() (err error) {
-	algo.ctrlMutex.Lock()
-	defer algo.ctrlMutex.Unlock()
 	return algo.interrupt(nil)
 }
 

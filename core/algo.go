@@ -31,7 +31,6 @@ type Algo struct {
 	lastDataTime   int64
 	timeout        Timeout
 
-	ctrlMutex   sync.RWMutex // algo controller mutex
 	modelMutex  sync.RWMutex // algo model mutex
 	statusMutex sync.RWMutex // algo model mutex
 }

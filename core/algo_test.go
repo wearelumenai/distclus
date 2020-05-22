@@ -2,7 +2,6 @@ package core_test
 
 import (
 	"errors"
-	"log"
 	"math"
 	"testing"
 	"time"
@@ -418,13 +417,16 @@ func Test_Freq(t *testing.T) {
 }
 
 func Test_StatusNotifier(t *testing.T) {
-	var statuses [6]core.OCStatus
-
-	var i = 0
+	var statusCounts = map[core.ClustStatus]int{
+		core.Initializing: 1,
+		core.Ready:        1,
+		core.Running:      2,
+		core.Idle:         1,
+		core.Finished:     1,
+	}
 
 	var statusNotifier = func(_ core.OnlineClust, status core.OCStatus) {
-		statuses[i] = status
-		i++
+		statusCounts[status.Value]--
 	}
 
 	algo := newAlgo(t, core.CtrlConf{Iter: 1000, StatusNotifier: statusNotifier}, 3)
@@ -439,17 +441,9 @@ func Test_StatusNotifier(t *testing.T) {
 
 	algo.Stop()
 
-	var steps = []core.ClustStatus{
-		core.Initializing, core.Ready, core.Running, core.Idle, core.Running, core.Finished,
-	}
-	if len(steps) != len(statuses) {
-		log.Println("same size expected")
-	}
-
-	for i, step := range steps {
-		var status = statuses[i]
-		if status.Value != step {
-			t.Errorf("%v expected. %v", step, status.Value)
+	for status, count := range statusCounts {
+		if count != 0 {
+			t.Errorf("%v not meet", status)
 		}
 	}
 }

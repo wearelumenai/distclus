@@ -176,7 +176,7 @@ func newAlgo(t *testing.T, conf core.CtrlConf, size int) (algo *core.Algo) {
 }
 
 func Test_Scenario_Batch(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 100}, 1000)
 
 	test.DoTestScenarioBatch(t, algo)
 }
@@ -207,7 +207,7 @@ func Test_Timeout(t *testing.T) {
 }
 */
 func Test_Freq(t *testing.T) {
-	algo := newAlgo(t, core.CtrlConf{IterFreq: 1}, 10)
+	algo := newAlgo(t, core.CtrlConf{IterFreq: 10}, 10)
 
 	test.DoTestFreq(t, algo)
 }

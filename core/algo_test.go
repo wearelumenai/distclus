@@ -233,8 +233,8 @@ func TestIterError(t *testing.T) {
 
 	err = algo.Wait(nil, 0)
 
-	if err != errIter {
-		t.Error("iter error expected", err)
+	if err != errIter && err != core.ErrNotRunning {
+		t.Error("iter error or not running expected", err)
 	}
 
 	err = algo.Wait(nil, 1*time.Second)
@@ -251,7 +251,7 @@ func TestIterError(t *testing.T) {
 }
 
 func TestPause(t *testing.T) {
-	algo := newAlgo(t, core.CtrlConf{Iter: 1}, 10)
+	algo := newAlgo(t, core.CtrlConf{Iter: 100}, 10)
 
 	err := algo.Play()
 
@@ -309,7 +309,7 @@ func Test_Init(t *testing.T) {
 }
 
 func Test_Predict(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1000}, 10)
 
 	_, _, _ = algo.Predict(nil)
 
@@ -381,7 +381,7 @@ func Test_infinite_Batch(t *testing.T) {
 }
 
 func Test_Scenario_Batch(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 1}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1000}, 10)
 
 	test.DoTestScenarioBatch(t, &algo)
 }
@@ -399,7 +399,7 @@ func Test_scenario_finite(t *testing.T) {
 }
 
 func Test_Scenario_Play(t *testing.T) {
-	var algo = newAlgo(t, core.CtrlConf{Iter: 20}, 10)
+	var algo = newAlgo(t, core.CtrlConf{Iter: 1000}, 10)
 
 	test.DoTestScenarioPlay(t, &algo)
 }
@@ -417,16 +417,14 @@ func Test_Freq(t *testing.T) {
 }
 
 func Test_StatusNotifier(t *testing.T) {
-	var statusCounts = map[core.ClustStatus]int{
-		core.Initializing: 1,
-		core.Ready:        1,
-		core.Running:      2,
-		core.Idle:         1,
-		core.Finished:     1,
+	var statuses = []core.ClustStatus{
+		core.Initializing, core.Ready, core.Running, core.Idle, core.Running, core.Finished,
 	}
 
+	var statusChan = make(chan core.ClustStatus, len(statuses))
+
 	var statusNotifier = func(_ core.OnlineClust, status core.OCStatus) {
-		statusCounts[status.Value]--
+		statusChan <- status.Value
 	}
 
 	algo := newAlgo(t, core.CtrlConf{Iter: 1000, StatusNotifier: statusNotifier}, 3)
@@ -441,9 +439,10 @@ func Test_StatusNotifier(t *testing.T) {
 
 	algo.Stop()
 
-	for status, count := range statusCounts {
-		if count != 0 {
-			t.Errorf("%v not meet", status)
+	for _, status := range statuses {
+		var algoStatus = <-statusChan
+		if status != algoStatus {
+			t.Errorf("wrong status: %v. Expected %v", algoStatus, status)
 		}
 	}
 }

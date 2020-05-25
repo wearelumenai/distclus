@@ -23,6 +23,7 @@ type Algo struct {
 	status         OCStatus
 	statusChannel  chan OCStatus
 	ackChannel     chan bool
+	notifChannel   chan OCStatus
 	runtimeFigures RuntimeFigures
 	newData        int
 	pushedData     int
@@ -65,12 +66,7 @@ func (algo *Algo) setStatus(status OCStatus, safe bool) {
 	} else {
 		algo.status = status
 	}
-	algo.modelMutex.RLock()
-	var statusNotifier = algo.conf.Ctrl().StatusNotifier
-	algo.modelMutex.RUnlock()
-	if statusNotifier != nil {
-		go statusNotifier(algo, status)
-	}
+	algo.notifChannel <- status
 }
 
 // receiveStatus status from main routine
@@ -85,4 +81,23 @@ func (algo *Algo) sendStatus(status OCStatus) (ok bool) {
 	algo.statusChannel <- status
 	_, ok = <-algo.ackChannel
 	return
+}
+
+func (algo *Algo) notify(status OCStatus) {
+	algo.modelMutex.RLock()
+	var statusNotifier = algo.conf.Ctrl().StatusNotifier
+	algo.modelMutex.RUnlock()
+	if statusNotifier != nil {
+		statusNotifier(algo, status)
+	}
+}
+
+func (algo *Algo) notificationLoop() {
+	for {
+		var status, ok = <-algo.notifChannel
+		if !ok {
+			return
+		}
+		algo.notify(status)
+	}
 }

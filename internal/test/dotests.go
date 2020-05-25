@@ -840,7 +840,7 @@ func DoTestIterToRun(t *testing.T, algo core.OnlineClust) { // must Iter == 0
 	}
 
 	var conf = algo.Conf()
-	conf.Ctrl().Iter = 10
+	conf.Ctrl().Iter = 1000
 	// algo.SetConf(conf)
 
 	var err = algo.Play()

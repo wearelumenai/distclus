@@ -76,6 +76,10 @@ func (algo *Algo) init() (err error) {
 		algo.modelMutex.Unlock()
 		fallthrough
 	case Created:
+		if algo.status.Value == Created {
+			algo.notifChannel = make(chan OCStatus)
+			go algo.notificationLoop()
+		}
 		algo.setStatus(NewOCStatus(Initializing), false)
 		var centroids Clust
 		centroids, err = algo.impl.Init(algo)

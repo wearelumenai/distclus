@@ -20,9 +20,9 @@ In addition, static and dynamic concerns aim to address multi-platform cross-usa
 
 ```
 # install all artefacts, verbose and update if necessary
-go get -u -v github.com/wearelumenai/distclus/...
+go get -v github.com/wearelumenai/distclus/...
 # or only streaming
-go get -u -v github.com/wearelumenai/streaming
+go get -v github.com/wearelumenai/streaming
 ```
 
 #### Inside go file:

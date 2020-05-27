@@ -154,13 +154,19 @@ func (algo *Algo) CanNeverFinish(finishing Finishing, timeout time.Duration) boo
 
 // Wait for online finishing predicate
 func (algo *Algo) Wait(finishing Finishing, timeout time.Duration) (err error) {
-	if algo.Status().Value == Running {
+	switch algo.Status().Value {
+	case Running:
 		if algo.CanNeverFinish(finishing, timeout) {
 			err = ErrNeverFinish
 		} else {
 			err = WaitTimeout(finishing, timeout, algo)
 		}
-	} else {
+	case Idle:
+		err = ErrIdle
+	case Ready:
+		fallthrough
+	case Finished:
+	default:
 		err = ErrNotRunning
 	}
 	return

@@ -519,7 +519,7 @@ func DoTestScenarioInfinite(t *testing.T, algo *core.Algo) { // no Iter or = 0
 
 	err = algo.Wait(nil, 0)
 
-	if err != core.ErrNotRunning {
+	if err != core.ErrIdle {
 		t.Error("not running expected", err)
 	}
 
@@ -620,8 +620,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 
 	err = algo.Wait(nil, 0)
 
-	if err != core.ErrNotRunning {
-		t.Error("not running expected", err)
+	if err != core.ErrIdle {
+		t.Error("idle expected", err)
 	}
 
 	err = algo.Play()
@@ -644,8 +644,8 @@ func DoTestScenarioFinite(t *testing.T, algo *core.Algo) { // require iter = 100
 
 	err = algo.Wait(nil, 0)
 
-	if err != core.ErrNotRunning {
-		t.Error("not running expected", err)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 	if algo.Status().Value != core.Ready {
 		t.Error("Ready expected", algo.Status().Value)

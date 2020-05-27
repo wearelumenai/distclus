@@ -233,14 +233,14 @@ func TestIterError(t *testing.T) {
 
 	err = algo.Wait(nil, 0)
 
-	if err != errIter && err != core.ErrNotRunning {
+	if err != errIter && err != nil {
 		t.Error("iter error or not running expected", err)
 	}
 
 	err = algo.Wait(nil, 1*time.Second)
 
-	if err != core.ErrNotRunning {
-		t.Error("not running expected", err)
+	if err != nil {
+		t.Error("no error expected", err)
 	}
 
 	err = algo.Batch()

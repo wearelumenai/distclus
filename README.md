@@ -4,7 +4,7 @@
 
 ## Introduction
 
-This library implements the concepts and theoretical results described in the article https://hal.inria.fr/hal-01264233.
+This library is based on the concepts and theoretical results described in the article https://projecteuclid.org/euclid.ejs/1537430425
 
 In addition, static and dynamic concerns aim to address multi-platform cross-usages, from large to embedded scales.
 
